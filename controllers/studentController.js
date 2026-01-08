@@ -71,3 +71,45 @@ exports.getStudents = async (req, res) => {
     });
   }
 };
+
+// Update a student
+exports.updateStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses } = req.body;
+
+    // Find the student and verify ownership
+    const student = await Student.findOne({ _id: id, createdBy: req.user._id });
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found or unauthorized'
+      });
+    }
+
+    // Update student
+    student.name = name || student.name;
+    student.studentId = studentId || student.studentId;
+    student.gradeLevel = gradeLevel || student.gradeLevel;
+    student.age = age || student.age;
+    student.disabilities = disabilities || student.disabilities;
+    student.strengths = strengths || student.strengths;
+    student.weaknesses = weaknesses || student.weaknesses;
+
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Student updated successfully',
+      student
+    });
+  } catch (error) {
+    console.error('Update Student Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating student',
+      error: error.message
+    });
+  }
+};

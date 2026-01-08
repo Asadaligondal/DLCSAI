@@ -57,6 +57,7 @@ const AdminPanel = ({ token }) => {
 
 // --- Sub-Component: Professor Panel ---
 const ProfessorPanel = ({ token }) => {
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [form, setForm] = useState({ 
     name: '', studentId: '', age: '', gradeLevel: '', 
@@ -161,15 +162,37 @@ const ProfessorPanel = ({ token }) => {
       {/* Student List */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold mb-6">My Students ({students.length})</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {students.length === 0 ? <p className="text-gray-500">No students found.</p> : students.map(s => (
-            <div key={s._id} className="border p-4 rounded-lg hover:shadow-lg transition">
-              <h3 className="font-bold text-lg">{s.name}</h3>
-              <p className="text-sm text-gray-600">ID: {s.studentId} | Age: {s.age} | Grade: {s.gradeLevel}</p>
-              {s.disabilities?.length > 0 && <p className="text-xs mt-2">⚠️ {s.disabilities.join(', ')}</p>}
-            </div>
-          ))}
-        </div>
+        {students.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No students found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {students.map(s => (
+                  <tr key={s._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.studentId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button 
+                        onClick={() => navigate(`/student/${s._id}`)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
