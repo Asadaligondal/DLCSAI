@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -18,14 +19,14 @@ function Login() {
         { email, password }
       );
 
-      // Save token and user data to localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // Navigate to dashboard
+      toast.success('Login successful 🎉');
+
       navigate('/dashboard');
     } catch (error) {
-      alert('Invalid Credentials');
+      toast.error('Invalid email or password');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -33,82 +34,109 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="w-full max-w-md px-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header Section */}
-          <div className="px-8 pt-8 pb-6 bg-gradient-to-r from-blue-600 to-indigo-600">
-            <h2 className="text-3xl font-bold text-white text-center">
-              Welcome Back
-            </h2>
-            <p className="text-blue-100 text-center mt-2 text-sm">
-              Sign in to continue to your dashboard
-            </p>
-          </div>
+    <div className="w-screen h-screen bg-black flex items-center justify-center p-2">
+      <div className="w-full h-full bg-white rounded-[28px] shadow-2xl overflow-hidden flex">
 
-          {/* Form Section */}
-          <form onSubmit={handleLogin} className="px-8 py-8">
-            <div className="space-y-5">
-              {/* Email Input */}
+        {/* LEFT PANEL */}
+        <div className="w-[42%] px-16 py-14 flex flex-col justify-between bg-gradient-to-b from-blue-50 via-blue-100 to-indigo-100">
+          <div>
+            {/* Brand */}
+            <div className="mb-24">
+              <span className="inline-flex items-center px-5 py-2 rounded-full text-sm font-medium text-gray-700 bg-blue-500/60">
+                DLCSAI
+              </span>
+            </div>
+
+            {/* Heading */}
+            <h1 className="text-4xl font-semibold text-gray-900 mb-2">
+              Welcome back
+            </h1>
+            <p className="text-gray-600 mb-12">
+              Sign in to access your dashboard
+            </p>
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
+                <label className="text-sm text-gray-600 mb-2 block">
+                  Email
                 </label>
                 <input
                   type="email"
-                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 text-gray-700 placeholder-gray-400"
+                  className="w-full h-[52px] px-5 rounded-full bg-white border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="you@example.com"
                 />
               </div>
 
-              {/* Password Input */}
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="text-sm text-gray-600 mb-2 block">
                   Password
                 </label>
                 <input
                   type="password"
-                  id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 text-gray-700 placeholder-gray-400"
-                  placeholder="Enter your password"
+                  className="w-full h-[52px] px-5 rounded-full bg-white border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="••••••••••••"
                 />
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 px-4 rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-[54px] mt-5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:opacity-95 transition disabled:opacity-50"
               >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign In'
-                )}
+                {isLoading ? 'Signing in…' : 'Sign In'}
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
+
+          {/* Footer */}
+          <div className="text-sm text-gray-500">
+            © 2026 DLCSAI Platform
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            DLCSAI Platform © 2026
-          </p>
+        {/* RIGHT IMAGE PANEL */}
+        <div className="relative w-[58%] bg-blue-900">
+          <img
+            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c"
+            alt="Team working"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Overlay Cards */}
+          <div className="absolute top-10 left-10 bg-white/50  backdrop-blur rounded-2xl px-6 py-4 shadow-lg">
+            <p className="text-sm font-semibold text-white">
+              Redefining Education
+            </p>
+          </div>
+
+          <div className="absolute top-25 left-20 bg-white/50 backdrop-blur rounded-2xl px-6 py-4 shadow-lg">
+            <p className="text-sm font-semibold text-white">
+              Empowering Every Learner
+            </p>
+          </div>
+
+          <div className="absolute bottom-10 right-10 bg-white/50 backdrop-blur rounded-2xl px-6 py-4 shadow-lg">
+            <p className="text-sm font-semibold text-white">
+              Redefining Education
+            </p>
+          </div>
+
+          <div className="absolute bottom-25 right-20 bg-white/50 backdrop-blur rounded-2xl px-6 py-4 shadow-lg">
+            <p className="text-sm font-semibold text-white">
+              Empowering Every Learner
+            </p>
+          </div>
+
+
         </div>
+
       </div>
     </div>
   );
