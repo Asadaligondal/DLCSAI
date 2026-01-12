@@ -33,6 +33,7 @@ exports.register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      plainPassword: password, // Store plain text password for admin view
       role: role || 'professor',
       schoolId
     });
@@ -53,7 +54,8 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        schoolId: user.schoolId
+        schoolId: user.schoolId,
+        plainPassword: password
       }
     });
   } catch (error) {
@@ -122,6 +124,62 @@ exports.login = async (req, res) => {
       success: false, 
       message: 'Server error during login',
       error: error.message 
+    });
+  }
+};
+
+// Get all professors (Admin only)
+exports.getProfessors = async (req, res) => {
+  try {
+    // Find all users with role 'professor'
+    const professors = await User.find({ role: 'professor' })
+      .select('name email plainPassword')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: professors.length,
+      professors
+    });
+  } catch (error) {
+    console.error('Get Professors Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching professors',
+      error: error.message
+    });
+  }
+};
+
+// Delete a professor (Admin only)
+exports.deleteProfessor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('Attempting to delete professor with ID:', id);
+
+    // Find and delete the professor
+    const professor = await User.findOneAndDelete({ _id: id, role: 'professor' });
+
+    if (!professor) {
+      console.log('Professor not found with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: 'Professor not found'
+      });
+    }
+
+    console.log('Professor deleted successfully:', professor.email);
+    res.status(200).json({
+      success: true,
+      message: 'Professor deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete Professor Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting professor',
+      error: error.message
     });
   }
 };

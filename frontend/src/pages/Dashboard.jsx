@@ -27,30 +27,159 @@ const TextArea = ({ label, ...props }) => (
 // --- Sub-Component: Admin Panel ---
 const AdminPanel = ({ token }) => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [professors, setProfessors] = useState([]);
+  const [showPasswords, setShowPasswords] = useState({});
+
+  const fetchProfessors = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/auth/professors`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfessors(res.data.professors || []);
+    } catch (error) {
+      console.error('Error fetching professors:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfessors();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, 
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, 
         { ...form, role: 'professor' }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Professor Created');
       setForm({ name: '', email: '', password: '' });
+      // Add new professor to the list immediately
+      setProfessors([response.data.user, ...professors]);
     } catch (err) {
       alert(err.response?.data?.message || 'Error creating professor');
     }
   };
 
+  const handleDelete = async (professorId) => {
+    if (!window.confirm('Are you sure you want to delete this professor?')) {
+      return;
+    }
+
+    console.log('Deleting professor with ID:', professorId);
+    console.log('API URL:', import.meta.env.VITE_API_URL);
+    console.log('Full delete URL:', `${import.meta.env.VITE_API_URL}/auth/professors/${professorId}`);
+
+    try {
+      const response = await axios.delete(
+        `${import.meta.env.VITE_API_URL}/auth/professors/${professorId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      console.log('Delete response:', response.data);
+      
+      if (response.data.success) {
+        alert('Professor deleted successfully');
+        // Remove professor from the list
+        setProfessors(professors.filter(p => (p._id || p.id) !== professorId));
+      }
+    } catch (err) {
+      console.error('Delete error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        url: err.config?.url
+      });
+      alert(err.response?.data?.message || 'Error deleting professor');
+    }
+  };
+
+  const togglePasswordVisibility = (professorId) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [professorId]: !prev[professorId]
+    }));
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-6 text-gray-800">Create New Professor</h2>
-      <form onSubmit={handleSubmit}>
-        <Input label="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-        <Input label="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
-        <Input label="Password" type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
-        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Create Professor</button>
-      </form>
+    <div className="space-y-8">
+      {/* Create Professor Form */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-6 text-gray-800">Create New Professor</h2>
+        <form onSubmit={handleSubmit}>
+          <Input label="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+          <Input label="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
+          <Input label="Password" type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
+          <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">Create Professor</button>
+        </form>
+      </div>
+
+      {/* Professors List */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-6">List of Professors ({professors.length})</h2>
+        {professors.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No professors found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {professors.map(p => {
+                  const professorId = p._id || p.id;
+                  const isPasswordVisible = showPasswords[professorId];
+                  return (
+                    <tr key={professorId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono">
+                            {isPasswordVisible ? (p.plainPassword || '<not stored>') : '••••••••'}
+                          </span>
+                          {p.plainPassword && (
+                            <button
+                              onClick={() => togglePasswordVisibility(professorId)}
+                              className="text-gray-600 hover:text-blue-500 transition"
+                              title={isPasswordVisible ? 'Hide password' : 'Show password'}
+                            >
+                              {isPasswordVisible ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                  <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleDelete(professorId)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
