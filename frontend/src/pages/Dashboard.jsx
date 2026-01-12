@@ -227,6 +227,28 @@ const ProfessorPanel = ({ token }) => {
     }
   };
 
+  const handleDeleteStudent = async (studentId) => {
+    if (!window.confirm('Are you sure you want to delete this student?')) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `${import.meta.env.VITE_API_URL}/students/${studentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        alert('Student deleted successfully');
+        // Remove student from the list
+        setStudents(students.filter(s => s._id !== studentId));
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert(err.response?.data?.message || 'Error deleting student');
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Add Student Form */}
@@ -309,12 +331,20 @@ const ProfessorPanel = ({ token }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.studentId}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button 
-                        onClick={() => navigate(`/student/${s._id}`)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                      >
-                        View
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => navigate(`/student/${s._id}`)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteStudent(s._id)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
