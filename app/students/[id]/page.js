@@ -8,6 +8,8 @@ import Navbar from '@/components/Navbar';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 import {
   ArrowLeft,
   Edit,
@@ -32,6 +34,8 @@ export default function StudentDetail() {
   const [recommendations, setRecommendations] = useState([]);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [assignConfirm, setAssignConfirm] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -130,6 +134,113 @@ export default function StudentDetail() {
       setAssignConfirm(false);
     } catch (error) {
       toast.error('Failed to assign goals');
+    }
+  };
+
+  const handleGenerateIEP = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await axios.post('/api/generate-iep', {
+        studentGrade: student.gradeLevel,
+        studentAge: student.age,
+        areaOfNeed: student.areaOfNeed || 'General Education',
+        currentPerformance: `Quantitative: ${student.performanceQuantitative || 'Not specified'}, Narrative: ${student.performanceNarrative || 'Not specified'}`,
+        disabilityCategory: student.disabilities?.join(', ') || 'Not specified',
+        instructionalSetting: student.instructionalSetting || 'General Education'
+      });
+
+      setGeneratedPlan(response.data.data);
+      toast.success('IEP Plan generated successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to generate IEP plan');
+      console.error('Generate IEP error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleExportToWord = async () => {
+    if (!generatedPlan) return;
+
+    try {
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              text: 'Individualized Education Program (IEP)',
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 }
+            }),
+            new Paragraph({
+              text: `Student: ${student.name}`,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({
+              text: `Student ID: ${student.studentId}`,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({
+              text: `Grade: ${student.gradeLevel} | Age: ${student.age}`,
+              spacing: { after: 400 }
+            }),
+            
+            new Paragraph({
+              text: 'Present Level of Academic Achievement and Functional Performance (PLAAFP)',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 }
+            }),
+            new Paragraph({
+              text: generatedPlan.plaafp_narrative,
+              spacing: { after: 400 }
+            }),
+            
+            new Paragraph({
+              text: 'Annual Goals',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 }
+            }),
+            ...generatedPlan.annual_goals.map((goal, index) => 
+              new Paragraph({
+                text: `${index + 1}. ${goal}`,
+                spacing: { after: 200 },
+                bullet: { level: 0 }
+              })
+            ),
+            
+            new Paragraph({
+              text: 'Short-Term Objectives',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 }
+            }),
+            ...generatedPlan.short_term_objectives.map((obj, index) => 
+              new Paragraph({
+                text: `${index + 1}. ${obj}`,
+                spacing: { after: 200 },
+                bullet: { level: 0 }
+              })
+            ),
+            
+            new Paragraph({
+              text: 'Intervention Recommendations',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 400, after: 200 }
+            }),
+            new Paragraph({
+              text: generatedPlan.intervention_recommendations,
+              spacing: { after: 400 }
+            })
+          ]
+        }]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `IEP_${student.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`);
+      toast.success('IEP document exported successfully');
+    } catch (error) {
+      toast.error('Failed to export document');
+      console.error('Export error:', error);
     }
   };
 
@@ -347,10 +458,75 @@ export default function StudentDetail() {
                   <Wand2 className="w-4 h-4" />
                   Auto-Assign Goals
                 </button>
+                <button
+                  onClick={handleGenerateIEP}
+                  disabled={isGenerating}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  {isGenerating ? 'Generating...' : 'Generate IEP Plan'}
+                </button>
               </div>
             </div>
           </div>
         </div>
+
+        {generatedPlan && (
+          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Generated IEP Plan</h2>
+              <button
+                onClick={handleExportToWord}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Word Doc
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
+                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{generatedPlan.plaafp_narrative}</p>
+              </div>
+
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
+                <ul className="space-y-2">
+                  {generatedPlan.annual_goals?.map((goal, index) => (
+                    <li key={index} className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      <p className="text-gray-700 text-sm pt-0.5">{goal}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
+                <ul className="space-y-2">
+                  {generatedPlan.short_term_objectives?.map((objective, index) => (
+                    <li key={index} className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      <p className="text-gray-700 text-sm pt-0.5">{objective}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
+                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{generatedPlan.intervention_recommendations}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showRecommendations && (

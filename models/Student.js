@@ -32,6 +32,26 @@ const StudentSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  state: {
+    type: String,
+    default: 'Florida'
+  },
+  instructionalSetting: {
+    type: String,
+    default: ''
+  },
+  performanceQuantitative: {
+    type: String,
+    default: ''
+  },
+  performanceNarrative: {
+    type: String,
+    default: ''
+  },
+  areaOfNeed: {
+    type: String,
+    default: ''
+  },
   assignedGoals: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Goal'
