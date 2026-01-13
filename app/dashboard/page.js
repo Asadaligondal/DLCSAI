@@ -13,6 +13,10 @@ import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
 const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
 const WEAKNESSES_OPTIONS = ['Reading Comprehension', 'Focus', 'Math Skills', 'Social Skills', 'Writing', 'Organization', 'Others'];
+const INSTRUCTIONAL_SETTINGS = ['General Education Support', 'Special Education Support', 'Resource Room', 'Inclusion', 'Self-Contained'];
+const QUANTITATIVE_LEVELS = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8'];
+const NARRATIVE_LEVELS = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+const AREAS_OF_NEED = ['English Language Arts (ELA)', 'Math', 'Behavior', 'Science', 'Social Studies', 'Art', 'Physical Education'];
 
 export default function Dashboard() {
   const router = useRouter();
@@ -29,7 +33,12 @@ export default function Dashboard() {
     gradeLevel: '',
     disabilities: [],
     strengths: [],
-    weaknesses: []
+    weaknesses: [],
+    state: 'Florida',
+    instructionalSetting: '',
+    performanceQuantitative: '',
+    performanceNarrative: '',
+    areaOfNeed: ''
   });
 
   useEffect(() => {
@@ -73,7 +82,12 @@ export default function Dashboard() {
       gradeLevel: '',
       disabilities: [],
       strengths: [],
-      weaknesses: []
+      weaknesses: [],
+      state: 'Florida',
+      instructionalSetting: '',
+      performanceQuantitative: '',
+      performanceNarrative: '',
+      areaOfNeed: ''
     });
     setShowModal(true);
   };
@@ -87,7 +101,12 @@ export default function Dashboard() {
       gradeLevel: '',
       disabilities: [],
       strengths: [],
-      weaknesses: []
+      weaknesses: [],
+      state: 'Florida',
+      instructionalSetting: '',
+      performanceQuantitative: '',
+      performanceNarrative: '',
+      areaOfNeed: ''
     });
   };
 
@@ -314,6 +333,91 @@ export default function Dashboard() {
               onChange={(value) => setFormData({ ...formData, weaknesses: value })}
               placeholder="Select weaknesses..."
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <input
+                  type="text"
+                  value={formData.state}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Instructional Setting</label>
+                <select
+                  value={formData.instructionalSetting}
+                  onChange={(e) => setFormData({ ...formData, instructionalSetting: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select setting...</option>
+                  {INSTRUCTIONAL_SETTINGS.map((setting) => (
+                    <option key={setting} value={setting}>
+                      {setting}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Performance Level</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Quantitative</label>
+                  <select
+                    value={formData.performanceQuantitative}
+                    onChange={(e) => setFormData({ ...formData, performanceQuantitative: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select level...</option>
+                    {QUANTITATIVE_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Narrative</label>
+                  <select
+                    value={formData.performanceNarrative}
+                    onChange={(e) => setFormData({ ...formData, performanceNarrative: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Select level...</option>
+                    {NARRATIVE_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Area(s) of Need</label>
+              <select
+                value={formData.areaOfNeed}
+                onChange={(e) => setFormData({ ...formData, areaOfNeed: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select area...</option>
+                {AREAS_OF_NEED.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <button
