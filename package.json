@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Student Management System with Next.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "build": "cd frontend && npm install && npm run build",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "next lint"
   },
   "repository": {
