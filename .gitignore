@@ -33,3 +33,12 @@ lerna-debug.log*
 dist
 dist-ssr
 build
+out
+
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# Old frontend (after migration)
+/frontend

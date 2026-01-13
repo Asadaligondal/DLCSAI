@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const StudentSchema = new mongoose.Schema({
   name: {
@@ -32,6 +32,10 @@ const StudentSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  assignedGoals: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Goal'
+  }],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -43,4 +47,4 @@ const StudentSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Student', StudentSchema);
+export default mongoose.models.Student || mongoose.model('Student', StudentSchema);

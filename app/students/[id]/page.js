@@ -1,0 +1,406 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useRouter, useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
+import Navbar from '@/components/Navbar';
+import Modal from '@/components/Modal';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import MultiSelect from '@/components/MultiSelect';
+import {
+  ArrowLeft,
+  Edit,
+  Save,
+  X,
+  Calendar,
+  GraduationCap,
+  Target,
+  Wand2,
+  Lightbulb
+} from 'lucide-react';
+
+const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
+const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
+const WEAKNESSES_OPTIONS = ['Reading Comprehension', 'Focus', 'Math Skills', 'Social Skills', 'Writing', 'Organization', 'Others'];
+
+export default function StudentDetail() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [student, setStudent] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [assignConfirm, setAssignConfirm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    studentId: '',
+    age: '',
+    gradeLevel: '',
+    disabilities: [],
+    strengths: [],
+    weaknesses: []
+  });
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    fetchStudent(token);
+  }, [id, router]);
+
+  const fetchStudent = async (token) => {
+    try {
+      const response = await axios.get(`/api/students/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const studentData = response.data.student;
+      setStudent(studentData);
+      setFormData({
+        name: studentData.name,
+        studentId: studentData.studentId,
+        age: studentData.age,
+        gradeLevel: studentData.gradeLevel,
+        disabilities: studentData.disabilities || [],
+        strengths: studentData.strengths || [],
+        weaknesses: studentData.weaknesses || []
+      });
+    } catch (error) {
+      toast.error('Failed to load student data');
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+
+    try {
+      await axios.put(
+        `/api/students/${id}`,
+        {
+          name: formData.name,
+          studentId: formData.studentId,
+          age: parseInt(formData.age),
+          gradeLevel: formData.gradeLevel,
+          disabilities: formData.disabilities,
+          strengths: formData.strengths,
+          weaknesses: formData.weaknesses
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      toast.success('Student updated successfully');
+      setIsEditing(false);
+      fetchStudent(token);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error updating student');
+    }
+  };
+
+  const handleGetRecommendations = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.get(`/api/students/${id}/assign-goals`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRecommendations(response.data.recommendations);
+      setShowRecommendations(true);
+    } catch (error) {
+      toast.error('Failed to get goal recommendations');
+    }
+  };
+
+  const handleAutoAssignGoals = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.post(
+        `/api/students/${id}/assign-goals`,
+        { auto: true },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      toast.success(`Assigned ${response.data.student.assignedGoals.length} goals to student`);
+      fetchStudent(token);
+      setShowRecommendations(false);
+      setAssignConfirm(false);
+    } catch (error) {
+      toast.error('Failed to assign goals');
+    }
+  };
+
+  if (!student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+
+      <div className="max-w-full px-8 py-6">
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Students
+        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              {!isEditing ? (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {student.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-900">{student.name}</h2>
+                        <p className="text-sm text-gray-600">ID: {student.studentId}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 text-gray-600 mb-1">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-xs font-medium">Age</span>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">{student.age}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2 text-gray-600 mb-1">
+                        <GraduationCap className="w-4 h-4" />
+                        <span className="text-xs font-medium">Grade Level</span>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">{student.gradeLevel}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-semibold text-gray-700">Disabilities</span>
+                      <p className="text-sm text-gray-600 mt-1">{student.disabilities?.join(', ') || 'None'}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-semibold text-gray-700">Strengths</span>
+                      <p className="text-sm text-gray-600 mt-1">{student.strengths?.join(', ') || 'None'}</p>
+                    </div>
+
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-semibold text-gray-700">Weaknesses</span>
+                      <p className="text-sm text-gray-600 mt-1">{student.weaknesses?.join(', ') || 'None'}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleUpdate}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                        <input
+                          type="text"
+                          value={formData.studentId}
+                          onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                        <input
+                          type="number"
+                          value={formData.age}
+                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                        <input
+                          type="text"
+                          value={formData.gradeLevel}
+                          onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <MultiSelect
+                      label="Disabilities"
+                      options={DISABILITIES_OPTIONS}
+                      value={formData.disabilities}
+                      onChange={(value) => setFormData({ ...formData, disabilities: value })}
+                      placeholder="Select disabilities..."
+                    />
+
+                    <MultiSelect
+                      label="Strengths"
+                      options={STRENGTHS_OPTIONS}
+                      value={formData.strengths}
+                      onChange={(value) => setFormData({ ...formData, strengths: value })}
+                      placeholder="Select strengths..."
+                    />
+
+                    <MultiSelect
+                      label="Weaknesses"
+                      options={WEAKNESSES_OPTIONS}
+                      value={formData.weaknesses}
+                      onChange={(value) => setFormData({ ...formData, weaknesses: value })}
+                      placeholder="Select weaknesses..."
+                    />
+
+                    <button
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Assigned Goals</h3>
+              </div>
+
+              {student.assignedGoals && student.assignedGoals.length > 0 ? (
+                <div className="space-y-2 mb-4">
+                  {student.assignedGoals.map((goal) => (
+                    <div key={goal._id} className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+                      <h4 className="font-medium text-gray-900 text-sm">{goal.title}</h4>
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{goal.description}</p>
+                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">
+                        {goal.category}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm mb-4 text-center py-6 bg-gray-50 rounded-lg">No goals assigned yet</p>
+              )}
+
+              <div className="space-y-2">
+                <button
+                  onClick={handleGetRecommendations}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Get Recommendations
+                </button>
+                <button
+                  onClick={() => setAssignConfirm(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Auto-Assign Goals
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showRecommendations && (
+        <Modal
+          title="Recommended Goals"
+          onClose={() => setShowRecommendations(false)}
+          size="lg"
+        >
+        <div className="p-6">
+          {recommendations.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No recommendations available</p>
+          ) : (
+            <div className="space-y-3">
+              {recommendations.map((rec) => (
+                <div key={rec.goalId} className="p-4 border border-green-200 bg-green-50 rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <h5 className="font-semibold text-gray-900">{rec.title}</h5>
+                    <span className="px-2 py-1 bg-white text-green-800 text-xs font-medium rounded">
+                      Score: {rec.score}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{rec.category}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.matchReasons.map((reason, idx) => (
+                      <span
+                        key={idx}
+                        className="text-xs bg-white px-2 py-1 rounded text-gray-700"
+                      >
+                        {reason}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        </Modal>
+      )}
+
+      {assignConfirm && (
+        <ConfirmDialog
+          title="Auto-Assign Goals"
+          message="This will automatically assign the most suitable goals based on the student's profile. Continue?"
+          confirmText="Assign Goals"
+          type="info"
+          onConfirm={handleAutoAssignGoals}
+          onCancel={() => setAssignConfirm(false)}
+        />
+      )}
+    </div>
+  );
+}
