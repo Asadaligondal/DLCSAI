@@ -39,6 +39,8 @@ export default function StudentDetail() {
   const [editablePlan, setEditablePlan] = useState(null);
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
+  const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -64,6 +66,9 @@ export default function StudentDetail() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const studentData = response.data.student;
+      console.log('📥 Fetched student data:', studentData);
+      console.log('📦 IEP plan data:', studentData.iep_plan_data);
+      
       setStudent(studentData);
       setFormData({
         name: studentData.name,
@@ -74,7 +79,64 @@ export default function StudentDetail() {
         strengths: studentData.strengths || [],
         weaknesses: studentData.weaknesses || []
       });
+
+      // Load existing IEP plan if available
+      if (studentData.iep_plan_data && studentData.iep_plan_data.original_ai_draft) {
+        const originalDraft = studentData.iep_plan_data.original_ai_draft;
+        
+        // Check if there's actual content (not just empty structure)
+        const hasActualContent = (
+          originalDraft.plaafp_narrative && originalDraft.plaafp_narrative.trim().length > 0
+        ) || (
+          originalDraft.annual_goals && originalDraft.annual_goals.length > 0
+        ) || (
+          originalDraft.short_term_objectives && originalDraft.short_term_objectives.length > 0
+        ) || (
+          originalDraft.intervention_recommendations && originalDraft.intervention_recommendations.trim().length > 0
+        );
+        
+        if (!hasActualContent) {
+          console.log('⚠️ IEP structure exists but no actual content found - treating as no plan');
+          setHasExistingPlan(false);
+          return;
+        }
+        
+        console.log('✅ Found existing IEP plan with content');
+        console.log('📝 Original AI draft:', JSON.stringify(studentData.iep_plan_data.original_ai_draft, null, 2));
+        console.log('✏️ User edited version:', JSON.stringify(studentData.iep_plan_data.user_edited_version, null, 2));
+        
+        const editedVersion = studentData.iep_plan_data.user_edited_version;
+        
+        // Ensure arrays exist and are not null/undefined
+        const sanitizedOriginal = {
+          plaafp_narrative: originalDraft?.plaafp_narrative || '',
+          annual_goals: Array.isArray(originalDraft?.annual_goals) ? originalDraft.annual_goals : [],
+          short_term_objectives: Array.isArray(originalDraft?.short_term_objectives) ? originalDraft.short_term_objectives : [],
+          intervention_recommendations: originalDraft?.intervention_recommendations || ''
+        };
+        
+        const sanitizedEdited = editedVersion ? {
+          plaafp_narrative: editedVersion?.plaafp_narrative || '',
+          annual_goals: Array.isArray(editedVersion?.annual_goals) ? editedVersion.annual_goals : [],
+          short_term_objectives: Array.isArray(editedVersion?.short_term_objectives) ? editedVersion.short_term_objectives : [],
+          intervention_recommendations: editedVersion?.intervention_recommendations || ''
+        } : sanitizedOriginal;
+        
+        console.log('🔧 Sanitized original:', JSON.stringify(sanitizedOriginal, null, 2));
+        console.log('🔧 Sanitized edited:', JSON.stringify(sanitizedEdited, null, 2));
+        
+        setHasExistingPlan(true);
+        setOriginalAIPlan(sanitizedOriginal);
+        setEditablePlan(sanitizedEdited);
+        setIsReviewed(studentData.iep_plan_data.is_reviewed || false);
+        setGeneratedPlan(sanitizedOriginal);
+        setViewMode('edited');
+      } else {
+        console.log('❌ No existing IEP plan found');
+        setHasExistingPlan(false);
+      }
     } catch (error) {
+      console.error('❌ Error fetching student:', error);
       toast.error('Failed to load student data');
     }
   };
@@ -143,6 +205,8 @@ export default function StudentDetail() {
   const handleGenerateIEP = async () => {
     setIsGenerating(true);
     try {
+      console.log('🎯 Generating IEP for student:', student);
+      
       const response = await axios.post('/api/generate-iep', {
         studentGrade: student.gradeLevel,
         studentAge: student.age,
@@ -153,14 +217,24 @@ export default function StudentDetail() {
       });
 
       const aiData = response.data.data;
+      console.log('🤖 AI Response Data:', JSON.stringify(aiData, null, 2));
+      console.log('📝 PLAAFP length:', aiData.plaafp_narrative?.length);
+      console.log('🎯 Annual goals count:', aiData.annual_goals?.length);
+      console.log('🎯 Objectives count:', aiData.short_term_objectives?.length);
+      console.log('💡 Recommendations length:', aiData.intervention_recommendations?.length);
+      
       setGeneratedPlan(aiData);
       setOriginalAIPlan(aiData);
       setEditablePlan(aiData);
       setIsReviewed(false);
+      setHasExistingPlan(true);
+      setViewMode('edited');
+      
+      console.log('✅ State updated with AI data');
       toast.success('IEP Plan generated successfully');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to generate IEP plan');
-      console.error('Generate IEP error:', error);
+      console.error('❌ Generate IEP error:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -171,6 +245,31 @@ export default function StudentDetail() {
       setEditablePlan(JSON.parse(JSON.stringify(originalAIPlan)));
       setIsReviewed(false);
       toast.info('Content reset to original AI version');
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      console.log('💾 Saving IEP changes...');
+      console.log('📝 Original AI Plan:', originalAIPlan);
+      console.log('✏️ Editable Plan:', editablePlan);
+      console.log('✅ Is Reviewed:', isReviewed);
+      
+      const response = await axios.put(
+        `/api/students/${id}/save-iep`,
+        {
+          original_ai_draft: originalAIPlan,
+          user_edited_version: editablePlan,
+          is_reviewed: isReviewed
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      
+      console.log('✅ Save response:', response.data);
+      toast.success('Changes saved successfully');
+    } catch (error) {
+      console.error('❌ Save error:', error);
+      toast.error('Failed to save changes');
     }
   };
 
@@ -254,18 +353,15 @@ export default function StudentDetail() {
       saveAs(blob, `IEP_${student.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`);
       
       // Save to database
-      try {
-        await axios.put(
-          `/api/students/${id}/save-iep`,
-          {
-            ai_generated_draft: originalAIPlan,
-            final_approved_content: editablePlan
-          },
-          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-        );
-      } catch (dbError) {
-        console.error('Failed to save IEP to database:', dbError);
-      }
+      await axios.put(
+        `/api/students/${id}/save-iep`,
+        {
+          original_ai_draft: originalAIPlan,
+          user_edited_version: editablePlan,
+          is_reviewed: isReviewed
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
       
       toast.success('IEP document exported successfully');
     } catch (error) {
@@ -488,24 +584,33 @@ export default function StudentDetail() {
                   <Wand2 className="w-4 h-4" />
                   Auto-Assign Goals
                 </button>
-                <button
-                  onClick={handleGenerateIEP}
-                  disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  {isGenerating ? 'Generating...' : 'Generate IEP Plan'}
-                </button>
+                {!hasExistingPlan && (
+                  <button
+                    onClick={handleGenerateIEP}
+                    disabled={isGenerating}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    {isGenerating ? 'Generating...' : 'Generate IEP Plan'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {generatedPlan && editablePlan && (
+        {hasExistingPlan && generatedPlan && editablePlan && (
           <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Generated IEP Plan - Review & Edit</h2>
+              <h2 className="text-xl font-semibold text-gray-900">IEP Plan - Review & Edit</h2>
               <div className="flex gap-2">
+                <button
+                  onClick={handleSaveChanges}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </button>
                 <button
                   onClick={handleResetToOriginal}
                   className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -529,7 +634,75 @@ export default function StudentDetail() {
               </div>
             </div>
 
-            <div className="space-y-6">
+            {/* Toggle Between Original and Edited */}
+            <div className="mb-6 flex gap-2 border-b border-gray-200">
+              <button
+                onClick={() => setViewMode('original')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'original'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Original AI Draft (Read-Only)
+              </button>
+              <button
+                onClick={() => setViewMode('edited')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'edited'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Current Edited Version
+              </button>
+            </div>
+
+            {/* Display Content Based on View Mode */}
+            {viewMode === 'original' ? (
+              // Original AI Draft - Read Only
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
+                </div>
+
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
+                  <ul className="space-y-2">
+                    {originalAIPlan.annual_goals?.map((goal, index) => (
+                      <li key={index} className="flex gap-3">
+                        <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </span>
+                        <p className="text-gray-700 text-sm pt-0.5">{goal}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
+                  <ul className="space-y-2">
+                    {originalAIPlan.short_term_objectives?.map((objective, index) => (
+                      <li key={index} className="flex gap-3">
+                        <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          {index + 1}
+                        </span>
+                        <p className="text-gray-700 text-sm pt-0.5">{objective}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
+                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
+                </div>
+              </div>
+            ) : (
+              // Current Edited Version - Editable
+              <div className="space-y-6">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
                 <textarea
@@ -611,6 +784,7 @@ export default function StudentDetail() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
       </div>

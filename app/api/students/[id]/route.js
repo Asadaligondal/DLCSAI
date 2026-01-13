@@ -36,6 +36,14 @@ export async function GET(request, { params }) {
       );
     }
 
+    console.log('📥 Fetching student:', id);
+    console.log('📦 Student IEP data:', student.iep_plan_data);
+    if (student.iep_plan_data) {
+      console.log('📝 Original AI draft present:', !!student.iep_plan_data.original_ai_draft);
+      console.log('✏️ User edited version present:', !!student.iep_plan_data.user_edited_version);
+      console.log('✅ Is reviewed:', student.iep_plan_data.is_reviewed);
+    }
+
     return NextResponse.json(
       {
         success: true,

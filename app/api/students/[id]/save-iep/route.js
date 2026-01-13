@@ -21,7 +21,11 @@ export async function PUT(req, { params }) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const body = await req.json();
-    const { ai_generated_draft, final_approved_content } = body;
+    const { original_ai_draft, user_edited_version, is_reviewed } = body;
+
+    console.log('💾 Save IEP Request Body:', body);
+    console.log('📝 Original AI Draft keys:', original_ai_draft ? Object.keys(original_ai_draft) : 'null');
+    console.log('✏️ User Edited Version keys:', user_edited_version ? Object.keys(user_edited_version) : 'null');
 
     const student = await Student.findById(id);
 
@@ -32,20 +36,22 @@ export async function PUT(req, { params }) {
       );
     }
 
-    // Update the IEP plan with version history
-    student.iepPlan = {
-      ai_generated_draft: {
-        ...ai_generated_draft,
-        generated_at: new Date()
-      },
-      final_approved_content: {
-        ...final_approved_content,
-        approved_at: new Date(),
-        approved_by: decoded.id
-      }
+    console.log('📦 Existing IEP data before save:', student.iep_plan_data);
+
+    // Update the IEP plan data
+    student.iep_plan_data = {
+      original_ai_draft: original_ai_draft || student.iep_plan_data?.original_ai_draft,
+      user_edited_version: user_edited_version,
+      is_reviewed: is_reviewed,
+      last_updated: new Date()
     };
 
+    console.log('📦 New IEP data to save:', student.iep_plan_data);
+
     await student.save();
+    
+    console.log('✅ IEP saved successfully to database');
+    console.log('📦 Saved student IEP data:', student.iep_plan_data);
 
     return NextResponse.json({
       success: true,

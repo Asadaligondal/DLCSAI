@@ -52,27 +52,26 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  iepPlan: {
-    ai_generated_draft: {
+  iep_plan_data: {
+    original_ai_draft: {
       plaafp_narrative: String,
       annual_goals: [String],
       short_term_objectives: [String],
-      intervention_recommendations: String,
-      generated_at: {
-        type: Date,
-        default: Date.now
-      }
+      intervention_recommendations: String
     },
-    final_approved_content: {
+    user_edited_version: {
       plaafp_narrative: String,
       annual_goals: [String],
       short_term_objectives: [String],
-      intervention_recommendations: String,
-      approved_at: Date,
-      approved_by: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-      }
+      intervention_recommendations: String
+    },
+    is_reviewed: {
+      type: Boolean,
+      default: false
+    },
+    last_updated: {
+      type: Date,
+      default: Date.now
     }
   },
   assignedGoals: [{
