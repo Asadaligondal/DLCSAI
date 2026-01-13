@@ -3,13 +3,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Target, LogOut, User, Settings } from 'lucide-react';
+import { Users, Target, LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const dropdownRef = useRef(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    if (u) {
+      setUserRole(u.role);
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -26,10 +34,13 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const navItems = [
-    { name: 'Professors', path: '/professors', icon: Users },
-    { name: 'Goals', path: '/goals', icon: Target }
+  const allNavItems = [
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['professor'] },
+    { name: 'Professors', path: '/professors', icon: Users, roles: ['admin'] },
+    { name: 'Goals', path: '/goals', icon: Target, roles: ['admin', 'professor'] }
   ];
+
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   return (
     <header className="w-full bg-white border-b border-gray-200 sticky top-0 z-40">

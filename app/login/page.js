@@ -23,7 +23,12 @@ export default function Login() {
 
       toast.success('Login successful');
 
-      router.push('/dashboard');
+      // Redirect based on role
+      if (response.data.user.role === 'admin') {
+        router.push('/professors');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Invalid email or password');
       console.error('Login error:', error);

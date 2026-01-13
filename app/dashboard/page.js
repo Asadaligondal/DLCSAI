@@ -39,6 +39,11 @@ export default function Dashboard() {
       router.push('/login');
       return;
     }
+    // Only professors can access this page
+    if (u.role === 'admin') {
+      router.push('/professors');
+      return;
+    }
     setUser(u);
     setToken(t);
   }, [router]);
