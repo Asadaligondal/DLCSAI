@@ -35,7 +35,7 @@ function Login() {
 
   return (
     <div className="w-screen h-screen bg-black flex items-center justify-center p-2">
-      <div className="w-full h-full bg-white rounded-[28px] shadow-2xl overflow-hidden flex">
+      <div className="w-full h-full bg-white rounded-[28px] shadow-3xl overflow-hidden flex">
 
         {/* LEFT PANEL */}
         <div className="w-[42%] px-16 py-14 flex flex-col justify-between bg-gradient-to-b from-blue-50 via-blue-100 to-indigo-100">

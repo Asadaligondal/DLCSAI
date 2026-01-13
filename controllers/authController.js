@@ -125,3 +125,24 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// Get all professors
+exports.getAllProfessors = async (req, res) => {
+  try {
+    const professors = await User.find({ role: 'professor' })
+      .select('-password'); // exclude password
+
+    res.status(200).json({
+      success: true,
+      count: professors.length,
+      data: professors,
+    });
+  } catch (error) {
+    console.error('Get Professors Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching professors',
+      error: error.message,
+    });
+  }
+};

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 // --- Helper Components to Remove UI Redundancy ---
 const Input = ({ label, ...props }) => (
@@ -215,18 +216,13 @@ function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white shadow-md p-4 mb-8">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Welcome, {user.name}</h1>
-          <button onClick={() => { localStorage.clear(); navigate('/'); }} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-            Logout
-          </button>
-        </div>
-      </div>
+    <div className='bg-black p-2 h-screen w-screen'>
+      <div className="h-full w-full bg-gradient-to-b from-blue-50 via-blue-100 to-indigo-200 rounded-[28px] shadow-3xl">
+        <Navbar />
 
-      <div className="container mx-auto px-4">
-        {user.role === 'admin' ? <AdminPanel token={token} /> : <ProfessorPanel token={token} />}
+        <div className="container mx-auto px-4">
+          {user.role === 'admin' ? <AdminPanel token={token} /> : <ProfessorPanel token={token} />}
+        </div>
       </div>
     </div>
   );
