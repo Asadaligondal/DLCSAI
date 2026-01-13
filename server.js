@@ -21,6 +21,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 
 // MongoDB Connection
+// Note: We define this outside the listen block so it runs on Vercel too
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
@@ -34,6 +35,14 @@ mongoose.connect(MONGO_URI)
 // Server Configuration
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// --- CHANGES START HERE ---
+
+// Only run app.listen() if we are NOT in production (i.e., local development)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running locally on port ${PORT}`);
+  });
+}
+
+// Export the app so Vercel can run it as a serverless function
+module.exports = app;

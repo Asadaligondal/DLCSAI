@@ -113,3 +113,36 @@ exports.updateStudent = async (req, res) => {
     });
   }
 };
+
+// Delete a student
+exports.deleteStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('Attempting to delete student with ID:', id);
+
+    // Find and delete the student, verify ownership
+    const student = await Student.findOneAndDelete({ _id: id, createdBy: req.user._id });
+
+    if (!student) {
+      console.log('Student not found with ID:', id);
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found or unauthorized'
+      });
+    }
+
+    console.log('Student deleted successfully:', student.name);
+    res.status(200).json({
+      success: true,
+      message: 'Student deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete Student Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting student',
+      error: error.message
+    });
+  }
+};
