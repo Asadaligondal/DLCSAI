@@ -52,6 +52,29 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  iepPlan: {
+    ai_generated_draft: {
+      plaafp_narrative: String,
+      annual_goals: [String],
+      short_term_objectives: [String],
+      intervention_recommendations: String,
+      generated_at: {
+        type: Date,
+        default: Date.now
+      }
+    },
+    final_approved_content: {
+      plaafp_narrative: String,
+      annual_goals: [String],
+      short_term_objectives: [String],
+      intervention_recommendations: String,
+      approved_at: Date,
+      approved_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    }
+  },
   assignedGoals: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Goal'

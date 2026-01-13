@@ -35,6 +35,9 @@ export default function StudentDetail() {
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [assignConfirm, setAssignConfirm] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [originalAIPlan, setOriginalAIPlan] = useState(null);
+  const [editablePlan, setEditablePlan] = useState(null);
+  const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -149,7 +152,11 @@ export default function StudentDetail() {
         instructionalSetting: student.instructionalSetting || 'General Education'
       });
 
-      setGeneratedPlan(response.data.data);
+      const aiData = response.data.data;
+      setGeneratedPlan(aiData);
+      setOriginalAIPlan(aiData);
+      setEditablePlan(aiData);
+      setIsReviewed(false);
       toast.success('IEP Plan generated successfully');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to generate IEP plan');
@@ -159,8 +166,16 @@ export default function StudentDetail() {
     }
   };
 
+  const handleResetToOriginal = () => {
+    if (originalAIPlan) {
+      setEditablePlan(JSON.parse(JSON.stringify(originalAIPlan)));
+      setIsReviewed(false);
+      toast.info('Content reset to original AI version');
+    }
+  };
+
   const handleExportToWord = async () => {
-    if (!generatedPlan) return;
+    if (!editablePlan || !isReviewed) return;
 
     try {
       const doc = new Document({
@@ -192,7 +207,7 @@ export default function StudentDetail() {
               spacing: { before: 400, after: 200 }
             }),
             new Paragraph({
-              text: generatedPlan.plaafp_narrative,
+              text: editablePlan.plaafp_narrative,
               spacing: { after: 400 }
             }),
             
@@ -201,7 +216,7 @@ export default function StudentDetail() {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 }
             }),
-            ...generatedPlan.annual_goals.map((goal, index) => 
+            ...editablePlan.annual_goals.map((goal, index) => 
               new Paragraph({
                 text: `${index + 1}. ${goal}`,
                 spacing: { after: 200 },
@@ -214,7 +229,7 @@ export default function StudentDetail() {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 }
             }),
-            ...generatedPlan.short_term_objectives.map((obj, index) => 
+            ...editablePlan.short_term_objectives.map((obj, index) => 
               new Paragraph({
                 text: `${index + 1}. ${obj}`,
                 spacing: { after: 200 },
@@ -228,7 +243,7 @@ export default function StudentDetail() {
               spacing: { before: 400, after: 200 }
             }),
             new Paragraph({
-              text: generatedPlan.intervention_recommendations,
+              text: editablePlan.intervention_recommendations,
               spacing: { after: 400 }
             })
           ]
@@ -237,6 +252,21 @@ export default function StudentDetail() {
 
       const blob = await Packer.toBlob(doc);
       saveAs(blob, `IEP_${student.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`);
+      
+      // Save to database
+      try {
+        await axios.put(
+          `/api/students/${id}/save-iep`,
+          {
+            ai_generated_draft: originalAIPlan,
+            final_approved_content: editablePlan
+          },
+          { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        );
+      } catch (dbError) {
+        console.error('Failed to save IEP to database:', dbError);
+      }
+      
       toast.success('IEP document exported successfully');
     } catch (error) {
       toast.error('Failed to export document');
@@ -471,58 +501,114 @@ export default function StudentDetail() {
           </div>
         </div>
 
-        {generatedPlan && (
+        {generatedPlan && editablePlan && (
           <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Generated IEP Plan</h2>
-              <button
-                onClick={handleExportToWord}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download Word Doc
-              </button>
+              <h2 className="text-xl font-semibold text-gray-900">Generated IEP Plan - Review & Edit</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleResetToOriginal}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Reset to Original
+                </button>
+                <button
+                  onClick={handleExportToWord}
+                  disabled={!isReviewed}
+                  className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium ${
+                    isReviewed
+                      ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download Word Doc
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
-                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{generatedPlan.plaafp_narrative}</p>
+                <textarea
+                  value={editablePlan.plaafp_narrative}
+                  onChange={(e) => setEditablePlan({ ...editablePlan, plaafp_narrative: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
+                  rows="8"
+                />
               </div>
 
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
-                <ul className="space-y-2">
-                  {generatedPlan.annual_goals?.map((goal, index) => (
-                    <li key={index} className="flex gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                <div className="space-y-3">
+                  {editablePlan.annual_goals?.map((goal, index) => (
+                    <div key={index} className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
                         {index + 1}
                       </span>
-                      <p className="text-gray-700 text-sm pt-0.5">{goal}</p>
-                    </li>
+                      <textarea
+                        value={goal}
+                        onChange={(e) => {
+                          const newGoals = [...editablePlan.annual_goals];
+                          newGoals[index] = e.target.value;
+                          setEditablePlan({ ...editablePlan, annual_goals: newGoals });
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        rows="2"
+                      />
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
               <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
-                <ul className="space-y-2">
-                  {generatedPlan.short_term_objectives?.map((objective, index) => (
-                    <li key={index} className="flex gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                <div className="space-y-3">
+                  {editablePlan.short_term_objectives?.map((objective, index) => (
+                    <div key={index} className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
                         {index + 1}
                       </span>
-                      <p className="text-gray-700 text-sm pt-0.5">{objective}</p>
-                    </li>
+                      <textarea
+                        value={objective}
+                        onChange={(e) => {
+                          const newObjectives = [...editablePlan.short_term_objectives];
+                          newObjectives[index] = e.target.value;
+                          setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
+                        }}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                        rows="2"
+                      />
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
 
               <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
-                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{generatedPlan.intervention_recommendations}</p>
+                <textarea
+                  value={editablePlan.intervention_recommendations}
+                  onChange={(e) => setEditablePlan({ ...editablePlan, intervention_recommendations: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm leading-relaxed"
+                  rows="6"
+                />
+              </div>
+
+              <div className="p-4 border-2 border-yellow-400 bg-yellow-50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="review-checkbox"
+                    checked={isReviewed}
+                    onChange={(e) => setIsReviewed(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <label htmlFor="review-checkbox" className="flex-1 text-sm text-gray-900 font-medium cursor-pointer">
+                    I have reviewed this content for accuracy and professional standards. This IEP plan meets Florida Department of Education requirements and is ready for export.
+                  </label>
+                </div>
               </div>
             </div>
           </div>
