@@ -79,7 +79,7 @@ export async function PUT(request, { params }) {
     const user = authResult.user;
     const { id } = params;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations } = body;
 
     // Connect to database
     await connectDB();
@@ -106,6 +106,8 @@ export async function PUT(request, { params }) {
     if (strengths !== undefined) student.strengths = strengths;
     if (weaknesses !== undefined) student.weaknesses = weaknesses;
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
+    if (annualGoals !== undefined) student.annualGoals = annualGoals;
+    if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;
 
     await student.save();
 

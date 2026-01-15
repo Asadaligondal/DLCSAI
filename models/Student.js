@@ -74,6 +74,14 @@ const StudentSchema = new mongoose.Schema({
       default: Date.now
     }
   },
+  annualGoals: {
+    type: String,
+    default: ''
+  },
+  servicesRecommendations: {
+    type: String,
+    default: ''
+  },
   assignedGoals: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Goal'

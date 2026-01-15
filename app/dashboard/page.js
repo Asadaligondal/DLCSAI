@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
-import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, FileText } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
 const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
@@ -204,7 +204,7 @@ export default function Dashboard() {
                     Grade
                   </th>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Goals
+                    IEP Plan
                   </th>
                   <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -257,6 +257,13 @@ export default function Dashboard() {
                             title="View"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => router.push(`/services/${student._id}`)}
+                            className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                            title="Services & Recommendations"
+                          >
+                            <FileText className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(student)}
