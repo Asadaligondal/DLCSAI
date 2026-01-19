@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Target, LogOut, User, Settings, LayoutDashboard } from 'lucide-react';
+import { Users, Target, LogOut, User, Settings, LayoutDashboard, Home } from 'lucide-react';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -35,6 +35,7 @@ export default function Navbar() {
   }, []);
 
   const allNavItems = [
+    { name: 'Home', path: '/', icon: Home, roles: ['admin', 'professor'] },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['professor'] },
     { name: 'Professors', path: '/professors', icon: Users, roles: ['admin'] },
     { name: 'Goals', path: '/goals', icon: Target, roles: ['admin', 'professor'] }
