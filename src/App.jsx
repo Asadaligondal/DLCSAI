@@ -1,22 +1,6 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import MyStudents from './pages/MyStudents';
-import IEPWriter from './pages/IEPWriter';
-import Billing from './pages/Billing';
-import Settings from './pages/Settings';
+// This file was a React Router entry created during a local dev flow.
+// Not used in the Next.js App Router project — keep as a harmless placeholder.
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/students" element={<MyStudents />} />
-        <Route path="/iep-writer" element={<IEPWriter />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/" element={<Navigate to="/students" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+export default function AppPlaceholder() {
+  return null;
 }
-
-export default App;

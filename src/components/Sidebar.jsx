@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   LayoutDashboard,
@@ -16,7 +17,7 @@ import {
 
 export default function Sidebar({ user, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
+  const pathname = usePathname();
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/students' },
@@ -26,7 +27,7 @@ export default function Sidebar({ user, onLogout }) {
     { name: 'Settings', icon: Settings, path: '/settings' }
   ];
 
-  const isActive = (p) => location.pathname === p;
+  const isActive = (p) => pathname === p;
 
   return (
     <aside
@@ -48,7 +49,7 @@ export default function Sidebar({ user, onLogout }) {
       </div>
 
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        <Link to="/" className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-3 rounded-lg transition-colors ${isActive('/') ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-100'}`}>
+        <Link href="/" className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-3 rounded-lg transition-colors ${isActive('/') ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-100'}`}>
           <Home className="w-5 h-5" />
           {!collapsed && <span className="text-sm font-medium">Home</span>}
         </Link>
@@ -59,7 +60,7 @@ export default function Sidebar({ user, onLogout }) {
           return (
             <Link
               key={item.name}
-              to={item.path}
+              href={item.path}
               className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} p-3 rounded-lg transition-colors ${
                 active ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-100'
               }`}
