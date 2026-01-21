@@ -1,5 +1,4 @@
 import Sidebar from '../components/Sidebar';
-import { useTheme } from '../context/ThemeContext'; // If you are using the theme hook
 
 const Settings = () => {
   const user = JSON.parse(localStorage.getItem('user')) || { name: 'Guest' };
