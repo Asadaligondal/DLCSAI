@@ -1,9 +1,19 @@
 'use client';
-
+import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 
 export default function BillingPage() {
-  const user = JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('user') : 'null') || { name: 'Guest' };
+  const [user, setUser] = useState({ name: 'Guest' });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) setUser(JSON.parse(raw));
+    } catch (e) {
+      // ignore parse errors
+    }
+  }, []);
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
