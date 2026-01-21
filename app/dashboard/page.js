@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
-import { Plus, Search, Eye, Pencil, Trash2, FileText } from 'lucide-react';
+import { Plus, Search, Trash2, Zap } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
 const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
@@ -63,6 +63,11 @@ export default function Dashboard() {
       fetchStudents();
     }
   }, [token, user?.role]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push('/login');
+  };
 
   const fetchStudents = async () => {
     try {
@@ -155,26 +160,36 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className="flex h-screen bg-[#F9FAFB] font-sans text-slate-800">
+      {/* Left Sidebar */}
+      <Sidebar user={user} onLogout={handleLogout} />
 
-      <div className="max-w-full px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Students</h1>
-            <p className="text-sm text-gray-500 mt-1">{filteredStudents.length} total</p>
-          </div>
-          <button
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Student
-          </button>
-        </div>
+      {/* Right Main Content */}
+      <div className="flex-1 overflow-auto">
+        <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
+          <h2 className="text-xl font-semibold text-slate-800">Dashboard</h2>
+          <div className="text-sm text-slate-500">Welcome, {user.name}</div>
+        </header>
 
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
+        <main className="p-8">
+          <div className="max-w-full px-0 py-0">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold text-slate-900">Students</h1>
+                <p className="text-xs uppercase tracking-wide text-gray-500 mt-1">{filteredStudents.length} total</p>
+              </div>
+              <button
+                onClick={handleOpenModal}
+                className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg shadow-md text-sm font-semibold transition-all"
+                aria-label="Add Student"
+              >
+                <Plus className="w-4 h-4 opacity-90" />
+                Add Student
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-4 border-b border-transparent">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -182,31 +197,31 @@ export default function Dashboard() {
                 placeholder="Search students..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full max-w-sm pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full max-w-sm pl-9 pr-4 py-2 rounded-full text-sm bg-white shadow-sm focus:outline-none focus:shadow-lg transition-shadow"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="border-b">
                 <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Name
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Student ID
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Age
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Grade
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     IEP Plan
                   </th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -232,42 +247,46 @@ export default function Dashboard() {
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-medium text-sm">
+                    <tr key={student._id} className="hover:bg-blue-50 transition-colors">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 ring-1 ring-white shadow-sm">
+                            <span className="text-white font-semibold text-sm">
                               {student.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900">{student.name}</span>
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{student.name}</div>
+                            <div className="text-xs text-gray-400">{student.gradeLevel} • {student.age} yrs</div>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 font-mono">{student.studentId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{student.age}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{student.gradeLevel}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{student.studentId}</td>
+                      <td className="px-6 py-5 text-sm text-gray-600">{student.age}</td>
+                      <td className="px-6 py-5 text-sm text-gray-600">{student.gradeLevel}</td>
+                      <td className="px-6 py-5 text-sm text-gray-600">
                         {student.assignedGoals?.length || 0}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-5 text-right">
+                        <div className="flex items-center justify-end gap-3">
                           <button
                             onClick={() => router.push(`/students/${student._id}`)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="View"
+                            className="px-3 py-1.5 bg-white border border-transparent hover:border-indigo-100 text-indigo-600 hover:bg-indigo-50 rounded-full text-sm font-medium shadow-xs transition-all"
+                            title="IEP"
                           >
-                            <Eye className="w-4 h-4" />
+                            IEP
                           </button>
                           <button
                             onClick={() => router.push(`/services/${student._id}`)}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
-                            title="Services & Recommendations"
+                            className="px-3 py-1.5 bg-gradient-to-r from-green-100 to-green-50 text-green-700 hover:from-green-200 hover:to-green-100 rounded-full text-sm font-medium flex items-center gap-2 transition-all"
+                            title="View Recs"
                           >
-                            <FileText className="w-4 h-4" />
+                            <Zap className="w-4 h-4" />
+                            <span>View Recs</span>
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(student)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -281,6 +300,8 @@ export default function Dashboard() {
             </table>
           </div>
         </div>
+      </div>
+        </main>
       </div>
 
       {showModal && (
