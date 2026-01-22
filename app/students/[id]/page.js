@@ -385,6 +385,22 @@ export default function StudentDetail() {
     }
   };
 
+  // Remove a goal from the editable plan
+  const removeGoal = (index) => {
+    const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
+    newGoals.splice(index, 1);
+    setEditablePlan({ ...editablePlan, annual_goals: newGoals });
+  };
+
+  // Remove a short-term objective from the editable plan
+  const removeObjective = (index) => {
+    const newObjectives = Array.isArray(editablePlan?.short_term_objectives)
+      ? [...editablePlan.short_term_objectives]
+      : [];
+    newObjectives.splice(index, 1);
+    setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
+  };
+
   if (!student) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -762,7 +778,7 @@ export default function StudentDetail() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
                 <div className="space-y-3">
                   {editablePlan.annual_goals?.map((goal, index) => (
-                    <div key={index} className="flex gap-3">
+                    <div key={index} className="flex items-start gap-3">
                       <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
                         {index + 1}
                       </span>
@@ -776,6 +792,14 @@ export default function StudentDetail() {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                         rows="2"
                       />
+                      <button
+                        type="button"
+                        onClick={() => removeGoal(index)}
+                        className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Remove goal"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -785,7 +809,7 @@ export default function StudentDetail() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
                 <div className="space-y-3">
                   {editablePlan.short_term_objectives?.map((objective, index) => (
-                    <div key={index} className="flex gap-3">
+                    <div key={index} className="flex items-start gap-3">
                       <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
                         {index + 1}
                       </span>
@@ -799,6 +823,14 @@ export default function StudentDetail() {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                         rows="2"
                       />
+                      <button
+                        type="button"
+                        onClick={() => removeObjective(index)}
+                        className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Remove objective"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
