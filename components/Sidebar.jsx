@@ -11,6 +11,7 @@ import {
   CreditCard,
   LogOut,
   Home,
+  Accessibility,
   ChevronLeft,
   Menu
 } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function Sidebar({ user, onLogout }) {
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Accommodations', icon: Accessibility, path: '/accommodations' },
     { name: 'My Students', icon: Users, path: '/students' },
     { name: 'IEP Writer', icon: FileText, path: '/iep-writer' },
     { name: 'Billing / Plan', icon: CreditCard, path: '/billing' },
