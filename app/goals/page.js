@@ -10,9 +10,56 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import { Plus, Pencil, Trash2, Search, Filter } from 'lucide-react';
 
-const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
-const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
-const WEAKNESSES_OPTIONS = ['Reading Comprehension', 'Focus', 'Math Skills', 'Social Skills', 'Writing', 'Organization', 'Others'];
+const DISABILITIES_OPTIONS = [
+  'Autism Spectrum Disorder (P)',
+  'Deaf or Hard-of-Hearing (H)',
+  'Developmental Delay (T)',
+  'Dual-Sensory Impairment (O)',
+  'Emotional or Behavioral Disability (J)',
+  'Established Conditions (Age: 0-2) (U)',
+  'Gifted (L)',
+  'Hospitalized or Homebound (M)',
+  'Intellectual Disability (W)',
+  'Language Impairment (G)',
+  'Orthopedic Impairment (C)',
+  'Other Health Impairment (V)',
+  'Traumatic Brain Injury (S)',
+  'Specific Learning Disability (K)',
+  'Speech Impairment (F)',
+  'Visual Impairment (I)'
+];
+const STRENGTHS_OPTIONS = [
+  'Good Memory',
+  'Creative',
+  'Problem Solving',
+  'Communication',
+  'Leadership',
+  'Artistic',
+  'Athletic',
+  'Teamwork',
+  'Adaptability',
+  'Organization',
+  'Perseverance',
+  'Attention to Detail',
+  'Curiosity',
+  'Others'
+];
+const WEAKNESSES_OPTIONS = [
+  'Reading Comprehension',
+  'Focus',
+  'Math Skills',
+  'Social Skills',
+  'Writing',
+  'Organization',
+  'Processing Speed',
+  'Working Memory',
+  'Fine Motor',
+  'Gross Motor',
+  'Anxiety',
+  'Executive Functioning',
+  'Behavioral Regulation',
+  'Others'
+];
 
 export default function Goals() {
   const router = useRouter();
@@ -30,7 +77,9 @@ export default function Goals() {
     category: 'academic',
     targetDisabilities: [],
     targetWeaknesses: [],
+    targetWeaknessesOther: '',
     requiredStrengths: [],
+    requiredStrengthsOther: '',
     gradeLevel: '',
     priority: 'medium',
     isActive: true
@@ -391,11 +440,11 @@ export default function Goals() {
             </div>
 
             <MultiSelect
-              label="Target Disabilities"
+              label="Target Exceptionalities"
               options={DISABILITIES_OPTIONS}
               value={form.targetDisabilities}
               onChange={(value) => setForm({ ...form, targetDisabilities: value })}
-              placeholder="Select target disabilities..."
+              placeholder="Select target exceptionalities..."
             />
 
             <MultiSelect
@@ -406,6 +455,19 @@ export default function Goals() {
               placeholder="Select target weaknesses..."
             />
 
+            {form.targetWeaknesses?.includes('Others') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Other Target Weaknesses (describe)</label>
+                <input
+                  type="text"
+                  value={form.targetWeaknessesOther}
+                  onChange={(e) => setForm({ ...form, targetWeaknessesOther: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe other target weaknesses..."
+                />
+              </div>
+            )}
+
             <MultiSelect
               label="Required Strengths"
               options={STRENGTHS_OPTIONS}
@@ -413,6 +475,19 @@ export default function Goals() {
               onChange={(value) => setForm({ ...form, requiredStrengths: value })}
               placeholder="Select required strengths..."
             />
+
+            {form.requiredStrengths?.includes('Others') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Other Required Strengths (describe)</label>
+                <input
+                  type="text"
+                  value={form.requiredStrengthsOther}
+                  onChange={(e) => setForm({ ...form, requiredStrengthsOther: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe other required strengths..."
+                />
+              </div>
+            )}
 
             <div className="flex items-center">
               <input

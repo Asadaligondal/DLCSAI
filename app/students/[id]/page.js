@@ -19,9 +19,56 @@ import {
   Wand2
 } from 'lucide-react';
 
-const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
-const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
-const WEAKNESSES_OPTIONS = ['Reading Comprehension', 'Focus', 'Math Skills', 'Social Skills', 'Writing', 'Organization', 'Others'];
+const DISABILITIES_OPTIONS = [
+  'Autism Spectrum Disorder (P)',
+  'Deaf or Hard-of-Hearing (H)',
+  'Developmental Delay (T)',
+  'Dual-Sensory Impairment (O)',
+  'Emotional or Behavioral Disability (J)',
+  'Established Conditions (Age: 0-2) (U)',
+  'Gifted (L)',
+  'Hospitalized or Homebound (M)',
+  'Intellectual Disability (W)',
+  'Language Impairment (G)',
+  'Orthopedic Impairment (C)',
+  'Other Health Impairment (V)',
+  'Traumatic Brain Injury (S)',
+  'Specific Learning Disability (K)',
+  'Speech Impairment (F)',
+  'Visual Impairment (I)'
+];
+const STRENGTHS_OPTIONS = [
+  'Good Memory',
+  'Creative',
+  'Problem Solving',
+  'Communication',
+  'Leadership',
+  'Artistic',
+  'Athletic',
+  'Teamwork',
+  'Adaptability',
+  'Organization',
+  'Perseverance',
+  'Attention to Detail',
+  'Curiosity',
+  'Others'
+];
+const WEAKNESSES_OPTIONS = [
+  'Reading Comprehension',
+  'Focus',
+  'Math Skills',
+  'Social Skills',
+  'Writing',
+  'Organization',
+  'Processing Speed',
+  'Working Memory',
+  'Fine Motor',
+  'Gross Motor',
+  'Anxiety',
+  'Executive Functioning',
+  'Behavioral Regulation',
+  'Others'
+];
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -42,7 +89,9 @@ export default function StudentDetail() {
     gradeLevel: '',
     disabilities: [],
     strengths: [],
-    weaknesses: []
+    strengthsOther: '',
+    weaknesses: [],
+    weaknessesOther: ''
   });
 
   useEffect(() => {
@@ -71,7 +120,9 @@ export default function StudentDetail() {
         gradeLevel: studentData.gradeLevel,
         disabilities: studentData.disabilities || [],
         strengths: studentData.strengths || [],
-        weaknesses: studentData.weaknesses || []
+        strengthsOther: studentData.strengthsOther || '',
+        weaknesses: studentData.weaknesses || [],
+        weaknessesOther: studentData.weaknessesOther || ''
       });
 
       // Load existing IEP plan if available
@@ -149,7 +200,9 @@ export default function StudentDetail() {
           gradeLevel: formData.gradeLevel,
           disabilities: formData.disabilities,
           strengths: formData.strengths,
-          weaknesses: formData.weaknesses
+          strengthsOther: formData.strengthsOther,
+          weaknesses: formData.weaknesses,
+          weaknessesOther: formData.weaknessesOther
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -355,67 +408,88 @@ export default function StudentDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              {!isEditing ? (
+            {!isEditing ? (
+              <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">
-                          {student.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900">{student.name}</h2>
-                        <p className="text-sm text-gray-600">ID: {student.studentId}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <Calendar className="w-4 h-4" />
-                        <span className="text-xs font-medium">Age</span>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">{student.age}</p>
-                    </div>
-
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2 text-gray-600 mb-1">
-                        <GraduationCap className="w-4 h-4" />
-                        <span className="text-xs font-medium">Grade Level</span>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">{student.gradeLevel}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-semibold text-gray-700">Disabilities</span>
-                      <p className="text-sm text-gray-600 mt-1">{student.disabilities?.join(', ') || 'None'}</p>
-                    </div>
-
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-semibold text-gray-700">Strengths</span>
-                      <p className="text-sm text-gray-600 mt-1">{student.strengths?.join(', ') || 'None'}</p>
-                    </div>
-
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-semibold text-gray-700">Weaknesses</span>
-                      <p className="text-sm text-gray-600 mt-1">{student.weaknesses?.join(', ') || 'None'}</p>
-                    </div>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                    <span className="ml-2 text-xs text-gray-400 font-normal">— write only initials (e.g. Adam Smith → A S)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
                 </div>
-              ) : (
-                <form onSubmit={handleUpdate}>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                  <input
+                    type="text"
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                  <input
+                    type="number"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                  <select
+                    value={formData.gradeLevel}
+                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select grade...</option>
+                    <option>Kindergarten (K)</option>
+                    <option>Grade 1</option>
+                    <option>Grade 2</option>
+                    <option>Grade 3</option>
+                    <option>Grade 4</option>
+                    <option>Grade 5</option>
+                    <option>Grade 6</option>
+                    <option>Grade 7</option>
+                    <option>Grade 8</option>
+                    <option>Grade 9 (Freshman)</option>
+                    <option>Grade 10 (Sophomore)</option>
+                    <option>Grade 11 (Junior)</option>
+                    <option>Grade 12 (Senior)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-semibold text-gray-700">Disabilities</span>
+                <p className="text-sm text-gray-600 mt-1">{student.disabilities?.join(', ') || 'None'}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-semibold text-gray-700">Strengths</span>
+                <p className="text-sm text-gray-600 mt-1">{student.strengths?.join(', ') || 'None'}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-semibold text-gray-700">Weaknesses</span>
+                <p className="text-sm text-gray-600 mt-1">{student.weaknesses?.join(', ') || 'None'}</p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleUpdate}>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
                     <button
@@ -472,11 +546,11 @@ export default function StudentDetail() {
                     </div>
 
                     <MultiSelect
-                      label="Disabilities"
+                      label="Exceptionalities"
                       options={DISABILITIES_OPTIONS}
                       value={formData.disabilities}
                       onChange={(value) => setFormData({ ...formData, disabilities: value })}
-                      placeholder="Select disabilities..."
+                      placeholder="Select exceptionalities..."
                     />
 
                     <MultiSelect
@@ -487,6 +561,19 @@ export default function StudentDetail() {
                       placeholder="Select strengths..."
                     />
 
+                    {formData.strengths.includes('Others') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Other Strengths (describe)</label>
+                        <input
+                          type="text"
+                          value={formData.strengthsOther}
+                          onChange={(e) => setFormData({ ...formData, strengthsOther: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Describe other strengths..."
+                        />
+                      </div>
+                    )}
+
                     <MultiSelect
                       label="Weaknesses"
                       options={WEAKNESSES_OPTIONS}
@@ -494,6 +581,19 @@ export default function StudentDetail() {
                       onChange={(value) => setFormData({ ...formData, weaknesses: value })}
                       placeholder="Select weaknesses..."
                     />
+
+                    {formData.weaknesses.includes('Others') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Other Weaknesses (describe)</label>
+                        <input
+                          type="text"
+                          value={formData.weaknessesOther}
+                          onChange={(e) => setFormData({ ...formData, weaknessesOther: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Describe other weaknesses..."
+                        />
+                      </div>
+                    )}
 
                     <button
                       type="submit"
@@ -505,7 +605,6 @@ export default function StudentDetail() {
                   </div>
                 </form>
               )}
-            </div>
           </div>
 
           <div className="lg:col-span-1">

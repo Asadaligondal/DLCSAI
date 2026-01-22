@@ -10,13 +10,70 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import { Plus, Search, Trash2, Zap } from 'lucide-react';
 
-const DISABILITIES_OPTIONS = ['ADHD', 'Dyslexia', 'Autism', 'Speech Impairment', 'Visual Impairment', 'Hearing Impairment', 'Others'];
-const STRENGTHS_OPTIONS = ['Good Memory', 'Creative', 'Problem Solving', 'Communication', 'Leadership', 'Artistic', 'Athletic', 'Others'];
-const WEAKNESSES_OPTIONS = ['Reading Comprehension', 'Focus', 'Math Skills', 'Social Skills', 'Writing', 'Organization', 'Others'];
+const DISABILITIES_OPTIONS = [
+  'Autism Spectrum Disorder (P)',
+  'Deaf or Hard-of-Hearing (H)',
+  'Developmental Delay (T)',
+  'Dual-Sensory Impairment (O)',
+  'Emotional or Behavioral Disability (J)',
+  'Established Conditions (Age: 0-2) (U)',
+  'Gifted (L)',
+  'Hospitalized or Homebound (M)',
+  'Intellectual Disability (W)',
+  'Language Impairment (G)',
+  'Orthopedic Impairment (C)',
+  'Other Health Impairment (V)',
+  'Traumatic Brain Injury (S)',
+  'Specific Learning Disability (K)',
+  'Speech Impairment (F)',
+  'Visual Impairment (I)'
+];
+const STRENGTHS_OPTIONS = [
+  'Good Memory',
+  'Creative',
+  'Problem Solving',
+  'Communication',
+  'Leadership',
+  'Artistic',
+  'Athletic',
+  'Teamwork',
+  'Adaptability',
+  'Organization',
+  'Perseverance',
+  'Attention to Detail',
+  'Curiosity',
+  'Others'
+];
+const WEAKNESSES_OPTIONS = [
+  'Reading Comprehension',
+  'Focus',
+  'Math Skills',
+  'Social Skills',
+  'Writing',
+  'Organization',
+  'Processing Speed',
+  'Working Memory',
+  'Fine Motor',
+  'Gross Motor',
+  'Anxiety',
+  'Executive Functioning',
+  'Behavioral Regulation',
+  'Others'
+];
 const INSTRUCTIONAL_SETTINGS = ['General Education Support', 'Special Education Support', 'Resource Room', 'Inclusion', 'Self-Contained'];
 const QUANTITATIVE_LEVELS = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8'];
 const NARRATIVE_LEVELS = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
-const AREAS_OF_NEED = ['English Language Arts (ELA)', 'Math', 'Behavior', 'Science', 'Social Studies', 'Art', 'Physical Education'];
+const AREAS_OF_NEED = [
+  'Language & Literacy',
+  'Mathematics',
+  'Behavior & Social-Emotional',
+  'Communication',
+  'Adaptive / Life Skills',
+  'Motor / Physical',
+  'Sensory',
+  'Cognition',
+    'Other', // Ensure 'Other' is included explicitly
+];
 
 export default function Dashboard() {
   const router = useRouter();
@@ -34,7 +91,10 @@ export default function Dashboard() {
     gradeLevel: '',
     disabilities: [],
     strengths: [],
+    strengthsOther: '',
     weaknesses: [],
+    weaknessesOther: '',
+    areaOfNeedOther: '',
     state: 'Florida',
     instructionalSetting: '',
     performanceQuantitative: '',
@@ -91,7 +151,9 @@ export default function Dashboard() {
       gradeLevel: '',
       disabilities: [],
       strengths: [],
+      strengthsOther: '',
       weaknesses: [],
+      weaknessesOther: '',
       state: 'Florida',
       instructionalSetting: '',
       performanceQuantitative: '',
@@ -309,7 +371,10 @@ export default function Dashboard() {
           <form onSubmit={handleSubmit} className="space-y-4 p-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                  <span className="ml-2 text-xs text-gray-400 font-normal">— write only initials (e.g. Adam Smith → A S)</span>
+                </label>
                 <input
                   type="text"
                   value={formData.name}
@@ -343,23 +408,36 @@ export default function Dashboard() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
-                <input
-                  type="text"
+                <select
                   value={formData.gradeLevel}
                   onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., 5th Grade"
                   required
-                />
+                >
+                  <option value="">Select grade...</option>
+                  <option>Kindergarten (K)</option>
+                  <option>Grade 1</option>
+                  <option>Grade 2</option>
+                  <option>Grade 3</option>
+                  <option>Grade 4</option>
+                  <option>Grade 5</option>
+                  <option>Grade 6</option>
+                  <option>Grade 7</option>
+                  <option>Grade 8</option>
+                  <option>Grade 9 (Freshman)</option>
+                  <option>Grade 10 (Sophomore)</option>
+                  <option>Grade 11 (Junior)</option>
+                  <option>Grade 12 (Senior)</option>
+                </select>
               </div>
             </div>
 
             <MultiSelect
-              label="Disabilities"
+              label="Exceptionalities"
               options={DISABILITIES_OPTIONS}
               value={formData.disabilities}
               onChange={(value) => setFormData({ ...formData, disabilities: value })}
-              placeholder="Select disabilities..."
+              placeholder="Select exceptionalities..."
             />
 
             <MultiSelect
@@ -370,6 +448,19 @@ export default function Dashboard() {
               placeholder="Select strengths..."
             />
 
+            {formData.strengths.includes('Others') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Other Strengths (describe)</label>
+                <input
+                  type="text"
+                  value={formData.strengthsOther}
+                  onChange={(e) => setFormData({ ...formData, strengthsOther: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe other strengths..."
+                />
+              </div>
+            )}
+
             <MultiSelect
               label="Weaknesses"
               options={WEAKNESSES_OPTIONS}
@@ -377,6 +468,19 @@ export default function Dashboard() {
               onChange={(value) => setFormData({ ...formData, weaknesses: value })}
               placeholder="Select weaknesses..."
             />
+
+            {formData.weaknesses.includes('Others') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Other Weaknesses (describe)</label>
+                <input
+                  type="text"
+                  value={formData.weaknessesOther}
+                  onChange={(e) => setFormData({ ...formData, weaknessesOther: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe other weaknesses..."
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -461,6 +565,18 @@ export default function Dashboard() {
                   </option>
                 ))}
               </select>
+              {formData.areaOfNeed === 'Other' && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Other Area of Need (describe)</label>
+                  <input
+                    type="text"
+                    value={formData.areaOfNeedOther}
+                    onChange={(e) => setFormData({ ...formData, areaOfNeedOther: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Describe other area of need..."
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
