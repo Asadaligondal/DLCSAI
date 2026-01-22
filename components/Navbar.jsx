@@ -37,7 +37,7 @@ export default function Navbar() {
   const allNavItems = [
     { name: 'Home', path: '/', icon: Home, roles: ['admin', 'professor'] },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['professor'] },
-    { name: 'Professors', path: '/professors', icon: Users, roles: ['admin'] },
+    { name: 'Teacher/Service Providers', path: '/professors', icon: Users, roles: ['admin'] },
     { name: 'Goals', path: '/goals', icon: Target, roles: ['admin', 'professor'] }
   ];
 

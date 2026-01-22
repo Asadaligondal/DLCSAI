@@ -54,7 +54,7 @@ export default function Professors() {
       });
       setProfessors(res.data.professors || []);
     } catch (error) {
-      toast.error('Failed to fetch professors');
+      toast.error('Failed to fetch Teacher/Service Providers');
     }
   };
 
@@ -91,12 +91,12 @@ export default function Professors() {
         await axios.put(`/api/auth/professors/${editingProf._id}`, updateData, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        toast.success('Professor updated successfully');
+        toast.success('Teacher/Service Provider updated successfully');
       } else {
         await axios.post('/api/auth/register', { ...formData, role: 'professor' }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        toast.success('Professor added successfully');
+        toast.success('Teacher/Service Provider added successfully');
       }
       fetchProfessors();
       handleCloseModal();
@@ -110,11 +110,11 @@ export default function Professors() {
       await axios.delete(`/api/auth/professors/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Professor deleted successfully');
+      toast.success('Teacher/Service Provider deleted successfully');
       fetchProfessors();
       setDeleteConfirm(null);
     } catch (error) {
-      toast.error('Failed to delete professor');
+      toast.error('Failed to delete Teacher/Service Provider');
     }
   };
 
@@ -133,7 +133,7 @@ export default function Professors() {
       <div className="max-w-full px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Professors</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Teacher/Service Providers</h1>
             <p className="text-sm text-gray-500 mt-1">{filteredProfessors.length} total</p>
           </div>
           {user.role === 'admin' && (
@@ -142,7 +142,7 @@ export default function Professors() {
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add Professor
+              Add Teacher/Service Provider
             </button>
           )}
         </div>
@@ -153,7 +153,7 @@ export default function Professors() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search professors..."
+                placeholder="Search Teacher/Service Providers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full max-w-sm pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -187,8 +187,8 @@ export default function Professors() {
               <tbody className="divide-y divide-gray-200">
                 {filteredProfessors.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-sm">
-                      No professors found
+                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-sm">
+                      No Teacher/Service Providers found
                     </td>
                   </tr>
                 ) : (
@@ -242,7 +242,7 @@ export default function Professors() {
 
       {showModal && (
         <Modal
-          title={editingProf ? 'Edit Professor' : 'Add Professor'}
+          title={editingProf ? 'Edit Teacher/Service Provider' : 'Add Teacher/Service Provider'}
           onClose={handleCloseModal}
         >
           <form onSubmit={handleSubmit} className="space-y-4 p-5">
@@ -305,7 +305,7 @@ export default function Professors() {
                 type="submit"
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
               >
-                {editingProf ? 'Update' : 'Add'} Professor
+                {editingProf ? 'Update Teacher/Service Provider' : 'Add Teacher/Service Provider'}
               </button>
             </div>
           </form>
@@ -314,7 +314,7 @@ export default function Professors() {
 
       {deleteConfirm && (
         <ConfirmDialog
-          title="Delete Professor"
+          title="Delete Teacher/Service Provider"
           message={`Are you sure you want to delete ${deleteConfirm.name}? This action cannot be undone.`}
           type="danger"
           confirmText="Delete"

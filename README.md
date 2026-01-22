@@ -5,12 +5,12 @@ A comprehensive Next.js application for managing students with special education
 ## Features
 
 ### Admin Features
-- Create and manage professor accounts
+- Create and manage Teacher/Service Provider accounts
 - Create and manage educational goals
-- View all professors and their information
+- View all Teacher/Service Providers and their information
 - Auto-assign goals to students based on their abilities and disabilities
 
-### Professor Features
+### Teacher/Service Provider Features
 - Add and manage students
 - Track student disabilities, strengths, and weaknesses
 - View student details and progress
@@ -76,7 +76,7 @@ DLCSAI/
 │   ├── dashboard/           # Dashboard page
 │   ├── goals/               # Goals management page
 │   ├── login/               # Login page
-│   ├── professors/          # Professors directory
+│   ├── professors/          # Teacher/Service Providers directory
 │   ├── students/[id]/       # Student detail page
 │   ├── layout.js            # Root layout
 │   └── globals.css          # Global styles

@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'DLCSAI - Student Management System',
-  description: 'Management system for professors and students',
+  description: 'Management system for teachers/service providers and students',
 };
 
 export default function RootLayout({ children }) {
