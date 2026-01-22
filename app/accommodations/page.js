@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Sidebar from '@/components/Sidebar';
-import { Plus, Brain, CheckCircle, Accessibility } from 'lucide-react';
+import { Plus, Brain, CheckCircle, Accessibility, Trash2 } from 'lucide-react';
 
 export default function AccommodationsPage() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [formData, setFormData] = useState({ category: '', description: '' });
 
   const fetchList = async () => {
@@ -46,6 +47,21 @@ export default function AccommodationsPage() {
     acc[k].push(item);
     return acc;
   }, {});
+
+  const handleRemove = async (id) => {
+    try {
+      setDeletingId(id);
+      const token = localStorage.getItem('token');
+      const res = await axios.delete(`/api/accommodations/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data && res.data.success) {
+        setList((s) => s.filter((it) => it._id !== id));
+      }
+    } catch (err) {
+      console.error('Remove accommodation error', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -87,17 +103,41 @@ export default function AccommodationsPage() {
             )}
 
             {Object.entries(grouped).map(([category, items]) => (
-              <div key={category} className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-4">
+              <div key={category} className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-4 border border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">{category}</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{category}</h3>
                   <span className="text-sm text-gray-500">{items.length}</span>
                 </div>
                 <ul className="mt-3 space-y-2">
-                  {items.map((it) => (
-                    <li key={it._id} className="p-3 bg-gray-50 dark:bg-slate-900 rounded-md">
-                      <div className="text-sm text-gray-800 dark:text-gray-200">{it.description}</div>
-                    </li>
-                  ))}
+                  {items.map((it) => {
+                    const isDeleting = deletingId === it._id;
+                    return (
+                      <li
+                        key={it._id}
+                        className={`flex items-start justify-between p-3 bg-white dark:bg-slate-800 rounded-md border border-gray-100 dark:border-slate-700 ${
+                          isDeleting ? 'opacity-70' : ''
+                        }`}
+                      >
+                        <div className="text-sm text-gray-800 dark:text-gray-200">{it.description}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(it._id)}
+                          className={`ml-4 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors ${isDeleting ? 'cursor-not-allowed' : ''}`}
+                          title="Remove accommodation"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <svg className="w-4 h-4 animate-spin text-red-600" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
