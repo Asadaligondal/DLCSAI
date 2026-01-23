@@ -8,7 +8,7 @@ import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
-import { Plus, Search, Trash2, Zap } from 'lucide-react';
+import { Plus, Search, Trash2, Zap, Upload } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -179,6 +180,81 @@ export default function Dashboard() {
       performanceNarrative: '',
       areaOfNeed: ''
     });
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file');
+      return;
+    }
+
+    setUploading(true);
+    const toastId = toast.loading('Analyzing document...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await axios.post('/api/parse-pdf', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.data && res.data.success) {
+        const extracted = res.data.data;
+        
+        // Convert comma-separated strings to arrays for multi-selects
+        // Helper function to convert comma-separated string to array, filtering out "add manually"
+        const toArray = (value) => {
+          if (!value || value === 'add manually') return [];
+          return value.split(',').map(item => item.trim()).filter(item => item && item !== 'add manually');
+        };
+        
+        const disabilitiesArray = toArray(extracted.disabilities);
+        const strengthsArray = toArray(extracted.strengths);
+        const weaknessesArray = toArray(extracted.weaknesses);
+
+        setFormData(prev => ({
+          ...prev,
+          name: extracted.name !== 'add manually' ? extracted.name : prev.name,
+          studentId: extracted.studentId !== 'add manually' ? extracted.studentId : prev.studentId,
+          age: extracted.age !== 'add manually' ? extracted.age : prev.age,
+          gradeLevel: extracted.gradeLevel !== 'add manually' ? extracted.gradeLevel : prev.gradeLevel,
+          disabilities: disabilitiesArray.length > 0 ? disabilitiesArray : prev.disabilities,
+          strengths: strengthsArray.length > 0 ? strengthsArray : prev.strengths,
+          weaknesses: weaknessesArray.length > 0 ? weaknessesArray : prev.weaknesses,
+          state: extracted.state !== 'add manually' ? extracted.state : prev.state,
+          instructionalSetting: extracted.instructionalSetting !== 'add manually' ? extracted.instructionalSetting : 'add manually',
+          performanceQuantitative: extracted.performanceQuantitative !== 'add manually' ? extracted.performanceQuantitative : 'add manually',
+          performanceNarrative: extracted.performanceNarrative !== 'add manually' ? extracted.performanceNarrative : 'add manually',
+          areaOfNeed: extracted.areaOfNeed !== 'add manually' ? extracted.areaOfNeed : 'add manually'
+        }));
+
+        toast.update(toastId, {
+          render: 'Form auto-filled from PDF!',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000
+        });
+      }
+    } catch (error) {
+      console.error('PDF upload error:', error);
+      toast.update(toastId, {
+        render: error.response?.data?.message || 'Failed to parse PDF',
+        type: 'error',
+        isLoading: false,
+        autoClose: 3000
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -369,6 +445,48 @@ export default function Dashboard() {
       {showModal && (
         <Modal title="Add Student" onClose={handleCloseModal} size="lg">
           <form onSubmit={handleSubmit} className="space-y-4 p-5">
+            {/* PDF Upload Button */}
+            <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Auto-fill from PDF</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Upload a report or intake form to extract student information</p>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    id="pdf-upload"
+                    accept="application/pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                  <label
+                    htmlFor="pdf-upload"
+                    className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors ${
+                      uploading ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {uploading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        <span>Analyzing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>Upload PDF</span>
+                      </>
+                    )}
+                  </label>
+                    <p className="mt-1 text-xs text-gray-400">Beta version — may extract incomplete or imprecise fields</p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
