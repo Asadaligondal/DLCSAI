@@ -14,7 +14,7 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
-    lg: 'max-w-4xl',
+    lg: 'max-w-[860px]',
     xl: 'max-w-6xl'
   };
 
@@ -22,27 +22,30 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200`}
+        className={`relative bg-white rounded-[16px] shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 border border-gray-100`}
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        {/* Header (sticky) */}
+        <div className="sticky top-0 bg-white z-20 flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Close"
+            className="w-9 h-9 inline-flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-180px)]">
+        {/* Content (scrollable) */}
+        <div className="overflow-y-auto max-h-[calc(90vh-64px)] p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {children}
         </div>
       </div>
