@@ -298,73 +298,76 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-[#F9FAFB] font-sans text-slate-800">
+    <div className="flex h-screen bg-[#F7F9FB] font-sans text-slate-800">
       {/* Left Sidebar */}
       <Sidebar user={user} onLogout={handleLogout} />
 
       {/* Right Main Content */}
       <div className="flex-1 overflow-auto">
-        <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
-          <h2 className="text-xl font-semibold text-slate-800">Dashboard</h2>
-          <div className="text-sm text-slate-500">Welcome, {user.name}</div>
+        <header className="bg-white border-b px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+          <div>
+            <h2 className="text-2xl font-semibold text-slate-900">Dashboard</h2>
+            <div className="text-sm text-slate-500">Welcome, {user?.name}</div>
+          </div>
+          <div />
         </header>
 
         <main className="p-8">
-          <div className="max-w-full px-0 py-0">
+          <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900">Students</h1>
+                <h1 className="text-3xl font-semibold text-slate-900">Students</h1>
                 <p className="text-xs uppercase tracking-wide text-gray-500 mt-1">{filteredStudents.length} total</p>
               </div>
               <button
                 onClick={handleOpenModal}
-                className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg shadow-md text-sm font-semibold transition-all"
+                className="flex items-center gap-2 h-10 bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-md shadow-sm text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 aria-label="Add Student"
               >
                 <Plus className="w-4 h-4 opacity-90" />
-                Add Student
+                <span className="leading-none">Add Student</span>
               </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm">
-          <div className="p-4 border-b border-transparent">
-            <div className="relative">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search students..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full max-w-sm pl-9 pr-4 py-2 rounded-full text-sm bg-white shadow-sm focus:outline-none focus:shadow-lg transition-shadow"
+                className="w-full pl-10 pr-4 h-10 rounded-md text-sm bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b">
+            <table className="min-w-full divide-y divide-gray-100">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     Name
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     Student ID
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     Age
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     Grade
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     IEP Plan
                   </th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {loading ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-12 text-center">
@@ -385,38 +388,36 @@ export default function Dashboard() {
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-blue-50 transition-colors">
-                      <td className="px-6 py-5">
+                    <tr key={student._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 ring-1 ring-white shadow-sm">
+                          <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full flex items-center justify-center flex-shrink-0 ring-1 ring-white shadow">
                             <span className="text-white font-semibold text-sm">
                               {student.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
                             <div className="text-sm font-medium text-slate-900">{student.name}</div>
-                            <div className="text-xs text-gray-400">{student.gradeLevel} • {student.age} yrs</div>
+                            <div className="text-xs text-gray-500">{student.gradeLevel} • {student.age} yrs</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{student.studentId}</td>
-                      <td className="px-6 py-5 text-sm text-gray-600">{student.age}</td>
-                      <td className="px-6 py-5 text-sm text-gray-600">{student.gradeLevel}</td>
-                      <td className="px-6 py-5 text-sm text-gray-600">
-                        {student.assignedGoals?.length || 0}
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                        <div className="flex items-center justify-end gap-3">
+                      <td className="px-4 py-3 text-sm text-gray-600 font-mono">{student.studentId}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{student.age}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{student.gradeLevel}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{student.assignedGoals?.length || 0}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => router.push(`/students/${student._id}`)}
-                            className="px-3 py-1.5 bg-white border border-transparent hover:border-indigo-100 text-indigo-600 hover:bg-indigo-50 rounded-full text-sm font-medium shadow-xs transition-all"
+                            className="px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 text-indigo-600 hover:bg-indigo-50 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300"
                             title="IEP"
                           >
                             IEP
                           </button>
                           <button
                             onClick={() => router.push(`/services/${student._id}`)}
-                            className="px-3 py-1.5 bg-gradient-to-r from-green-100 to-green-50 text-green-700 hover:from-green-200 hover:to-green-100 rounded-full text-sm font-medium flex items-center gap-2 transition-all"
+                            className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-md text-sm font-medium flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-200"
                             title="View Recs"
                           >
                             <Zap className="w-4 h-4" />
@@ -424,8 +425,9 @@ export default function Dashboard() {
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(student)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
                             title="Delete"
+                            aria-label="Delete student"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
