@@ -542,7 +542,20 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-sm text-gray-600 font-mono">{student.studentId}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{student.age}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{student.gradeLevel}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{student.assignedGoals?.length || 0}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {(
+                          student?.iep_plan_data && (
+                            student.iep_plan_data.original_ai_draft?.plaafp_narrative ||
+                            (student.iep_plan_data.original_ai_draft?.annual_goals && student.iep_plan_data.original_ai_draft.annual_goals.length > 0) ||
+                            student.iep_plan_data.user_edited_version?.plaafp_narrative ||
+                            (student.iep_plan_data.user_edited_version?.annual_goals && student.iep_plan_data.user_edited_version.annual_goals.length > 0)
+                          )
+                        ) ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white">Generated</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-600 text-white">Pending</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
