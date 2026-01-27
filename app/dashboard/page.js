@@ -29,20 +29,86 @@ const DISABILITIES_OPTIONS = [
   'Visual Impairment (I)'
 ];
 const STRENGTHS_OPTIONS = [
-  'Good Memory',
-  'Creative',
-  'Problem Solving',
-  'Communication',
-  'Leadership',
-  'Artistic',
-  'Athletic',
-  'Teamwork',
-  'Adaptability',
-  'Organization',
-  'Perseverance',
-  'Attention to Detail',
-  'Curiosity',
-  'Others'
+  {
+    label: 'Academic Achievement',
+    options: [
+      'Demonstrates age-appropriate skills in select academic areas',
+      'Demonstrates relative strengths in foundational academic skills',
+      'Demonstrates improved performance with explicit, systematic instruction',
+      'Demonstrates understanding of grade-level concepts when provided accommodations',
+      'Benefits from repeated practice and structured instructional routines',
+      'Demonstrates strengths in academic tasks when materials are presented orally',
+      'Demonstrates relative strengths in problem-solving tasks',
+      'Demonstrates increased accuracy when instructional supports are provided'
+    ]
+  },
+  {
+    label: 'Communication',
+    options: [
+      'Demonstrates functional expressive communication skills in structured settings',
+      'Demonstrates receptive language skills sufficient to follow classroom instruction with supports',
+      'Communicates needs effectively with familiar adults',
+      'Demonstrates increased verbal participation when provided wait time and prompts',
+      'Utilizes appropriate nonverbal communication strategies',
+      'Demonstrates emerging self-advocacy skills related to communication needs',
+      'Demonstrates functional bilingual language skills'
+    ]
+  },
+  {
+    label: 'Social / Emotional / Behavioral Functioning',
+    options: [
+      'Demonstrates appropriate social interactions with peers and adults',
+      'Responds positively to adult feedback and redirection',
+      'Demonstrates awareness of classroom expectations',
+      'Demonstrates age-appropriate behavior in structured environments',
+      'Demonstrates improved emotional regulation with adult support',
+      'Demonstrates persistence when tasks are scaffolded',
+      'Demonstrates motivation to engage in learning activities',
+      'Demonstrates cooperative behaviors during small-group instruction'
+    ]
+  },
+  {
+    label: 'Executive Functioning / Learning Behaviors',
+    options: [
+      'Follows established classroom routines and procedures',
+      'Demonstrates task completion with visual or verbal supports',
+      'Demonstrates emerging organizational skills',
+      'Demonstrates sustained attention during structured or preferred activities',
+      'Demonstrates ability to transition between activities with supports',
+      'Utilizes strategies to remain engaged in instructional tasks',
+      'Demonstrates independence with familiar academic routines'
+    ]
+  },
+  {
+    label: 'Adaptive / Functional Skills',
+    options: [
+      'Demonstrates age-appropriate self-care and daily living skills',
+      'Independently manages personal materials with reminders',
+      'Follows multi-step directions when supports are provided',
+      'Demonstrates appropriate safety awareness in school settings',
+      'Utilizes assistive technology as designed to access instruction',
+      'Demonstrates functional independence within the school environment'
+    ]
+  },
+  {
+    label: 'Interests / Learning Preferences',
+    options: [
+      'Demonstrates increased engagement during hands-on or experiential learning',
+      'Demonstrates motivation when instruction incorporates student interests',
+      'Demonstrates responsiveness to technology-based instruction',
+      'Demonstrates engagement during small-group or collaborative learning activities',
+      'Demonstrates creativity in approaching problem-solving tasks'
+    ]
+  },
+  {
+    label: 'Transition-Relevant Strengths (When Applicable)',
+    options: [
+      'Demonstrates awareness of personal strengths and areas of need',
+      'Demonstrates emerging self-determination skills',
+      'Demonstrates appropriate work behaviors in classroom or school-based settings',
+      'Demonstrates ability to follow adult direction in structured environments'
+    ]
+  }
 ];
 const WEAKNESSES_OPTIONS = [
   'Reading Comprehension',
