@@ -527,19 +527,19 @@ export default function Dashboard() {
                   required
                 >
                   <option value="">Select grade...</option>
-                  <option>Kindergarten (K)</option>
-                  <option>Grade 1</option>
-                  <option>Grade 2</option>
-                  <option>Grade 3</option>
-                  <option>Grade 4</option>
-                  <option>Grade 5</option>
-                  <option>Grade 6</option>
-                  <option>Grade 7</option>
-                  <option>Grade 8</option>
-                  <option>Grade 9 (Freshman)</option>
-                  <option>Grade 10 (Sophomore)</option>
-                  <option>Grade 11 (Junior)</option>
-                  <option>Grade 12 (Senior)</option>
+                  <option>KG</option>
+                  <option>1st</option>
+                  <option>2nd</option>
+                  <option>3rd</option>
+                  <option>4th</option>
+                  <option>5th</option>
+                  <option>6th</option>
+                  <option>7th</option>
+                  <option>8th</option>
+                  <option>9th</option>
+                  <option>10th</option>
+                  <option>11th</option>
+                  <option>12th</option>
                 </select>
               </div>
             </div>
