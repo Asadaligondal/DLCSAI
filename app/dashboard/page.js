@@ -130,15 +130,86 @@ const INSTRUCTIONAL_SETTINGS = ['General Education Support', 'Special Education 
 const QUANTITATIVE_LEVELS = ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6', 'Grade 7', 'Grade 8'];
 const NARRATIVE_LEVELS = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 const AREAS_OF_NEED = [
-  'Language & Literacy',
-  'Mathematics',
-  'Behavior & Social-Emotional',
-  'Communication',
-  'Adaptive / Life Skills',
-  'Motor / Physical',
-  'Sensory',
-  'Cognition',
-    'Other', // Ensure 'Other' is included explicitly
+  {
+    label: 'Academic Achievement — Reading',
+    options: [
+      'Difficulty decoding grade-level words accurately',
+      'Difficulty reading grade-level text with appropriate fluency',
+      'Difficulty demonstrating reading comprehension of grade-level text',
+      'Limited ability to identify main idea and supporting details',
+      'Difficulty making inferences from text',
+      'Difficulty summarizing grade-level passages',
+      'Difficulty answering text-based questions independently',
+      'Difficulty applying phonics skills to unfamiliar words',
+      'Requires instructional materials to be read aloud to access content'
+    ]
+  },
+  {
+    label: 'Academic Achievement — Written Expression',
+    options: [
+      'Difficulty organizing ideas in written form',
+      'Difficulty generating complete sentences independently',
+      'Limited use of grade-appropriate grammar, punctuation, and capitalization',
+      'Difficulty writing responses aligned to task requirements',
+      'Difficulty editing and revising written work',
+      'Difficulty producing written work within allotted time',
+      'Requires sentence starters or graphic organizers to complete writing tasks',
+      'Difficulty expanding written responses with sufficient detail'
+    ]
+  },
+  {
+    label: 'Academic Achievement — Mathematics',
+    options: [
+      'Difficulty demonstrating understanding of grade-level math concepts',
+      'Difficulty recalling math facts efficiently',
+      'Difficulty applying problem-solving strategies independently',
+      'Difficulty interpreting word problems',
+      'Difficulty explaining mathematical thinking',
+      'Difficulty completing multi-step math problems accurately',
+      'Difficulty applying math skills to real-world situations',
+      'Requires manipulatives or visual models to access math instruction'
+    ]
+  },
+  {
+    label: 'Academic Achievement — Content Area Achievement',
+    options: [
+      'Difficulty accessing grade-level science content independently',
+      'Difficulty accessing grade-level social studies content independently',
+      'Difficulty comprehending academic vocabulary across content areas',
+      'Difficulty extracting key information from textbooks or digital content',
+      'Difficulty completing content-area assignments without accommodations'
+    ]
+  },
+  {
+    label: 'Learning Rate / Instructional Support',
+    options: [
+      'Requires repeated instruction to master new academic skills',
+      'Requires small-group or individualized instruction to access curriculum',
+      'Demonstrates slow acquisition of new academic skills',
+      'Difficulty generalizing learned skills across settings or subjects',
+      'Requires scaffolded instruction to complete grade-level tasks'
+    ]
+  },
+  {
+    label: 'Assessment & Academic Performance',
+    options: [
+      'Difficulty demonstrating knowledge on classroom or state assessments',
+      'Performance on assessments does not reflect instructional understanding without accommodations',
+      'Difficulty completing assessments within standard time limits',
+      'Requires alternative formats to demonstrate academic knowledge',
+      'Difficulty maintaining accuracy during independent academic tasks'
+    ]
+  },
+  {
+    label: 'Task Completion / Academic Independence',
+    options: [
+      'Difficulty completing academic tasks independently',
+      'Difficulty sustaining academic engagement during non-preferred tasks',
+      'Requires frequent prompts to remain engaged in instruction',
+      'Difficulty following multi-step academic directions',
+      'Difficulty initiating academic tasks without adult support'
+    ]
+  }
 ];
 
 export default function Dashboard() {
@@ -730,32 +801,19 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Area(s) of Need</label>
-                <select
-                  value={formData.areaOfNeed}
-                  onChange={(e) => setFormData({ ...formData, areaOfNeed: e.target.value })}
-                  className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Select area...</option>
-                  {AREAS_OF_NEED.map((area) => (
-                    <option key={area} value={area}>
-                      {area}
-                    </option>
-                  ))}
-                </select>
-                {formData.areaOfNeed === 'Other' && (
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Other Area of Need (describe)</label>
-                    <input
-                      type="text"
-                      value={formData.areaOfNeedOther}
-                      onChange={(e) => setFormData({ ...formData, areaOfNeedOther: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      placeholder="Describe other area of need..."
-                    />
-                  </div>
-                )}
+                <MultiSelect
+                  label="Area(s) of Need"
+                  options={AREAS_OF_NEED}
+                  value={
+                    Array.isArray(formData.areaOfNeed)
+                      ? formData.areaOfNeed
+                      : formData.areaOfNeed && formData.areaOfNeed !== 'add manually'
+                      ? formData.areaOfNeed.split(',').map((s) => s.trim()).filter(Boolean)
+                      : []
+                  }
+                  onChange={(value) => setFormData({ ...formData, areaOfNeed: Array.isArray(value) ? value.join(', ') : value })}
+                  placeholder="Select areas of need..."
+                />
               </div>
             </div>
 
