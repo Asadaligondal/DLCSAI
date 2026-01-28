@@ -157,14 +157,20 @@ export default function StudentDetail() {
           plaafp_narrative: originalDraft?.plaafp_narrative || '',
           annual_goals: Array.isArray(originalDraft?.annual_goals) ? originalDraft.annual_goals : [],
           short_term_objectives: Array.isArray(originalDraft?.short_term_objectives) ? originalDraft.short_term_objectives : [],
-          intervention_recommendations: originalDraft?.intervention_recommendations || ''
+          intervention_recommendations: originalDraft?.intervention_recommendations || '',
+          // new grouped fields returned by LLM (camelCase)
+          annualGoalsByExceptionality: Array.isArray(originalDraft?.annualGoalsByExceptionality) ? originalDraft.annualGoalsByExceptionality : Array.isArray(originalDraft?.annual_goals_by_exceptionality) ? originalDraft.annual_goals_by_exceptionality : [],
+          shortTermObjectivesByExceptionality: Array.isArray(originalDraft?.shortTermObjectivesByExceptionality) ? originalDraft.shortTermObjectivesByExceptionality : Array.isArray(originalDraft?.short_term_objectives_by_exceptionality) ? originalDraft.short_term_objectives_by_exceptionality : []
         };
         
         const sanitizedEdited = editedVersion ? {
           plaafp_narrative: editedVersion?.plaafp_narrative || '',
           annual_goals: Array.isArray(editedVersion?.annual_goals) ? editedVersion.annual_goals : [],
           short_term_objectives: Array.isArray(editedVersion?.short_term_objectives) ? editedVersion.short_term_objectives : [],
-          intervention_recommendations: editedVersion?.intervention_recommendations || ''
+          intervention_recommendations: editedVersion?.intervention_recommendations || '',
+          // preserve grouped fields when present
+          annualGoalsByExceptionality: Array.isArray(editedVersion?.annualGoalsByExceptionality) ? editedVersion.annualGoalsByExceptionality : Array.isArray(editedVersion?.annual_goals_by_exceptionality) ? editedVersion.annual_goals_by_exceptionality : [],
+          shortTermObjectivesByExceptionality: Array.isArray(editedVersion?.shortTermObjectivesByExceptionality) ? editedVersion.shortTermObjectivesByExceptionality : Array.isArray(editedVersion?.short_term_objectives_by_exceptionality) ? editedVersion.short_term_objectives_by_exceptionality : []
         } : sanitizedOriginal;
         
         console.log('🔧 Sanitized original:', JSON.stringify(sanitizedOriginal, null, 2));
@@ -229,6 +235,8 @@ export default function StudentDetail() {
         currentPerformance: `Quantitative: ${student.performanceQuantitative || 'Not specified'}, Narrative: ${student.performanceNarrative || 'Not specified'}`,
         disabilityCategory: student.disabilities?.join(', ') || 'Not specified',
         instructionalSetting: student.instructionalSetting || 'General Education'
+        ,
+        exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : []
       });
 
       const aiData = response.data.data;
@@ -723,6 +731,40 @@ export default function StudentDetail() {
             {viewMode === 'original' ? (
               // Original AI Draft - Read Only
               <div className="space-y-6">
+                {/* Goals & Objectives grouped by Exceptionality (if provided) */}
+                {originalAIPlan.annualGoalsByExceptionality && originalAIPlan.annualGoalsByExceptionality.length > 0 && (
+                  <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Goals & Objectives by Exceptionality</h3>
+                    <div className="space-y-4">
+                      {originalAIPlan.annualGoalsByExceptionality.map((group) => (
+                        <div key={group.exceptionality} className="p-3 bg-white border border-gray-100 rounded">
+                          <div className="text-sm font-medium text-gray-800 mb-2">{group.exceptionality}</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {group.goals?.map((g, gi) => (
+                              <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
+                                <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
+                                <p className="text-gray-700 text-sm">{g.goal}</p>
+                              </div>
+                            ))}
+                            {originalAIPlan.shortTermObjectivesByExceptionality && originalAIPlan.shortTermObjectivesByExceptionality.length > 0 && (
+                              <div className="mt-3">
+                                <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
+                                <div className="space-y-2">
+                                  { (originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
+                                    <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
+                                      <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
+                                      <p className="text-gray-700 text-sm">{o.objective}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
                   <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
@@ -773,6 +815,41 @@ export default function StudentDetail() {
                   rows="8"
                 />
               </div>
+
+              {/* Goals & Objectives grouped by Exceptionality (if provided) - read-only snapshot */}
+              { (editablePlan.annualGoalsByExceptionality && editablePlan.annualGoalsByExceptionality.length > 0) && (
+                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Goals & Objectives by Exceptionality (LLM)</h3>
+                  <div className="space-y-4">
+                    {editablePlan.annualGoalsByExceptionality.map((group) => (
+                      <div key={group.exceptionality} className="p-3 bg-white border border-gray-100 rounded">
+                        <div className="text-sm font-medium text-gray-800 mb-2">{group.exceptionality}</div>
+                        <div className="grid grid-cols-1 gap-2">
+                          {group.goals?.map((g) => (
+                            <div key={`eg-${g.referenceId}`} className="flex gap-3 items-start">
+                              <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
+                              <p className="text-gray-700 text-sm">{g.goal}</p>
+                            </div>
+                          ))}
+                          {editablePlan.shortTermObjectivesByExceptionality && (
+                            <div className="mt-3">
+                              <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
+                              <div className="space-y-2">
+                                {(editablePlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
+                                  <div key={`eo-${o.referenceId}`} className="flex gap-3 items-start">
+                                    <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
+                                    <p className="text-gray-700 text-sm">{o.objective}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>

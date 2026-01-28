@@ -9,7 +9,8 @@ export async function POST(req) {
       areaOfNeed,
       currentPerformance,
       disabilityCategory,
-      instructionalSetting
+      instructionalSetting,
+      exceptionalities // expected: array of strings, e.g. ["Specific Learning Disability", "Autism"]
     } = body;
 
     // Validate required fields
@@ -79,6 +80,48 @@ Ensure all content is audit-ready, professionally written, and compliant with Fl
 
     const data = await openaiResponse.json();
     const generatedContent = JSON.parse(data.choices[0].message.content);
+
+    // Add grouping of annual goals and short-term objectives by provided exceptionalities
+    try {
+      const exList = Array.isArray(exceptionalities) && exceptionalities.length > 0 ? exceptionalities : [];
+
+      // Prepare empty grouped structures
+      const annualGoalsByExceptionality = exList.map((ex) => ({ exceptionality: ex, goals: [] }));
+      const shortTermObjectivesByExceptionality = exList.map((ex) => ({ exceptionality: ex, objectives: [] }));
+
+      const annualGoals = Array.isArray(generatedContent.annual_goals) ? generatedContent.annual_goals : [];
+      const objectives = Array.isArray(generatedContent.short_term_objectives) ? generatedContent.short_term_objectives : [];
+
+      // Map each annual goal to exactly one exceptionality (round-robin) using index as referenceId
+      const goalIndexToExceptionalityIndex = {};
+      if (exList.length > 0 && annualGoals.length > 0) {
+        annualGoals.forEach((goal, idx) => {
+          const exIdx = idx % exList.length;
+          goalIndexToExceptionalityIndex[idx] = exIdx;
+          annualGoalsByExceptionality[exIdx].goals.push({ referenceId: String(idx), goal });
+        });
+      }
+
+      // Assign objectives to annual goals (round-robin over goals) and thus to the same exceptionality group
+      if (exList.length > 0 && objectives.length > 0 && annualGoals.length > 0) {
+        objectives.forEach((obj, oIdx) => {
+          const alignedGoalIndex = oIdx % annualGoals.length;
+          const exIdx = goalIndexToExceptionalityIndex[alignedGoalIndex] ?? (alignedGoalIndex % exList.length);
+          shortTermObjectivesByExceptionality[exIdx].objectives.push({
+            referenceId: String(oIdx),
+            objective: obj,
+            alignedAnnualGoalReferenceId: String(alignedGoalIndex)
+          });
+        });
+      }
+
+      // Attach the new fields while preserving all existing keys
+      generatedContent.annualGoalsByExceptionality = annualGoalsByExceptionality;
+      generatedContent.shortTermObjectivesByExceptionality = shortTermObjectivesByExceptionality;
+    } catch (e) {
+      console.error('Error grouping goals/objectives by exceptionality:', e);
+      // If grouping fails, return original generatedContent without the new fields
+    }
 
     return NextResponse.json({
       success: true,
