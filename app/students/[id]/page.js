@@ -458,177 +458,24 @@ export default function StudentDetail() {
         />
 
         {hasExistingPlan && generatedPlan && editablePlan && (
-          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">IEP Plan - Review & Edit</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveChanges}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </button>
-                <button
-                  onClick={handleResetToOriginal}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Reset to Original
-                </button>
-                <button
-                  onClick={handleExportToWord}
-                  disabled={!isReviewed}
-                  className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium ${
-                    isReviewed
-                      ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Download Word Doc
-                </button>
-              </div>
-            </div>
-
-            {/* Toggle Between Original and Edited */}
-            <div className="mb-6 flex gap-2 border-b border-gray-200">
-              <button
-                onClick={() => setViewMode('original')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  viewMode === 'original'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Original AI Draft (Read-Only)
-              </button>
-              <button
-                onClick={() => setViewMode('edited')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  viewMode === 'edited'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Current Edited Version
-              </button>
-            </div>
-
-            {/* Display Content Based on View Mode */}
-            {viewMode === 'original' ? (
-              // Original AI Draft - Read Only
-              <div className="space-y-6">
-                {/* Goals & Objectives grouped by Exceptionality (if provided) */}
-                {originalAIPlan.annualGoalsByExceptionality && originalAIPlan.annualGoalsByExceptionality.length > 0 && (
-                  <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Goals & Objectives by Exceptionality</h3>
-                    <div className="space-y-4">
-                      {originalAIPlan.annualGoalsByExceptionality.map((group) => (
-                        <div key={group.exceptionality} className="p-3 bg-white border border-gray-100 rounded">
-                          <div className="text-sm font-medium text-gray-800 mb-2">{group.exceptionality}</div>
-                          <div className="grid grid-cols-1 gap-2">
-                            {group.goals?.map((g, gi) => (
-                              <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
-                                <p className="text-gray-700 text-sm">{g.goal}</p>
-                              </div>
-                            ))}
-                            {originalAIPlan.shortTermObjectivesByExceptionality && originalAIPlan.shortTermObjectivesByExceptionality.length > 0 && (
-                              <div className="mt-3">
-                                <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
-                                <div className="space-y-2">
-                                  { (originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
-                                    <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
-                                      <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
-                                      <p className="text-gray-700 text-sm">{o.objective}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
-                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
-                </div>
-
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
-                  <ul className="space-y-2">
-                    {originalAIPlan.annual_goals?.map((goal, index) => (
-                      <li key={index} className="flex gap-3">
-                        <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </span>
-                        <p className="text-gray-700 text-sm pt-0.5">{goal}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
-                  <ul className="space-y-2">
-                    {originalAIPlan.short_term_objectives?.map((objective, index) => (
-                      <li key={index} className="flex gap-3">
-                        <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </span>
-                        <p className="text-gray-700 text-sm pt-0.5">{objective}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
-                  <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
-                </div>
-              </div>
-            ) : (
-              // Current Edited Version - Editable
-              <div className="space-y-6">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">PLAAFP Narrative</h3>
-                <textarea
-                  value={editablePlan.plaafp_narrative}
-                  onChange={(e) => setEditablePlan({ ...editablePlan, plaafp_narrative: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm leading-relaxed"
-                  rows="8"
-                />
-              </div>
-
-              {hasExistingPlan && generatedPlan && editablePlan && (
-                <IEPPlanEditor
-                  originalAIPlan={originalAIPlan}
-                  editablePlan={editablePlan}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                  isReviewed={isReviewed}
-                  setIsReviewed={setIsReviewed}
-                  isGenerating={isGenerating}
-                  handleGenerateIEP={handleGenerateIEP}
-                  handleResetToOriginal={handleResetToOriginal}
-                  handleSaveChanges={handleSaveChanges}
-                  handleExportToWord={handleExportToWord}
-                  removeGoal={removeGoal}
-                  removeObjective={removeObjective}
-                  updateGoal={updateGoal}
-                  updateObjective={updateObjective}
-                  setEditablePlan={setEditablePlan}
-                />
-              )}
-
-              </div>
-            )}
-          </div>
+          <IEPPlanEditor
+            originalAIPlan={originalAIPlan}
+            editablePlan={editablePlan}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            isReviewed={isReviewed}
+            setIsReviewed={setIsReviewed}
+            isGenerating={isGenerating}
+            handleGenerateIEP={handleGenerateIEP}
+            handleResetToOriginal={handleResetToOriginal}
+            handleSaveChanges={handleSaveChanges}
+            handleExportToWord={handleExportToWord}
+            removeGoal={removeGoal}
+            removeObjective={removeObjective}
+            updateGoal={updateGoal}
+            updateObjective={updateObjective}
+            setEditablePlan={setEditablePlan}
+          />
         )}
 
       </div>
