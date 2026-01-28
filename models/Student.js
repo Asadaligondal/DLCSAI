@@ -56,13 +56,61 @@ const StudentSchema = new mongoose.Schema({
     original_ai_draft: {
       plaafp_narrative: String,
       annual_goals: [String],
+      // Grouped goals by exceptionality (added to persist AI-generated grouping)
+      annualGoalsByExceptionality: [
+        {
+          exceptionality: String,
+          goals: [
+            {
+              referenceId: String,
+              goal: String
+            }
+          ]
+        }
+      ],
       short_term_objectives: [String],
+      // Grouped short-term objectives by exceptionality
+      shortTermObjectivesByExceptionality: [
+        {
+          exceptionality: String,
+          objectives: [
+            {
+              referenceId: String,
+              objective: String,
+              alignedAnnualGoalReferenceId: String
+            }
+          ]
+        }
+      ],
       intervention_recommendations: String
     },
     user_edited_version: {
       plaafp_narrative: String,
       annual_goals: [String],
+      annualGoalsByExceptionality: [
+        {
+          exceptionality: String,
+          goals: [
+            {
+              referenceId: String,
+              goal: String
+            }
+          ]
+        }
+      ],
       short_term_objectives: [String],
+      shortTermObjectivesByExceptionality: [
+        {
+          exceptionality: String,
+          objectives: [
+            {
+              referenceId: String,
+              objective: String,
+              alignedAnnualGoalReferenceId: String
+            }
+          ]
+        }
+      ],
       intervention_recommendations: String
     },
     is_reviewed: {

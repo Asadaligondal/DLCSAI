@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -8,16 +8,12 @@ import Navbar from '@/components/Navbar';
 import MultiSelect from '@/components/MultiSelect';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import {
-  ArrowLeft,
-  Edit,
-  Save,
-  X,
-  Calendar,
-  GraduationCap,
-  Target,
-  Wand2
-} from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
+
+import StudentInfoHeader from './components/StudentInfoHeader';
+import IEPPlanEditor from './components/IEPPlanEditor';
+import GoalsObjectivesSection from './components/GoalsObjectivesSection';
+import { HeaderActions, FooterActions } from './components/InterventionsAndFooterActions';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -409,6 +405,22 @@ export default function StudentDetail() {
     setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
   };
 
+  // Update a specific annual goal text (keeps same behavior)
+  const updateGoal = (index, text) => {
+    const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
+    newGoals[index] = text;
+    setEditablePlan({ ...editablePlan, annual_goals: newGoals });
+  };
+
+  // Update a specific short-term objective text
+  const updateObjective = (index, text) => {
+    const newObjectives = Array.isArray(editablePlan?.short_term_objectives)
+      ? [...editablePlan.short_term_objectives]
+      : [];
+    newObjectives[index] = text;
+    setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
+  };
+
   if (!student) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -430,243 +442,20 @@ export default function StudentDetail() {
           Back to Students
         </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {!isEditing ? (
-              <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name
-                    <span className="ml-2 text-xs text-gray-400 font-normal">— write only initials (e.g. Adam Smith → A S)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                  <input
-                    type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                  <input
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
-                  <select
-                    value={formData.gradeLevel}
-                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select grade...</option>
-                    <option>Kindergarten (K)</option>
-                    <option>Grade 1</option>
-                    <option>Grade 2</option>
-                    <option>Grade 3</option>
-                    <option>Grade 4</option>
-                    <option>Grade 5</option>
-                    <option>Grade 6</option>
-                    <option>Grade 7</option>
-                    <option>Grade 8</option>
-                    <option>Grade 9 (Freshman)</option>
-                    <option>Grade 10 (Sophomore)</option>
-                    <option>Grade 11 (Junior)</option>
-                    <option>Grade 12 (Senior)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-semibold text-gray-700">Disabilities</span>
-                <p className="text-sm text-gray-600 mt-1">{student.disabilities?.join(', ') || 'None'}</p>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-semibold text-gray-700">Strengths</span>
-                <p className="text-sm text-gray-600 mt-1">{student.strengths?.join(', ') || 'None'}</p>
-              </div>
-
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-semibold text-gray-700">Weaknesses</span>
-                <p className="text-sm text-gray-600 mt-1">{student.weaknesses?.join(', ') || 'None'}</p>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleUpdate}>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                        <input
-                          type="text"
-                          value={formData.studentId}
-                          onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                        <input
-                          type="number"
-                          value={formData.age}
-                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
-                        <input
-                          type="text"
-                          value={formData.gradeLevel}
-                          onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </div>
-
-                    <MultiSelect
-                      label="Exceptionalities"
-                      options={DISABILITIES_OPTIONS}
-                      value={formData.disabilities}
-                      onChange={(value) => setFormData({ ...formData, disabilities: value })}
-                      placeholder="Select exceptionalities..."
-                    />
-
-                    <MultiSelect
-                      label="Strengths"
-                      options={STRENGTHS_OPTIONS}
-                      value={formData.strengths}
-                      onChange={(value) => setFormData({ ...formData, strengths: value })}
-                      placeholder="Select strengths..."
-                    />
-
-                    {formData.strengths.includes('Others') && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Other Strengths (describe)</label>
-                        <input
-                          type="text"
-                          value={formData.strengthsOther}
-                          onChange={(e) => setFormData({ ...formData, strengthsOther: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Describe other strengths..."
-                        />
-                      </div>
-                    )}
-
-                    <MultiSelect
-                      label="Weaknesses"
-                      options={WEAKNESSES_OPTIONS}
-                      value={formData.weaknesses}
-                      onChange={(value) => setFormData({ ...formData, weaknesses: value })}
-                      placeholder="Select weaknesses..."
-                    />
-
-                    {formData.weaknesses.includes('Others') && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Other Weaknesses (describe)</label>
-                        <input
-                          type="text"
-                          value={formData.weaknessesOther}
-                          onChange={(e) => setFormData({ ...formData, weaknessesOther: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Describe other weaknesses..."
-                        />
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
-                    >
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </button>
-                  </div>
-                </form>
-              )}
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Target className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">IEP Plan</h3>
-              </div>
-
-              {student.assignedGoals && student.assignedGoals.length > 0 ? (
-                <div className="space-y-2 mb-4">
-                  {student.assignedGoals.map((goal) => (
-                    <div key={goal._id} className="p-3 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                      <h4 className="font-medium text-gray-900 text-sm">{goal.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">{goal.description}</p>
-                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">
-                        {goal.category}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm mb-4 text-center py-6 bg-gray-50 rounded-lg">No goals assigned yet</p>
-              )}
-
-              {!hasExistingPlan && (
-                <button
-                  onClick={handleGenerateIEP}
-                  disabled={isGenerating}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  {isGenerating ? 'Generating...' : 'Generate IEP Plan'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <StudentInfoHeader
+          student={student}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          formData={formData}
+          setFormData={setFormData}
+          handleUpdate={handleUpdate}
+          isGenerating={isGenerating}
+          handleGenerateIEP={handleGenerateIEP}
+          hasExistingPlan={hasExistingPlan}
+          disabilitiesOptions={DISABILITIES_OPTIONS}
+          strengthsOptions={STRENGTHS_OPTIONS}
+          weaknessesOptions={WEAKNESSES_OPTIONS}
+        />
 
         {hasExistingPlan && generatedPlan && editablePlan && (
           <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
@@ -816,133 +605,35 @@ export default function StudentDetail() {
                 />
               </div>
 
-              {/* Goals & Objectives grouped by Exceptionality (if provided) - read-only snapshot */}
-              { (editablePlan.annualGoalsByExceptionality && editablePlan.annualGoalsByExceptionality.length > 0) && (
-                <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Goals & Objectives by Exceptionality (LLM)</h3>
-                  <div className="space-y-4">
-                    {editablePlan.annualGoalsByExceptionality.map((group) => (
-                      <div key={group.exceptionality} className="p-3 bg-white border border-gray-100 rounded">
-                        <div className="text-sm font-medium text-gray-800 mb-2">{group.exceptionality}</div>
-                        <div className="grid grid-cols-1 gap-2">
-                          {group.goals?.map((g) => (
-                            <div key={`eg-${g.referenceId}`} className="flex gap-3 items-start">
-                              <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
-                              <p className="text-gray-700 text-sm">{g.goal}</p>
-                            </div>
-                          ))}
-                          {editablePlan.shortTermObjectivesByExceptionality && (
-                            <div className="mt-3">
-                              <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
-                              <div className="space-y-2">
-                                {(editablePlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
-                                  <div key={`eo-${o.referenceId}`} className="flex gap-3 items-start">
-                                    <div className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
-                                    <p className="text-gray-700 text-sm">{o.objective}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {hasExistingPlan && generatedPlan && editablePlan && (
+                <IEPPlanEditor
+                  originalAIPlan={originalAIPlan}
+                  editablePlan={editablePlan}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  isReviewed={isReviewed}
+                  setIsReviewed={setIsReviewed}
+                  isGenerating={isGenerating}
+                  handleGenerateIEP={handleGenerateIEP}
+                  handleResetToOriginal={handleResetToOriginal}
+                  handleSaveChanges={handleSaveChanges}
+                  handleExportToWord={handleExportToWord}
+                  removeGoal={removeGoal}
+                  removeObjective={removeObjective}
+                  updateGoal={updateGoal}
+                  updateObjective={updateObjective}
+                  setEditablePlan={setEditablePlan}
+                />
               )}
 
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Annual Goals</h3>
-                <div className="space-y-3">
-                  {editablePlan.annual_goals?.map((goal, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
-                        {index + 1}
-                      </span>
-                      <textarea
-                        value={goal}
-                        onChange={(e) => {
-                          const newGoals = [...editablePlan.annual_goals];
-                          newGoals[index] = e.target.value;
-                          setEditablePlan({ ...editablePlan, annual_goals: newGoals });
-                        }}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                        rows="2"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeGoal(index)}
-                        className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Remove goal"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
-
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
-                <div className="space-y-3">
-                  {editablePlan.short_term_objectives?.map((objective, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
-                        {index + 1}
-                      </span>
-                      <textarea
-                        value={objective}
-                        onChange={(e) => {
-                          const newObjectives = [...editablePlan.short_term_objectives];
-                          newObjectives[index] = e.target.value;
-                          setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
-                        }}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                        rows="2"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeObjective(index)}
-                        className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Remove objective"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
-                <textarea
-                  value={editablePlan.intervention_recommendations}
-                  onChange={(e) => setEditablePlan({ ...editablePlan, intervention_recommendations: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm leading-relaxed"
-                  rows="6"
-                />
-              </div>
-
-              <div className="p-4 border-2 border-yellow-400 bg-yellow-50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="review-checkbox"
-                    checked={isReviewed}
-                    onChange={(e) => setIsReviewed(e.target.checked)}
-                    className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <label htmlFor="review-checkbox" className="flex-1 text-sm text-gray-900 font-medium cursor-pointer">
-                    I have reviewed this content for accuracy and professional standards. This IEP plan meets Florida Department of Education requirements and is ready for export.
-                  </label>
-                </div>
-              </div>
-            </div>
             )}
           </div>
         )}
-      </div>
 
+      </div>
     </div>
   );
+
 }
+
