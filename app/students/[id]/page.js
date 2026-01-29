@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
 import MultiSelect from '@/components/MultiSelect';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -69,6 +70,7 @@ const WEAKNESSES_OPTIONS = [
 export default function StudentDetail() {
   const { id } = useParams();
   const router = useRouter();
+  const [userLocal, setUserLocal] = useState(null);
   const [student, setStudent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState(null);
@@ -97,6 +99,8 @@ export default function StudentDetail() {
       return;
     }
     fetchStudent(token);
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    setUserLocal(u);
   }, [id, router]);
 
   const fetchStudent = async (token) => {
@@ -430,54 +434,50 @@ export default function StudentDetail() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className="flex h-screen bg-[#F7F9FB] font-sans text-slate-800">
+      <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
-      <div className="max-w-full px-8 py-6">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Students
-        </button>
+      <div className="flex-1 overflow-auto">
+        <Navbar />
 
-        <StudentInfoHeader
-          student={student}
-          isEditing={isEditing}
-          setIsEditing={setIsEditing}
-          formData={formData}
-          setFormData={setFormData}
-          handleUpdate={handleUpdate}
-          isGenerating={isGenerating}
-          handleGenerateIEP={handleGenerateIEP}
-          hasExistingPlan={hasExistingPlan}
-          disabilitiesOptions={DISABILITIES_OPTIONS}
-          strengthsOptions={STRENGTHS_OPTIONS}
-          weaknessesOptions={WEAKNESSES_OPTIONS}
-        />
-
-        {hasExistingPlan && generatedPlan && editablePlan && (
-          <IEPPlanEditor
-            originalAIPlan={originalAIPlan}
-            editablePlan={editablePlan}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            isReviewed={isReviewed}
-            setIsReviewed={setIsReviewed}
+        <div className="max-w-full px-8 py-6">
+          <StudentInfoHeader
+            student={student}
+            isEditing={isEditing}
+            setIsEditing={setIsEditing}
+            formData={formData}
+            setFormData={setFormData}
+            handleUpdate={handleUpdate}
             isGenerating={isGenerating}
             handleGenerateIEP={handleGenerateIEP}
-            handleResetToOriginal={handleResetToOriginal}
-            handleSaveChanges={handleSaveChanges}
-            handleExportToWord={handleExportToWord}
-            removeGoal={removeGoal}
-            removeObjective={removeObjective}
-            updateGoal={updateGoal}
-            updateObjective={updateObjective}
-            setEditablePlan={setEditablePlan}
+            hasExistingPlan={hasExistingPlan}
+            disabilitiesOptions={DISABILITIES_OPTIONS}
+            strengthsOptions={STRENGTHS_OPTIONS}
+            weaknessesOptions={WEAKNESSES_OPTIONS}
           />
-        )}
 
+          {hasExistingPlan && generatedPlan && editablePlan && (
+            <IEPPlanEditor
+              originalAIPlan={originalAIPlan}
+              editablePlan={editablePlan}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              isReviewed={isReviewed}
+              setIsReviewed={setIsReviewed}
+              isGenerating={isGenerating}
+              handleGenerateIEP={handleGenerateIEP}
+              handleResetToOriginal={handleResetToOriginal}
+              handleSaveChanges={handleSaveChanges}
+              handleExportToWord={handleExportToWord}
+              removeGoal={removeGoal}
+              removeObjective={removeObjective}
+              updateGoal={updateGoal}
+              updateObjective={updateObjective}
+              setEditablePlan={setEditablePlan}
+            />
+          )}
+
+        </div>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export default function Sidebar({ user, onLogout }) {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Accommodations', icon: Accessibility, path: '/accommodations' },
-    { name: 'My Students', icon: Users, path: '/students' },
+    { name: 'Manage Classrooms', icon: Users, path: '/students' },
     { name: 'IEP Writer', icon: FileText, path: '/iep-writer' },
     { name: 'Billing / Plan', icon: CreditCard, path: '/billing' },
     { name: 'Settings', icon: Settings, path: '/settings' }

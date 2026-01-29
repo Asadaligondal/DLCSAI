@@ -38,10 +38,17 @@ export default function Navbar() {
     { name: 'Home', path: '/', icon: Home, roles: ['admin', 'professor'] },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['professor'] },
     { name: 'Teacher/Service Providers', path: '/professors', icon: Users, roles: ['admin'] },
-    { name: 'Goals', path: '/goals', icon: Target, roles: ['admin', 'professor'] }
+    // Show Goals only to admin users (hide from non-admin / professor dashboard)
+    { name: 'Goals', path: '/goals', icon: Target, roles: ['admin'] }
   ];
 
-  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
+  // Hide Home and Dashboard top-nav links when viewing student or service detail pages
+  const hideTopLinksOnPaths = pathname && (pathname.startsWith('/students') || pathname.startsWith('/services'));
+  const navItems = allNavItems.filter(item => {
+    if (!item.roles.includes(userRole)) return false;
+    if (hideTopLinksOnPaths && (item.name === 'Home' || item.name === 'Dashboard')) return false;
+    return true;
+  });
 
   return (
     <header className="w-full bg-white border-b border-gray-200 sticky top-0 z-40">
