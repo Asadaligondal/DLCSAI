@@ -15,6 +15,7 @@ export default function StudentInfoHeader({
   disabilitiesOptions,
   strengthsOptions,
   weaknessesOptions
+  , onCustomizeGoals
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -220,9 +221,20 @@ export default function StudentInfoHeader({
 
       <div className="lg:col-span-1">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Target className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">IEP Plan</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Goals</h3>
+            <button
+              type="button"
+              onClick={() => (onCustomizeGoals ? onCustomizeGoals() : null)}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                student?.assignedGoals && student.assignedGoals.length > 0
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              <Target className="w-4 h-4" />
+              {student?.assignedGoals && student.assignedGoals.length > 0 ? 'View Custom Goals' : 'Customize Goals'}
+            </button>
           </div>
 
           {student.assignedGoals && student.assignedGoals.length > 0 ? (
@@ -238,7 +250,11 @@ export default function StudentInfoHeader({
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm mb-4 text-center py-6 bg-gray-50 rounded-lg">No goals assigned yet</p>
+            <div className="mb-4">
+              <div className="flex items-center justify-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500 text-sm text-center">No goals assigned yet</p>
+              </div>
+            </div>
           )}
 
           {!hasExistingPlan && (

@@ -14,6 +14,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import StudentInfoHeader from './components/StudentInfoHeader';
 import IEPPlanEditor from './components/IEPPlanEditor';
 import GoalsObjectivesSection from './components/GoalsObjectivesSection';
+import CustomizeGoalModal from './components/CustomizeGoalModal';
 import { HeaderActions, FooterActions } from './components/InterventionsAndFooterActions';
 
 const DISABILITIES_OPTIONS = [
@@ -78,6 +79,7 @@ export default function StudentDetail() {
   const [editablePlan, setEditablePlan] = useState(null);
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [formData, setFormData] = useState({
@@ -454,7 +456,20 @@ export default function StudentDetail() {
             disabilitiesOptions={DISABILITIES_OPTIONS}
             strengthsOptions={STRENGTHS_OPTIONS}
             weaknessesOptions={WEAKNESSES_OPTIONS}
+            onCustomizeGoals={() => setShowCustomizeModal(true)}
           />
+
+          {showCustomizeModal && (
+            <CustomizeGoalModal
+              isOpen={showCustomizeModal}
+              onClose={() => setShowCustomizeModal(false)}
+              student={student}
+              onSaved={(goal) => {
+                // Refresh student to pick up the assigned goal
+                fetchStudent(localStorage.getItem('token'));
+              }}
+            />
+          )}
 
           {hasExistingPlan && generatedPlan && editablePlan && (
             <IEPPlanEditor

@@ -497,6 +497,9 @@ export default function Dashboard() {
                     Grade
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Goals
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
                     IEP Plan
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
@@ -542,6 +545,14 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-sm text-gray-600 font-mono">{student.studentId}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{student.age}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">{student.gradeLevel}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {student?.assignedGoals && student.assignedGoals.length > 0 ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white">Created</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-600 text-white">Not created</span>
+                        )}
+                      </td>
+
                       <td className="px-4 py-3 text-sm">
                         {(
                           student?.iep_plan_data && (
