@@ -79,6 +79,7 @@ export default function IEPPlanEditor({
             removeObjective={removeObjective}
             updateGoal={updateGoal}
             updateObjective={updateObjective}
+            setEditablePlan={setEditablePlan}
           />
 
           <FooterActions
