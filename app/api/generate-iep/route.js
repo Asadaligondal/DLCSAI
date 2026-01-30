@@ -37,8 +37,48 @@ You must return ONLY valid JSON with no additional text or markdown formatting.`
       ? customGoals.map((g, i) => `${i + 1}. ${g.title || g}`).join('\n')
       : null;
 
-    // User prompt with student data
-    const userPrompt = `Generate a comprehensive IEP plan for a student with the following profile:\n\nStudent Grade: ${studentGrade}\nStudent Age: ${studentAge}\nArea of Need: ${areaOfNeed}\nCurrent Performance: ${currentPerformance}\nDisability Category: ${disabilityCategory || 'Not specified'}\nInstructional Setting: ${instructionalSetting}\n\n${customGoalsList ? `The student has the following CUSTOM GOALS that should be considered when recommending strategies and mapping to the IEP:\n${customGoalsList}\n\n` : ''}Please provide a structured JSON response with these exact keys:\n{\n  "plaafp_narrative": "A detailed Present Level of Academic Achievement and Functional Performance narrative (3-4 paragraphs describing current abilities, challenges, and how disability impacts learning)",\n  "annual_goals": ["Array of 3-4 measurable annual goals with specific criteria and timeframes"],\n  "short_term_objectives": ["Array of 6-8 specific short-term objectives that support the annual goals"],\n    "intervention_recommendations": "Detailed recommendations for accommodations, modifications, and instructional strategies specific to Florida standards",\n    "custom_goals": [\n      // If the user provided custom goals, return an array of objects mapping each custom goal title to a recommendation.\n      // Example: { "title": "Improve reading fluency", "recommendation": "Use repeated readings with progress monitoring and fluency drills; provide audiobooks; set benchmark target X" }\n    ]\n}\n\nEnsure all content is audit-ready, professionally written, and compliant with Florida IEP requirements.`;
+    // User prompt with student data (built with join to avoid nested template-literal backtick issues)
+    const userPrompt = [
+      'Generate a comprehensive IEP plan for a student with the following profile:',
+      '',
+      `Student Grade: ${studentGrade}`,
+      `Student Age: ${studentAge}`,
+      `Area of Need: ${areaOfNeed}`,
+      `Current Performance: ${currentPerformance}`,
+      `Disability Category: ${disabilityCategory || 'Not specified'}`,
+      `Instructional Setting: ${instructionalSetting}`,
+      '',
+      (customGoalsList ? `The student has the following CUSTOM GOALS that should be considered when recommending strategies and mapping to the IEP:\n${customGoalsList}\n` : ''),
+      'Please provide a structured JSON response with these exact keys:',
+      '{',
+      '  "plaafp_narrative": "A detailed Present Level of Academic Achievement and Functional Performance narrative (3-4 paragraphs describing current abilities, challenges, and how disability impacts learning)",',
+      '  "annual_goals": ["Array of 3-4 BROAD, cross-exceptionality annual goals that address the student\'s overall strengths and weaknesses across domains"],',
+      '  "short_term_objectives": ["Array of 6-8 SPECIFIC but BROADER short-term objectives that operationalize the annual goals at a classroom/grade level (do NOT repeat exceptionality-specific objectives here)"],',
+      '  "intervention_recommendations": "Detailed recommendations for accommodations, modifications, and instructional strategies specific to Florida standards",',
+      '  "custom_goals": [',
+      '    // If the user provided custom goals, return an array of objects mapping each custom goal title to a recommendation.',
+      '    // Example: { "title": "Improve reading fluency", "recommendation": "Use repeated readings with progress monitoring and fluency drills; provide audiobooks; set benchmark target X" }',
+      '  ],',
+      '  "annualGoalsByExceptionality": [',
+      '    // For each provided exceptionality, return a dedicated object with targeted annual goals specific to that exceptionality',
+      '    // Example: { "exceptionality": "Autism", "goals": [{ "referenceId": "0", "goal": "Improve social pragmatic skills as measured by X" }, ...] }',
+      '  ],',
+      '  "shortTermObjectivesByExceptionality": [',
+      '    // For each exceptionality, return objectives aligned to the exceptionality-specific annual goals (do not duplicate the broader short_term_objectives above)',
+      '  ]',
+      '}',
+      '',
+      'Important instructions to ensure distinct, non-duplicated content:',
+      '- Produce TWO separate layers of goals/objectives:',
+      '  1) Top-level annual_goals and short_term_objectives: BROAD, cross-exceptionality goals that address the student\'s overall strengths and weaknesses and the academic/functional needs across settings. These should be applicable school-wide and not duplicate exceptionality-specific language.',
+      '  2) annualGoalsByExceptionality and shortTermObjectivesByExceptionality: TARGETED, exceptionality-specific goals and objectives. For each exceptionality provided, generate focused goals/objectives addressing how that exceptionality impacts learning; map objectives to the exceptionality group\'s annual goals.',
+      '- Do NOT repeat the same wording between the two layers. If an exceptionality-specific goal is essentially the same as a top-level annual goal, prefer returning a referenceId pointing to the top-level goal in annualGoalsByExceptionality instead of copying full text.',
+      '- When mapping objectives to goals, use referenceId fields (string indices) to link objectives to their aligned annual goal.',
+      '- If any custom goal is present, include it in custom_goals and also consider whether it should be represented as a top-level annual goal or as an exceptionality-specific goal; prefer to keep custom goals in custom_goals and reference them (by title/index) inside other structures if relevant.',
+      '- Always return valid JSON only (no explanatory text). If information is missing for a specific recommendation, set a confidence field to "low" and include a clarifyingQuestion for that item.',
+      '',
+      'Ensure all content is audit-ready, professionally written, and compliant with Florida IEP requirements.'
+    ].join('\n');
 
     // Call OpenAI API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {

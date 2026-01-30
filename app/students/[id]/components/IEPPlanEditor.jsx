@@ -12,6 +12,7 @@ export default function IEPPlanEditor({
   setIsReviewed,
   isGenerating,
   handleGenerateIEP,
+  handleRegenerateOriginal,
   handleResetToOriginal,
   handleSaveChanges,
   handleExportToWord,
@@ -30,6 +31,7 @@ export default function IEPPlanEditor({
           handleResetToOriginal={handleResetToOriginal}
           handleExportToWord={handleExportToWord}
           isReviewed={isReviewed}
+          handleRegenerateOriginal={handleRegenerateOriginal}
         />
       </div>
 

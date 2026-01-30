@@ -1,7 +1,7 @@
 import React from 'react';
-import { Save, X } from 'lucide-react';
+import { Save, X, Wand2 } from 'lucide-react';
 
-export function HeaderActions({ handleSaveChanges, handleResetToOriginal, handleExportToWord, isReviewed }) {
+export function HeaderActions({ handleSaveChanges, handleResetToOriginal, handleExportToWord, isReviewed, handleRegenerateOriginal }) {
   return (
     <div className="flex gap-2">
       <button
@@ -10,6 +10,13 @@ export function HeaderActions({ handleSaveChanges, handleResetToOriginal, handle
       >
         <Save className="w-4 h-4" />
         Save Changes
+      </button>
+      <button
+        onClick={handleRegenerateOriginal}
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+      >
+        <Wand2 className="w-4 h-4" />
+        Regenerate IEP
       </button>
       <button
         onClick={handleResetToOriginal}

@@ -616,6 +616,7 @@ export default function StudentDetail() {
               setIsReviewed={setIsReviewed}
               isGenerating={isGenerating}
               handleGenerateIEP={handleGenerateIEP}
+              handleRegenerateOriginal={handleGenerateIEP}
               handleResetToOriginal={handleResetToOriginal}
               handleSaveChanges={handleSaveChanges}
               handleExportToWord={handleExportToWord}
