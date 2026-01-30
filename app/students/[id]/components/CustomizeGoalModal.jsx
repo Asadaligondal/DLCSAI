@@ -25,8 +25,11 @@ export default function CustomizeGoalModal({ isOpen = true, onClose, student, on
       if (!student?.assignedGoals || student.assignedGoals.length === 0) return;
       try {
         const token = localStorage.getItem('token');
-        const details = await Promise.all(student.assignedGoals.map(async (gId) => {
-          const res = await fetch(`/api/goals/${gId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const details = await Promise.all(student.assignedGoals.map(async (gItem) => {
+          // assignedGoals may contain either string IDs or populated goal objects
+          const goalId = typeof gItem === 'string' ? gItem : (gItem && (gItem._id || gItem.id));
+          if (!goalId) return null;
+          const res = await fetch(`/api/goals/${goalId}`, { headers: { Authorization: `Bearer ${token}` } });
           if (!res.ok) return null;
           const data = await res.json();
           return data.goal;
@@ -136,6 +139,8 @@ export default function CustomizeGoalModal({ isOpen = true, onClose, student, on
                 </div>
               ))}
             </div>
+
+            {/* Regenerate button moved to the header — keep modal focused on create/edit/delete */}
           </div>
         )}
         <div>
@@ -179,8 +184,10 @@ export default function CustomizeGoalModal({ isOpen = true, onClose, student, on
 
         <div className="flex items-center justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-100">Cancel</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-blue-600 text-white">{saving ? 'Saving...' : 'Create Goal'}</button>
+          <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-blue-600 text-white">{saving ? 'Saving...' : (editingId ? 'Update Goal' : 'Create Goal')}</button>
         </div>
+
+        
       </form>
     </Modal>
   );

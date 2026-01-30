@@ -80,6 +80,67 @@ export default function StudentDetail() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+
+  // Handle regeneration initiated from CustomizeGoalModal via event
+  const regenerateIEPWithCustomGoals = async (goalsList) => {
+    try {
+      if (!goalsList || goalsList.length === 0) {
+        toast.info('No custom goals to include');
+        return;
+      }
+      const customGoals = goalsList.map(g => g.title || g);
+
+      setIsGenerating(true);
+      const res = await axios.post('/api/generate-iep', {
+        studentGrade: student.gradeLevel,
+        studentAge: student.age,
+        areaOfNeed: student.areaOfNeed || 'General Education',
+        currentPerformance: `Quantitative: ${student.performanceQuantitative || 'Not specified'}, Narrative: ${student.performanceNarrative || 'Not specified'}`,
+        disabilityCategory: student.disabilities?.join(', ') || 'Not specified',
+        instructionalSetting: student.instructionalSetting || 'General Education',
+        exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : [],
+        customGoals
+      });
+
+      const aiData = res.data.data;
+      if (!aiData) {
+        toast.error('Failed to generate IEP');
+        return;
+      }
+
+      aiData.custom_goals = aiData.custom_goals || [];
+
+      setGeneratedPlan(aiData);
+      setOriginalAIPlan(aiData);
+      setEditablePlan(aiData);
+      setIsReviewed(false);
+      setHasExistingPlan(true);
+      setViewMode('edited');
+
+      await axios.put(`/api/students/${id}/save-iep`, {
+        original_ai_draft: aiData,
+        user_edited_version: aiData,
+        is_reviewed: false
+      }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+
+      toast.success('IEP regenerated with custom goals');
+    } catch (err) {
+      console.error('Regenerate error', err);
+      toast.error('Failed to regenerate IEP');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      const goalsList = e.detail?.goals || [];
+      regenerateIEPWithCustomGoals(goalsList);
+    };
+
+    window.addEventListener('customGoalsRegenerate', handler);
+    return () => window.removeEventListener('customGoalsRegenerate', handler);
+  }, [student, id]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [formData, setFormData] = useState({
@@ -191,6 +252,41 @@ export default function StudentDetail() {
     } catch (error) {
       console.error('❌ Error fetching student:', error);
       toast.error('Failed to load student data');
+    }
+  };
+
+  // Handler triggered from the header regenerate button
+  const handleRegenerateFromHeader = async () => {
+    if (!student) return;
+    try {
+      // Build a list of goals with titles. If student.assignedGoals contains IDs, fetch them.
+      const assigned = student.assignedGoals || [];
+      if (assigned.length === 0) {
+        toast.info('No custom goals to include');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const goalsList = await Promise.all(assigned.map(async (g) => {
+        if (!g) return null;
+        if (typeof g === 'string') {
+          const res = await axios.get(`/api/goals/${g}`, { headers: { Authorization: `Bearer ${token}` } });
+          return res.data?.goal ? { title: res.data.goal.title, _id: res.data.goal._id } : null;
+        }
+        // assume populated object
+        return { title: g.title, _id: g._id };
+      }));
+
+      const filtered = goalsList.filter(Boolean);
+      if (filtered.length === 0) {
+        toast.info('No custom goals found');
+        return;
+      }
+
+      await regenerateIEPWithCustomGoals(filtered);
+    } catch (err) {
+      console.error('Header regenerate error', err);
+      toast.error('Failed to regenerate IEP');
     }
   };
 
@@ -334,6 +430,44 @@ export default function StudentDetail() {
               text: editablePlan.plaafp_narrative,
               spacing: { after: 400 }
             }),
+            new Paragraph({
+              text: 'Goals & Objectives by Exceptionality',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 300, after: 150 }
+            }),
+            ...((editablePlan.annualGoalsByExceptionality || []).flatMap((group) => {
+              const arr = [
+                new Paragraph({
+                  text: group.exceptionality,
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { before: 150, after: 80 }
+                })
+              ];
+
+              if (Array.isArray(group.goals)) {
+                group.goals.forEach((g) => {
+                  arr.push(new Paragraph({
+                    text: `${parseInt(g.referenceId, 10) + 1}. ${g.goal}`,
+                    spacing: { after: 100 },
+                    bullet: { level: 0 }
+                  }));
+                });
+              }
+
+              const objGroup = Array.isArray(editablePlan.shortTermObjectivesByExceptionality) ? editablePlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality) : null;
+              if (objGroup && Array.isArray(objGroup.objectives) && objGroup.objectives.length > 0) {
+                arr.push(new Paragraph({ text: 'Short-Term Objectives', spacing: { before: 80, after: 60 } }));
+                objGroup.objectives.forEach((o) => {
+                  arr.push(new Paragraph({
+                    text: `${parseInt(o.referenceId, 10) + 1}. ${o.objective}`,
+                    spacing: { after: 80 },
+                    bullet: { level: 0 }
+                  }));
+                });
+              }
+
+              return arr;
+            })),
             
             new Paragraph({
               text: 'Annual Goals',
@@ -457,6 +591,7 @@ export default function StudentDetail() {
             strengthsOptions={STRENGTHS_OPTIONS}
             weaknessesOptions={WEAKNESSES_OPTIONS}
             onCustomizeGoals={() => setShowCustomizeModal(true)}
+            onRegenerateCustomGoals={handleRegenerateFromHeader}
           />
 
           {showCustomizeModal && (

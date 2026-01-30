@@ -105,10 +105,24 @@ export default function GoalsObjectivesSection({
               ))}
             </ul>
           </div>
-
           <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Intervention Recommendations</h3>
             <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
+          </div>
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Custom Goals (LLM Recommendations)</h3>
+            {originalAIPlan.custom_goals && originalAIPlan.custom_goals.length > 0 ? (
+              <div className="space-y-3">
+                {originalAIPlan.custom_goals.map((cg, idx) => (
+                  <div key={`cg-${idx}`} className="p-3 bg-white border rounded">
+                    <div className="text-sm font-medium text-gray-800">{cg.title}</div>
+                    <div className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || ''}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No custom goals recommendations provided.</p>
+            )}
           </div>
         </>
       ) : (
@@ -195,6 +209,35 @@ export default function GoalsObjectivesSection({
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Custom Goals (LLM Recommendations)</h3>
+            {editablePlan.custom_goals && editablePlan.custom_goals.length > 0 ? (
+              <div className="space-y-3">
+                {editablePlan.custom_goals.map((cg, idx) => (
+                  <div key={`eg-edit-${idx}`} className="p-3 bg-white border rounded">
+                    <div className="text-sm font-medium text-gray-800 mb-2">{cg.title}</div>
+                    <textarea
+                      value={cg.recommendation || ''}
+                      onChange={(e) => {
+                        setEditablePlan(prev => {
+                          const next = JSON.parse(JSON.stringify(prev || {}));
+                          if (!Array.isArray(next.custom_goals)) next.custom_goals = [];
+                          next.custom_goals[idx] = next.custom_goals[idx] || { title: cg.title, recommendation: '' };
+                          next.custom_goals[idx].recommendation = e.target.value;
+                          return next;
+                        });
+                      }}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No custom goals recommendations yet.</p>
+            )}
           </div>
 
           <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">

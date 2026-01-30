@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Goal from '@/models/Goal';
+import mongoose from 'mongoose';
 import { protectRoute, protectAdminRoute } from '@/lib/authMiddleware';
 import Student from '@/models/Student';
 
@@ -16,13 +17,22 @@ export async function GET(request, { params }) {
       return authResult.response;
     }
 
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
 
     // Connect to database
     await connectDB();
 
+    // Validate id format
+    if (!id || !mongoose.Types.ObjectId.isValid(String(id))) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid goal id' },
+        { status: 400 }
+      );
+    }
+
     // Find the goal
-    const goal = await Goal.findById(id).populate('createdBy', 'name email');
+    const goal = await Goal.findById(String(id)).populate('createdBy', 'name email');
 
     if (!goal) {
       return NextResponse.json(
@@ -65,7 +75,8 @@ export async function PUT(request, { params }) {
     if (authResult.error) return authResult.response;
     const user = authResult.user;
 
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     const body = await request.json();
     const {
       title,
@@ -82,8 +93,13 @@ export async function PUT(request, { params }) {
     // Connect to database
     await connectDB();
 
+    // Validate id format
+    if (!id || !mongoose.Types.ObjectId.isValid(String(id))) {
+      return NextResponse.json({ success: false, message: 'Invalid goal id' }, { status: 400 });
+    }
+
     // Find the goal
-    const goal = await Goal.findById(id);
+    const goal = await Goal.findById(String(id));
 
     if (!goal) {
       return NextResponse.json({ success: false, message: 'Goal not found' }, { status: 404 });
@@ -126,13 +142,19 @@ export async function DELETE(request, { params }) {
     if (authResult.error) return authResult.response;
     const user = authResult.user;
 
-    const { id } = params;
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
     console.log('Attempting to delete goal with ID:', id);
 
     // Connect to database
     await connectDB();
 
-    const goal = await Goal.findById(id);
+    // Validate id format
+    if (!id || !mongoose.Types.ObjectId.isValid(String(id))) {
+      return NextResponse.json({ success: false, message: 'Invalid goal id' }, { status: 400 });
+    }
+
+    const goal = await Goal.findById(String(id));
     if (!goal) {
       console.log('Goal not found with ID:', id);
       return NextResponse.json({ success: false, message: 'Goal not found' }, { status: 404 });
