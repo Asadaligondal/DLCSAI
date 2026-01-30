@@ -211,6 +211,31 @@ export default function GoalsObjectivesSection({
             </div>
           </div>
 
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
+            <div className="space-y-3">
+              {editablePlan.short_term_objectives?.map((objective, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">{index + 1}</span>
+                  <textarea
+                    value={objective}
+                    onChange={(e) => updateObjective(index, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                    rows="2"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeObjective(index)}
+                    className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Remove objective"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Custom Goals (LLM Recommendations)</h3>
             {editablePlan.custom_goals && editablePlan.custom_goals.length > 0 ? (
@@ -238,31 +263,6 @@ export default function GoalsObjectivesSection({
             ) : (
               <p className="text-gray-500 text-sm">No custom goals recommendations yet.</p>
             )}
-          </div>
-
-          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Short-Term Objectives</h3>
-            <div className="space-y-3">
-              {editablePlan.short_term_objectives?.map((objective, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">{index + 1}</span>
-                  <textarea
-                    value={objective}
-                    onChange={(e) => updateObjective(index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                    rows="2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeObjective(index)}
-                    className="mt-2 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="Remove objective"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
         </>
       )}
