@@ -69,15 +69,21 @@ export async function POST(request) {
 - weaknesses (comma-separated string if multiple)
 - state (e.g., Florida, California, etc.)
 - instructionalSetting (e.g., General Education, Special Education, Resource Room, etc.)
-- performanceQuantitative (numerical test scores, grade levels, percentiles, etc.)
-- performanceNarrative (descriptive performance information)
+- performanceQuantitative (return a concise phrase describing quantitative level)
+- performanceNarrative (return a concise sentence summarizing performance)
 - areaOfNeed (academic areas needing support: Reading, Math, Writing, etc.)
+
+Special handling for performance fields:
+- If the document contains long or descriptive passages for current performance, produce concise, normalized outputs:
+  - performanceQuantitative: return a short phrase (preferably <= 5 words) like "Significantly Below Grade Level", "Below Grade Level", "At Grade Level", or "Above Grade Level" when possible. If a numeric score is present, you may return "Grade X" or the numeric score.
+  - performanceNarrative: return a short descriptive sentence (preferably <= 15 words) that summarizes the narrative (e.g., "Shows steady progress with visual aids and routines").
 
 Rules:
 - Return ONLY valid JSON with these exact field names.
 - For disabilities, strengths, weaknesses, and areaOfNeed, combine multiple items into a single comma-separated string (e.g., "ADHD, Dyslexia" or "Reading, Math").
 - If a field is not found in the document, set it to the exact string "add manually" (lowercase).
 - Do not leave any field as an empty string - use "add manually" for missing data.
+- For performanceQuantitative and performanceNarrative, prefer concise normalized values as described above.
 - Do not include any markdown formatting or explanations, just the JSON object.`;
 
     const completion = await openai.chat.completions.create({

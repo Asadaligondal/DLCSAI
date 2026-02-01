@@ -351,26 +351,89 @@ export default function Dashboard() {
           if (!value || value === 'add manually') return [];
           return value.split(',').map(item => item.trim()).filter(item => item && item !== 'add manually');
         };
+
+        // Normalizers for specific select fields to match frontend options
+        const normalizeGradeLevel = (val) => {
+          if (!val || val === 'add manually') return null;
+          const s = String(val).toLowerCase();
+          // Match formats like "grade 3", "3rd", "3"
+          const g = s.match(/grade\s*(\d{1,2})/) || s.match(/^(\d{1,2})(st|nd|rd|th)?$/);
+          if (g) {
+            const num = g[1];
+            const ord = (n) => {
+              const v = parseInt(n, 10);
+              if (v === 1) return '1st';
+              if (v === 2) return '2nd';
+              if (v === 3) return '3rd';
+              return `${v}th`;
+            };
+            return ord(num);
+          }
+          // Common full words
+          if (s.includes('kg') || s.includes('kindergarten')) return 'KG';
+          // If already in ordinal like "3rd grade"
+          const ordMatch = s.match(/(\d{1,2})(st|nd|rd|th)/);
+          if (ordMatch) return ordMatch[0];
+          return null;
+        };
+
+        const normalizeInstructionalSetting = (val) => {
+          if (!val || val === 'add manually') return null;
+          const s = String(val).toLowerCase();
+          if (s.includes('general')) return 'General Education Support';
+          if (s.includes('special')) return 'Special Education Support';
+          if (s.includes('resource')) return 'Resource Room';
+          if (s.includes('inclusion')) return 'Inclusion';
+          if (s.includes('self') || s.includes('contained')) return 'Self-Contained';
+          return null;
+        };
+
+        const normalizeQuantitative = (val) => {
+          if (!val || val === 'add manually') return null;
+          const s = String(val).toLowerCase();
+          const g = s.match(/grade\s*(\d{1,2})/) || s.match(/^(\d{1,2})(st|nd|rd|th)?$/);
+          if (g) return `Grade ${parseInt(g[1], 10)}`;
+          return null;
+        };
+
+        const normalizeNarrative = (val) => {
+          if (!val || val === 'add manually') return null;
+          const s = String(val).toLowerCase();
+          if (s.includes('poor')) return 'Poor';
+          if (s.includes('fair')) return 'Fair';
+          if (s.includes('very good') || s.includes('verygood') || s.includes('very good')) return 'Very Good';
+          if (s.includes('excellent') || s.includes('outstanding')) return 'Excellent';
+          if (s.includes('good') || s.includes('average')) return 'Good';
+          return null;
+        };
         
         const disabilitiesArray = toArray(extracted.disabilities);
         const strengthsArray = toArray(extracted.strengths);
         const weaknessesArray = toArray(extracted.weaknesses);
 
-        setFormData(prev => ({
-          ...prev,
-          name: extracted.name !== 'add manually' ? extracted.name : prev.name,
-          studentId: extracted.studentId !== 'add manually' ? extracted.studentId : prev.studentId,
-          age: extracted.age !== 'add manually' ? extracted.age : prev.age,
-          gradeLevel: extracted.gradeLevel !== 'add manually' ? extracted.gradeLevel : prev.gradeLevel,
-          disabilities: disabilitiesArray.length > 0 ? disabilitiesArray : prev.disabilities,
-          strengths: strengthsArray.length > 0 ? strengthsArray : prev.strengths,
-          weaknesses: weaknessesArray.length > 0 ? weaknessesArray : prev.weaknesses,
-          state: extracted.state !== 'add manually' ? extracted.state : prev.state,
-          instructionalSetting: extracted.instructionalSetting !== 'add manually' ? extracted.instructionalSetting : 'add manually',
-          performanceQuantitative: extracted.performanceQuantitative !== 'add manually' ? extracted.performanceQuantitative : 'add manually',
-          performanceNarrative: extracted.performanceNarrative !== 'add manually' ? extracted.performanceNarrative : 'add manually',
-          areaOfNeed: extracted.areaOfNeed !== 'add manually' ? extracted.areaOfNeed : 'add manually'
-        }));
+        setFormData(prev => {
+          // Normalize mappings for select fields, fall back to previous values if normalization fails
+          const normalizedGrade = normalizeGradeLevel(extracted.gradeLevel) || (extracted.gradeLevel !== 'add manually' ? extracted.gradeLevel : null);
+          const normalizedInstructional = normalizeInstructionalSetting(extracted.instructionalSetting) || (extracted.instructionalSetting !== 'add manually' ? extracted.instructionalSetting : null);
+          const normalizedQuant = normalizeQuantitative(extracted.performanceQuantitative) || (extracted.performanceQuantitative !== 'add manually' ? extracted.performanceQuantitative : null);
+          const normalizedNarr = normalizeNarrative(extracted.performanceNarrative) || (extracted.performanceNarrative !== 'add manually' ? extracted.performanceNarrative : null);
+
+          return {
+            ...prev,
+            name: extracted.name !== 'add manually' ? extracted.name : prev.name,
+            studentId: extracted.studentId !== 'add manually' ? extracted.studentId : prev.studentId,
+            age: extracted.age !== 'add manually' ? extracted.age : prev.age,
+            gradeLevel: normalizedGrade || prev.gradeLevel,
+            disabilities: disabilitiesArray.length > 0 ? disabilitiesArray : prev.disabilities,
+            strengths: strengthsArray.length > 0 ? strengthsArray : prev.strengths,
+            weaknesses: weaknessesArray.length > 0 ? weaknessesArray : prev.weaknesses,
+            state: extracted.state !== 'add manually' ? extracted.state : prev.state,
+            instructionalSetting: normalizedInstructional || prev.instructionalSetting,
+            performanceQuantitative: normalizedQuant || prev.performanceQuantitative,
+            performanceNarrative: normalizedNarr || prev.performanceNarrative,
+            areaOfNeed: extracted.areaOfNeed !== 'add manually' ? extracted.areaOfNeed : prev.areaOfNeed
+          };
+        });
 
         toast.update(toastId, {
           render: 'Form auto-filled from PDF!',
@@ -776,6 +839,9 @@ export default function Dashboard() {
                     required
                   >
                     <option value="">Select setting...</option>
+                      {formData.instructionalSetting && !INSTRUCTIONAL_SETTINGS.includes(formData.instructionalSetting) && (
+                        <option value={formData.instructionalSetting}>{formData.instructionalSetting}</option>
+                      )}
                     {INSTRUCTIONAL_SETTINGS.map((setting) => (
                       <option key={setting} value={setting}>
                         {setting}
@@ -797,6 +863,9 @@ export default function Dashboard() {
                       required
                     >
                       <option value="">Select level...</option>
+                      {formData.performanceQuantitative && !QUANTITATIVE_LEVELS.includes(formData.performanceQuantitative) && (
+                        <option value={formData.performanceQuantitative}>{formData.performanceQuantitative}</option>
+                      )}
                       {QUANTITATIVE_LEVELS.map((level) => (
                         <option key={level} value={level}>
                           {level}
@@ -814,6 +883,9 @@ export default function Dashboard() {
                       required
                     >
                       <option value="">Select level...</option>
+                      {formData.performanceNarrative && !NARRATIVE_LEVELS.includes(formData.performanceNarrative) && (
+                        <option value={formData.performanceNarrative}>{formData.performanceNarrative}</option>
+                      )}
                       {NARRATIVE_LEVELS.map((level) => (
                         <option key={level} value={level}>
                           {level}
