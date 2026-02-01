@@ -90,10 +90,10 @@ Rules:
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Extract student information from this text:\n\n${extractedText.substring(0, 3000)}` }
+        { role: 'user', content: `Extract student information from this text:\n\n${extractedText}` }
       ],
       temperature: 0.1,
-      max_tokens: 500
+      max_tokens: 1500
     });
 
     const responseText = completion.choices[0]?.message?.content || '{}';
