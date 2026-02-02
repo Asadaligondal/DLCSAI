@@ -700,10 +700,7 @@ export default function Dashboard() {
                   )}
                   <span className="leading-none">{uploading ? 'Analyzing...' : 'Upload PDF'}</span>
                 </label>
-                <div className="mt-2 text-xs text-slate-500 flex items-center gap-2">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-200 text-xs rounded">Beta</span>
-                  <span>May extract incomplete or imprecise fields</span>
-                </div>
+                
               </div>
             </div>
 
