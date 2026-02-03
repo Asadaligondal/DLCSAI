@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -8,6 +8,7 @@ import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
+import AccommodationsModal from '@/components/AccommodationsModal';
 import { Plus, Search, Trash2, Zap, Upload } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = [
@@ -239,6 +240,8 @@ export default function Dashboard() {
     performanceNarrative: '',
     areaOfNeed: ''
   });
+  const [showAccommodations, setShowAccommodations] = useState(false);
+  const [accommodations, setAccommodations] = useState(null);
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -435,6 +438,11 @@ export default function Dashboard() {
           };
         });
 
+        // If the AI returned any accommodations block, store it locally so user can review
+        if (extracted.student_accommodations) {
+          setAccommodations(extracted.student_accommodations);
+        }
+
         toast.update(toastId, {
           render: 'Form auto-filled from PDF!',
           type: 'success',
@@ -460,14 +468,9 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        '/api/students',
-        {
-          ...formData,
-          age: parseInt(formData.age)
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const payload = { ...formData, age: parseInt(formData.age) };
+      if (accommodations) payload.student_accommodations = accommodations;
+      await axios.post('/api/students', payload, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Student added successfully');
       fetchStudents();
       handleCloseModal();
@@ -602,6 +605,14 @@ export default function Dashboard() {
                           <div>
                             <div className="text-sm font-medium text-slate-900">{student.name}</div>
                             <div className="text-xs text-gray-500">{student.gradeLevel} • {student.age} yrs</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {(() => {
+                                const acc = student.student_accommodations || {};
+                                const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
+                                const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
+                                return total > 0 ? `${total} accommodations` : 'No accommodations';
+                              })()}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -686,6 +697,24 @@ export default function Dashboard() {
                   className="hidden"
                   disabled={uploading}
                 />
+                <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAccommodations(true)}
+                      className="inline-flex items-center gap-2 h-10 px-4 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-md shadow-sm text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      title={accommodations ? 'Edit accommodations' : 'Add accommodations'}
+                    >
+                      Add Accommodations
+                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-white border border-gray-200 rounded text-gray-700">
+                        {(() => {
+                          if (!accommodations) return 0;
+                          const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((acc,k)=> acc + (Array.isArray(obj?.[k])? obj[k].length:0),0);
+                          const c = sum(accommodations.classroom || {}) + sum(accommodations.assessment || {});
+                          return c;
+                        })()}
+                      </span>
+                    </button>
+                </div>
                 <label
                   htmlFor="pdf-upload"
                   className={`inline-flex items-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -928,6 +957,14 @@ export default function Dashboard() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {showAccommodations && (
+        <AccommodationsModal
+          initial={accommodations}
+          onClose={() => setShowAccommodations(false)}
+          onSave={(payload) => setAccommodations(payload)}
+        />
       )}
 
       {deleteConfirm && (

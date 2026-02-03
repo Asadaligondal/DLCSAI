@@ -52,6 +52,27 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  student_accommodations: {
+    consent: {
+      parentConsentRequired: { type: Boolean, default: false },
+      parentConsentObtained: { type: Boolean, default: false },
+      consentNotes: { type: String, default: '' }
+    },
+    classroom: {
+      presentation: { type: [Object], default: [] },
+      response: { type: [Object], default: [] },
+      scheduling: { type: [Object], default: [] },
+      setting: { type: [Object], default: [] },
+      assistive_technology_device: { type: [Object], default: [] }
+    },
+    assessment: {
+      presentation: { type: [Object], default: [] },
+      response: { type: [Object], default: [] },
+      scheduling: { type: [Object], default: [] },
+      setting: { type: [Object], default: [] },
+      assistive_technology_device: { type: [Object], default: [] }
+    }
+  },
   iep_plan_data: {
     original_ai_draft: {
       plaafp_narrative: String,

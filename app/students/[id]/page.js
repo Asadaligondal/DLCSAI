@@ -592,6 +592,7 @@ export default function StudentDetail() {
             weaknessesOptions={WEAKNESSES_OPTIONS}
             onCustomizeGoals={() => setShowCustomizeModal(true)}
             onRegenerateCustomGoals={handleRegenerateFromHeader}
+            onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
           />
 
           {showCustomizeModal && (

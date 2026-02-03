@@ -1,6 +1,9 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import MultiSelect from '@/components/MultiSelect';
 import { Target, Wand2, X, Save } from 'lucide-react';
+import AccommodationsModal from '@/components/AccommodationsModal';
 
 export default function StudentInfoHeader({
   student,
@@ -17,7 +20,52 @@ export default function StudentInfoHeader({
   weaknessesOptions
   , onCustomizeGoals,
   onRegenerateCustomGoals
+  , onAccommodationsSaved
 }) {
+  const [showAccommodations, setShowAccommodations] = useState(false);
+  const [accommodationsInitial, setAccommodationsInitial] = useState(null);
+
+  const openAccommodations = async () => {
+    // try to fetch existing accommodations for this student
+    if (student && student._id) {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/students/${student._id}/accommodations`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAccommodationsInitial(data.accommodations || null);
+        } else {
+          setAccommodationsInitial(null);
+        }
+      } catch (err) {
+        setAccommodationsInitial(null);
+      }
+    } else {
+      setAccommodationsInitial(null);
+    }
+
+    setShowAccommodations(true);
+  };
+
+  const handleSaveAccommodations = async (payload) => {
+    // Save for existing student via API if available, otherwise just close and bubble up
+    if (student && student._id) {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`/api/students/${student._id}/accommodations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        // ignore errors here; parent can refetch if needed
+      }
+    }
+
+    if (onAccommodationsSaved) onAccommodationsSaved();
+  };
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -99,6 +147,20 @@ export default function StudentInfoHeader({
             <div className="p-3 bg-gray-50 rounded-lg">
               <span className="text-sm font-semibold text-gray-700">Weaknesses</span>
               <p className="text-sm text-gray-600 mt-1">{student.weaknesses?.join(', ') || 'None'}</p>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+              <div>
+                <span className="text-sm font-semibold text-gray-700">Accommodations</span>
+                <p className="text-sm text-gray-600 mt-1">{(() => {
+                  const acc = student.student_accommodations || {};
+                  const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
+                  const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
+                  return total > 0 ? `${total} selected` : 'None';
+                })()}</p>
+              </div>
+              <div>
+                <button onClick={openAccommodations} className="px-3 py-1 text-sm bg-gray-100 rounded-md">Edit</button>
+              </div>
             </div>
           </div>
         ) : (
@@ -246,6 +308,14 @@ export default function StudentInfoHeader({
               >
                 Regenerate IEP with Custom Goals
               </button>
+              
+              <button
+                type="button"
+                onClick={openAccommodations}
+                className="px-3 py-2 rounded-md text-sm font-medium bg-gray-200 hover:bg-gray-300 text-gray-800"
+              >
+                Edit Accommodations
+              </button>
             </div>
           </div>
 
@@ -281,6 +351,13 @@ export default function StudentInfoHeader({
           )}
         </div>
       </div>
+      {showAccommodations && (
+        <AccommodationsModal
+          initial={accommodationsInitial}
+          onClose={() => setShowAccommodations(false)}
+          onSave={(data) => { handleSaveAccommodations(data); setShowAccommodations(false); }}
+        />
+      )}
     </div>
   );
 
