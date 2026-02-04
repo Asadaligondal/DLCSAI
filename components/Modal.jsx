@@ -15,6 +15,8 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
     sm: 'max-w-md',
     md: 'max-w-2xl',
     lg: 'max-w-[860px]',
+    // Use min(...) to ensure modal never exceeds viewport width and avoid horizontal scroll
+    wizard: 'max-w-[min(1100px,95vw)]',
     xl: 'max-w-6xl'
   };
 
@@ -29,6 +31,7 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
       {/* Modal */}
       <div
         className={`relative bg-white rounded-[16px] shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 border border-gray-100`}
+        style={{ overflowX: 'hidden' }}
         role="dialog"
         aria-modal="true"
       >
@@ -45,7 +48,7 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
         </div>
 
         {/* Content (scrollable) */}
-        <div className="overflow-y-auto max-h-[calc(90vh-64px)] p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <div className="overflow-y-auto max-h-[calc(90vh-64px)] p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent" style={{ overflowX: 'hidden' }}>
           {children}
         </div>
       </div>

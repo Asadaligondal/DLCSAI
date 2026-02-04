@@ -221,6 +221,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -301,6 +302,7 @@ export default function Dashboard() {
       performanceNarrative: '',
       areaOfNeed: ''
     });
+    setWizardStep(1);
     setShowModal(true);
   };
 
@@ -680,291 +682,304 @@ export default function Dashboard() {
       </div>
 
       {showModal && (
-        <Modal title="Add Student" onClose={handleCloseModal} size="lg">
-          <form onSubmit={handleSubmit} className="relative grid gap-6">
-            {/* PDF Upload Feature Card */}
-            <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-              <div>
-                <p className="text-sm font-medium text-slate-900">Auto-fill from PDF</p>
-                <p className="text-xs text-slate-500 mt-1">Upload a report or intake form to extract student information</p>
-              </div>
-              <div className="flex flex-col items-end">
-                <input
-                  type="file"
-                  id="pdf-upload"
-                  accept="application/pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={uploading}
-                />
-                <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowAccommodations(true)}
-                      className="inline-flex items-center gap-2 h-10 px-4 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-md shadow-sm text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      title={accommodations ? 'Edit accommodations' : 'Add accommodations'}
+        <Modal title="Add Student" onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'}>
+          <form onSubmit={handleSubmit} className="relative grid gap-6 pb-24">
+            {wizardStep === 1 ? (
+              <>
+                {/* PDF Upload Feature Card */}
+                <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Auto-fill from PDF</p>
+                    <p className="text-xs text-slate-500 mt-1">Upload a report or intake form to extract student information</p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <input
+                      type="file"
+                      id="pdf-upload"
+                      accept="application/pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                      <div className="mt-3" />
+                    <label
+                      htmlFor="pdf-upload"
+                      className={`inline-flex items-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      Add Accommodations
-                      <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-white border border-gray-200 rounded text-gray-700">
-                        {(() => {
-                          if (!accommodations) return 0;
-                          const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((acc,k)=> acc + (Array.isArray(obj?.[k])? obj[k].length:0),0);
-                          const c = sum(accommodations.classroom || {}) + sum(accommodations.assessment || {});
-                          return c;
-                        })()}
-                      </span>
-                    </button>
-                </div>
-                <label
-                  htmlFor="pdf-upload"
-                  className={`inline-flex items-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  {uploading ? (
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                    </svg>
-                  ) : (
-                    <Upload className="w-4 h-4" />
-                  )}
-                  <span className="leading-none">{uploading ? 'Analyzing...' : 'Upload PDF'}</span>
-                </label>
-                
-              </div>
-            </div>
-
-            {/* Form grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Name <span className="text-xs text-slate-500 font-normal">— write only initials</span></label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Student ID</label>
-                <input
-                  type="text"
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
-                <input
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Grade Level</label>
-                <select
-                  value={formData.gradeLevel}
-                  onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                  className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Select grade...</option>
-                  <option>KG</option>
-                  <option>1st</option>
-                  <option>2nd</option>
-                  <option>3rd</option>
-                  <option>4th</option>
-                  <option>5th</option>
-                  <option>6th</option>
-                  <option>7th</option>
-                  <option>8th</option>
-                  <option>9th</option>
-                  <option>10th</option>
-                  <option>11th</option>
-                  <option>12th</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <MultiSelect
-                label="Exceptionalities"
-                options={DISABILITIES_OPTIONS}
-                value={formData.disabilities}
-                onChange={(value) => setFormData({ ...formData, disabilities: value })}
-                placeholder="Select exceptionalities..."
-              />
-
-              <MultiSelect
-                label="Strengths"
-                options={STRENGTHS_OPTIONS}
-                value={formData.strengths}
-                onChange={(value) => setFormData({ ...formData, strengths: value })}
-                placeholder="Select strengths..."
-              />
-
-              {formData.strengths.includes('Others') && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Other Strengths (describe)</label>
-                  <input
-                    type="text"
-                    value={formData.strengthsOther}
-                    onChange={(e) => setFormData({ ...formData, strengthsOther: e.target.value })}
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Describe other strengths..."
-                  />
-                </div>
-              )}
-
-              <MultiSelect
-                label="Weaknesses"
-                options={WEAKNESSES_OPTIONS}
-                value={formData.weaknesses}
-                onChange={(value) => setFormData({ ...formData, weaknesses: value })}
-                placeholder="Select weaknesses..."
-              />
-
-              {formData.weaknesses.includes('Others') && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Other Weaknesses (describe)</label>
-                  <input
-                    type="text"
-                    value={formData.weaknessesOther}
-                    onChange={(e) => setFormData({ ...formData, weaknessesOther: e.target.value })}
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Describe other weaknesses..."
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">State</label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    disabled
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-gray-50 text-sm text-slate-600 cursor-not-allowed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Instructional Setting</label>
-                  <select
-                    value={formData.instructionalSetting}
-                    onChange={(e) => setFormData({ ...formData, instructionalSetting: e.target.value })}
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    required
-                  >
-                    <option value="">Select setting...</option>
-                      {formData.instructionalSetting && !INSTRUCTIONAL_SETTINGS.includes(formData.instructionalSetting) && (
-                        <option value={formData.instructionalSetting}>{formData.instructionalSetting}</option>
+                      {uploading ? (
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                      ) : (
+                        <Upload className="w-4 h-4" />
                       )}
-                    {INSTRUCTIONAL_SETTINGS.map((setting) => (
-                      <option key={setting} value={setting}>
-                        {setting}
-                      </option>
-                    ))}
-                  </select>
+                      <span className="leading-none">{uploading ? 'Analyzing...' : 'Upload PDF'}</span>
+                    </label>
+                    
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Current Performance Level</label>
+                {/* Form grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Quantitative</label>
-                    <select
-                      value={formData.performanceQuantitative}
-                      onChange={(e) => setFormData({ ...formData, performanceQuantitative: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Name <span className="text-xs text-slate-500 font-normal">— write only initials</span></label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                       required
-                    >
-                      <option value="">Select level...</option>
-                      {formData.performanceQuantitative && !QUANTITATIVE_LEVELS.includes(formData.performanceQuantitative) && (
-                        <option value={formData.performanceQuantitative}>{formData.performanceQuantitative}</option>
-                      )}
-                      {QUANTITATIVE_LEVELS.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Narrative</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Student ID</label>
+                    <input
+                      type="text"
+                      value={formData.studentId}
+                      onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
+                    <input
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Grade Level</label>
                     <select
-                      value={formData.performanceNarrative}
-                      onChange={(e) => setFormData({ ...formData, performanceNarrative: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      value={formData.gradeLevel}
+                      onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                       required
                     >
-                      <option value="">Select level...</option>
-                      {formData.performanceNarrative && !NARRATIVE_LEVELS.includes(formData.performanceNarrative) && (
-                        <option value={formData.performanceNarrative}>{formData.performanceNarrative}</option>
-                      )}
-                      {NARRATIVE_LEVELS.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
+                      <option value="">Select grade...</option>
+                      <option>KG</option>
+                      <option>1st</option>
+                      <option>2nd</option>
+                      <option>3rd</option>
+                      <option>4th</option>
+                      <option>5th</option>
+                      <option>6th</option>
+                      <option>7th</option>
+                      <option>8th</option>
+                      <option>9th</option>
+                      <option>10th</option>
+                      <option>11th</option>
+                      <option>12th</option>
                     </select>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <MultiSelect
-                  label="Area(s) of Need"
-                  options={AREAS_OF_NEED}
-                  value={
-                    Array.isArray(formData.areaOfNeed)
-                      ? formData.areaOfNeed
-                      : formData.areaOfNeed && formData.areaOfNeed !== 'add manually'
-                      ? formData.areaOfNeed.split(',').map((s) => s.trim()).filter(Boolean)
-                      : []
-                  }
-                  onChange={(value) => setFormData({ ...formData, areaOfNeed: Array.isArray(value) ? value.join(', ') : value })}
-                  placeholder="Select areas of need..."
+                <div className="space-y-4">
+                  <MultiSelect
+                    label="Exceptionalities"
+                    options={DISABILITIES_OPTIONS}
+                    value={formData.disabilities}
+                    onChange={(value) => setFormData({ ...formData, disabilities: value })}
+                    placeholder="Select exceptionalities..."
+                  />
+
+                  <MultiSelect
+                    label="Strengths"
+                    options={STRENGTHS_OPTIONS}
+                    value={formData.strengths}
+                    onChange={(value) => setFormData({ ...formData, strengths: value })}
+                    placeholder="Select strengths..."
+                  />
+
+                  {formData.strengths.includes('Others') && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Other Strengths (describe)</label>
+                      <input
+                        type="text"
+                        value={formData.strengthsOther}
+                        onChange={(e) => setFormData({ ...formData, strengthsOther: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="Describe other strengths..."
+                      />
+                    </div>
+                  )}
+
+                  <MultiSelect
+                    label="Weaknesses"
+                    options={WEAKNESSES_OPTIONS}
+                    value={formData.weaknesses}
+                    onChange={(value) => setFormData({ ...formData, weaknesses: value })}
+                    placeholder="Select weaknesses..."
+                  />
+
+                  {formData.weaknesses.includes('Others') && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Other Weaknesses (describe)</label>
+                      <input
+                        type="text"
+                        value={formData.weaknessesOther}
+                        onChange={(e) => setFormData({ ...formData, weaknessesOther: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="Describe other weaknesses..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">State</label>
+                      <input
+                        type="text"
+                        value={formData.state}
+                        disabled
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-gray-50 text-sm text-slate-600 cursor-not-allowed min-w-0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Instructional Setting</label>
+                      <select
+                        value={formData.instructionalSetting}
+                        onChange={(e) => setFormData({ ...formData, instructionalSetting: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        required
+                      >
+                        <option value="">Select setting...</option>
+                          {formData.instructionalSetting && !INSTRUCTIONAL_SETTINGS.includes(formData.instructionalSetting) && (
+                            <option value={formData.instructionalSetting}>{formData.instructionalSetting}</option>
+                          )}
+                        {INSTRUCTIONAL_SETTINGS.map((setting) => (
+                          <option key={setting} value={setting}>
+                            {setting}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Current Performance Level</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Quantitative</label>
+                        <select
+                          value={formData.performanceQuantitative}
+                          onChange={(e) => setFormData({ ...formData, performanceQuantitative: e.target.value })}
+                          className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                          required
+                        >
+                          <option value="">Select level...</option>
+                          {formData.performanceQuantitative && !QUANTITATIVE_LEVELS.includes(formData.performanceQuantitative) && (
+                            <option value={formData.performanceQuantitative}>{formData.performanceQuantitative}</option>
+                          )}
+                          {QUANTITATIVE_LEVELS.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Narrative</label>
+                        <select
+                          value={formData.performanceNarrative}
+                          onChange={(e) => setFormData({ ...formData, performanceNarrative: e.target.value })}
+                          className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                          required
+                        >
+                          <option value="">Select level...</option>
+                          {formData.performanceNarrative && !NARRATIVE_LEVELS.includes(formData.performanceNarrative) && (
+                            <option value={formData.performanceNarrative}>{formData.performanceNarrative}</option>
+                          )}
+                          {NARRATIVE_LEVELS.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <MultiSelect
+                      label="Area(s) of Need"
+                      options={AREAS_OF_NEED}
+                      value={
+                        Array.isArray(formData.areaOfNeed)
+                          ? formData.areaOfNeed
+                          : formData.areaOfNeed && formData.areaOfNeed !== 'add manually'
+                          ? formData.areaOfNeed.split(',').map((s) => s.trim()).filter(Boolean)
+                          : []
+                      }
+                      onChange={(value) => setFormData({ ...formData, areaOfNeed: Array.isArray(value) ? value.join(', ') : value })}
+                      placeholder="Select areas of need..."
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="pt-4 border-t">
+                <AccommodationsModal
+                  inline
+                  initial={accommodations}
+                  onApply={(data) => {
+                    setAccommodations(data);
+                  }}
+                  onClose={() => {}}
                 />
               </div>
-            </div>
+            )}
 
-            {/* Sticky footer actions */}
-            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 pt-4 pb-4 mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
-              >
-                Add Student
-              </button>
+            {/* Sticky footer actions (wizard) */}
+            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 pt-4 pb-4 mt-6 flex justify-between items-center">
+              <div>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div>
+                {wizardStep === 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(2)}
+                    className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  >
+                    Next: Accommodations
+                  </button>
+                ) : (
+                  <div className="flex gap-3 flex-wrap items-center">
+                    <button
+                      type="button"
+                      onClick={() => setWizardStep(1)}
+                      className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    >
+                      Add Student
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </form>
         </Modal>
-      )}
-
-      {showAccommodations && (
-        <AccommodationsModal
-          initial={accommodations}
-          onClose={() => setShowAccommodations(false)}
-          onSave={(payload) => setAccommodations(payload)}
-        />
       )}
 
       {deleteConfirm && (

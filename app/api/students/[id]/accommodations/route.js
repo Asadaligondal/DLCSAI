@@ -77,11 +77,20 @@ export async function POST(request, { params }) {
         consent: {
           parentConsentRequired: sanitizeBool(input?.consent?.parentConsentRequired),
           parentConsentObtained: sanitizeBool(input?.consent?.parentConsentObtained),
-          consentNotes: sanitizeString(input?.consent?.consentNotes)
+          consentNotes: sanitizeString(input?.consent?.consentNotes),
+          parentConsentName: sanitizeString(input?.consent?.parentConsentName),
+          parentConsentDate: sanitizeString(input?.consent?.parentConsentDate)
         },
         classroom: sanitizeScope(input?.classroom || {}),
         assessment: sanitizeScope(input?.assessment || {})
       };
+
+      // If consent is marked obtained but no name/date provided, reject
+      if (sanitized.consent.parentConsentObtained) {
+        if (!sanitized.consent.parentConsentName || !sanitized.consent.parentConsentDate) {
+          throw new Error('Parent consent marked obtained but name or date missing');
+        }
+      }
 
       return sanitized;
     };
