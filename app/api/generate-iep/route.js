@@ -11,7 +11,9 @@ export async function POST(req) {
       disabilityCategory,
       instructionalSetting,
       exceptionalities, // expected: array of strings, e.g. ["Specific Learning Disability", "Autism"]
-      customGoals // optional: array of { title, _id? } objects supplied by the caller
+      customGoals, // optional: array of { title, _id? } objects supplied by the caller
+      studentId,
+      student_accommodations // optional: accommodations payload provided directly in request
     } = body;
 
     // Validate required fields
@@ -24,18 +26,58 @@ export async function POST(req) {
 
     // System prompt for expert guidance
     const systemPrompt = `You are an expert Special Education consultant specializing in Florida IEP (Individualized Education Program) development. Your responses must be:
-- Aligned with Florida Department of Education standards and IDEA regulations
-- Written in professional, audit-safe language appropriate for official IEP documents
-- Specific, measurable, achievable, relevant, and time-bound (SMART)
-- Free from jargon while maintaining educational accuracy
-- Supportive and strength-based in tone
+  - Aligned with Florida Department of Education standards and IDEA regulations
+  - Written in professional, audit-safe language appropriate for official IEP documents
+  - Specific, measurable, achievable, relevant, and time-bound (SMART)
+  - Free from jargon while maintaining educational accuracy
+  - Supportive and strength-based in tone
 
-You must return ONLY valid JSON with no additional text or markdown formatting.`;
+  Accommodations Integration:
+  Accommodations are provided as structured inputs under accommodations.classroom and accommodations.assessment, grouped by categories (presentation/response/scheduling/setting/assistive_technology_device), plus accommodations.consent. You MUST use these accommodations to shape the conditions and supports embedded in goals/objectives (for example, "Given [supports/accommodations]..." or "With [accommodations]...") while keeping goals SMART and realistic. Do NOT invent accommodations that were not provided. Do NOT contradict provided accommodations (for example, if text-to-speech/human reader is selected, do not assume independent reading access unless the goal explicitly targets that skill and is stated accordingly). Ensure assessment goals/objectives do not reference accommodations that are only classroom-only unless explicitly compatible; if uncertain, set confidence to "low" and include a clarifyingQuestion.
+
+  Non-duplication constraint:
+  Across all goal layers (top-level and exceptionality-specific), avoid near-duplicates: each annual goal must target a distinct skill domain (e.g., reading comprehension vs written expression vs executive functioning). Each short-term objective must be a distinct step toward mastery (varying criteria, conditions, or skill subcomponent). Reuse referenceIds for alignment; do not copy/paste full text between layers.
+
+  Measurability rule:
+  Every annual goal and objective must include: a measurable behavior, a criterion (%, frequency, rubric level, accuracy), a time/measurement window, and conditions that may include accommodations. Embed accommodations into the condition when appropriate.
+
+  You must return ONLY valid JSON with no additional text or markdown formatting.`;
 
     // Prepare custom goals text for prompt (if provided)
     const customGoalsList = Array.isArray(customGoals) && customGoals.length > 0
       ? customGoals.map((g, i) => `${i + 1}. ${g.title || g}`).join('\n')
       : null;
+
+    // Load/normalize accommodations: prefer explicit payload, otherwise try to fetch student record
+    let accommodationsRaw = student_accommodations || null;
+    try {
+      if (!accommodationsRaw && studentId) {
+        const connectDB = (await import('@/lib/mongodb')).default;
+        const Student = (await import('@/models/Student')).default;
+        await connectDB();
+        const stu = await Student.findById(studentId).lean();
+        if (stu && stu.student_accommodations) accommodationsRaw = stu.student_accommodations;
+      }
+    } catch (e) {
+      console.warn('Could not load student accommodations from DB:', e.message || e);
+    }
+
+    const { normalizeAccommodations, accommodationsCount } = await import('@/lib/accommodations');
+    const accommodations = normalizeAccommodations(accommodationsRaw);
+
+    // Build a compact deterministic accommodationsSummary string and per-category counts for logging
+    const categories = ['presentation','response','scheduling','setting','assistive_technology_device'];
+    const counts = { classroom: {}, assessment: {} };
+    categories.forEach(cat => {
+      counts.classroom[cat] = (accommodations.classroom[cat] || []).length;
+      counts.assessment[cat] = (accommodations.assessment[cat] || []).length;
+    });
+    const summaryParts = [];
+    summaryParts.push('Classroom: ' + categories.map(c => `${c.charAt(0).toUpperCase()+c.slice(1)}(${counts.classroom[c]})`).join(', '));
+    summaryParts.push('Assessment: ' + categories.map(c => `${c.charAt(0).toUpperCase()+c.slice(1)}(${counts.assessment[c]})`).join(', '));
+    summaryParts.push('ConsentObtained: ' + (accommodations.consent && accommodations.consent.parentConsentObtained ? 'true' : 'false'));
+    const accommodationsSummary = summaryParts.join('. ');
+    console.log('IEP generation - accommodations counts:', counts, 'summary:', accommodationsSummary);
 
     // User prompt with student data (built with join to avoid nested template-literal backtick issues)
     const userPrompt = [
@@ -49,6 +91,30 @@ You must return ONLY valid JSON with no additional text or markdown formatting.`
       `Instructional Setting: ${instructionalSetting}`,
       '',
       (customGoalsList ? `The student has the following CUSTOM GOALS that should be considered when recommending strategies and mapping to the IEP:\n${customGoalsList}\n` : ''),
+      '',
+      'Accommodations usage rule',
+      '"You are given accommodations + accommodationsSummary. You MUST incorporate selected accommodations as the conditions/supports in goals/objectives (e.g., \'Given…\', \'With…\', \'Using…\') when appropriate. Do NOT invent accommodations not provided."',
+      '',
+      'No-duplicate rule across layers',
+      '"Non-duplication is mandatory: Top-level annual_goals / short_term_objectives must be broad and cross-exceptionality; exceptionality-specific goals must be distinct and not paraphrases. Do not repeat near-identical goals/objectives anywhere. If two items would be similar, change the skill focus, condition, or measurable criterion."',
+      '',
+      'SMART measurability constraint',
+      '"Every annual goal and objective must include: behavior + condition (may include accommodations) + criterion + measurement window. Avoid vague wording."',
+      '',
+      'Condition line rule (mandatory): For every annual goal and short-term objective, include an explicit condition phrase that reflects supports when relevant (e.g., "Given text-to-speech...", "With extended time...", "Using preferential seating...", "With a small-group setting...").',
+      '',
+      'If no accommodation applies to a specific goal, still include a neutral condition phrase (e.g., "Given grade-level instruction and routine classroom supports...").',
+      '',
+      'When accommodations exist, distribute them logically (don\'t paste the entire list into every goal). Apply reading-related accommodations to reading/writing access tasks, scheduling/setting accommodations to attention/executive function tasks, etc.',
+      '',
+      'Do not create new accommodations; use only the provided selections.',
+      '',
+      'Accommodation-consistency constraint',
+      '"If an accommodation supports access (e.g., TTS/human reader), do not write goals that assume unsupported access. If the goal is to build the unsupported skill (e.g., independent decoding), explicitly state it as a targeted instructional goal and keep accommodations in place for content access."',
+      '',
+      'Accommodations (normalized):',
+      JSON.stringify(accommodations),
+      `AccommodationsSummary: ${accommodationsSummary}`,
       'Please provide a structured JSON response with these exact keys:',
       '{',
       '  "plaafp_narrative": "A detailed Present Level of Academic Achievement and Functional Performance narrative (3-4 paragraphs describing current abilities, challenges, and how disability impacts learning)",',
@@ -81,6 +147,92 @@ You must return ONLY valid JSON with no additional text or markdown formatting.`
     ].join('\n');
 
     // Call OpenAI API
+    // --- Duplicate detection helpers (token-based, lightweight) ---
+    const STOPWORDS = new Set(['the','and','to','of','in','with','a','an','is','are','for','on','that','this','be','as','by','at','or','from','it','was','were','will','can','may','such','these','those']);
+
+    function normalizeTextForSim(s) {
+      if (!s || typeof s !== 'string') return '';
+      return s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function tokensSet(s) {
+      const n = normalizeTextForSim(s);
+      if (!n) return new Set();
+      return new Set(n.split(' ').filter(w => w && !STOPWORDS.has(w)));
+    }
+
+    function jaccardSet(a, b) {
+      if (!a.size && !b.size) return 1;
+      const intersection = [...a].filter(x => b.has(x)).length;
+      const union = new Set([...a, ...b]).size;
+      return union === 0 ? 0 : intersection / union;
+    }
+
+    function isSimilarText(a, b) {
+      const na = normalizeTextForSim(a);
+      const nb = normalizeTextForSim(b);
+      if (!na || !nb) return false;
+      // substring check
+      if (na.includes(nb) || nb.includes(na)) return true;
+      const ta = tokensSet(na);
+      const tb = tokensSet(nb);
+      const j = jaccardSet(ta, tb);
+      return j >= 0.75;
+    }
+
+    function findDuplicates(output) {
+      const items = [];
+      try {
+        // annual_goals
+        if (Array.isArray(output.annual_goals)) {
+          output.annual_goals.forEach((t, i) => items.push({ path: `annual_goals[${i}]`, text: String(t || '') }));
+        }
+        // short_term_objectives
+        if (Array.isArray(output.short_term_objectives)) {
+          output.short_term_objectives.forEach((t, i) => items.push({ path: `short_term_objectives[${i}]`, text: String(t || '') }));
+        }
+        // annualGoalsByExceptionality -> goals[].goal or .goals entries
+        if (Array.isArray(output.annualGoalsByExceptionality)) {
+          output.annualGoalsByExceptionality.forEach((grp, gIdx) => {
+            const goals = Array.isArray(grp.goals) ? grp.goals : [];
+            goals.forEach((g, i) => {
+              const text = typeof g === 'string' ? g : (g && (g.goal || g.text)) || '';
+              items.push({ path: `annualGoalsByExceptionality[${gIdx}].goals[${i}]`, text: String(text) });
+            });
+          });
+        }
+        // shortTermObjectivesByExceptionality -> objectives[].objective
+        if (Array.isArray(output.shortTermObjectivesByExceptionality)) {
+          output.shortTermObjectivesByExceptionality.forEach((grp, gIdx) => {
+            const objs = Array.isArray(grp.objectives) ? grp.objectives : [];
+            objs.forEach((o, i) => {
+              const text = typeof o === 'string' ? o : (o && (o.objective || o.text)) || '';
+              items.push({ path: `shortTermObjectivesByExceptionality[${gIdx}].objectives[${i}]`, text: String(text) });
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('findDuplicates parsing error', e.message || e);
+      }
+
+      const dupPaths = new Set();
+      const n = items.length;
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          try {
+            if (!items[i].text || !items[j].text) continue;
+            if (isSimilarText(items[i].text, items[j].text)) {
+              dupPaths.add(items[i].path);
+              dupPaths.add(items[j].path);
+            }
+          } catch (e) {
+            // ignore pair errors
+          }
+        }
+      }
+      return Array.from(dupPaths);
+    }
+
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -108,7 +260,7 @@ You must return ONLY valid JSON with no additional text or markdown formatting.`
     }
 
     const data = await openaiResponse.json();
-    const generatedContent = JSON.parse(data.choices[0].message.content);
+    let generatedContent = JSON.parse(data.choices[0].message.content);
 
     // Add grouping of annual goals and short-term objectives by provided exceptionalities
     try {
@@ -160,6 +312,65 @@ You must return ONLY valid JSON with no additional text or markdown formatting.`
         }
       } catch (e) {
         generatedContent.custom_goals = [];
+      }
+
+      // --- Similarity guard: detect near-duplicates and perform a single retry if needed ---
+      try {
+        const dupPaths = findDuplicates(generatedContent || {});
+        if (dupPaths && dupPaths.length) {
+          console.log('Duplicate items detected in LLM output:', dupPaths.length, 'paths:', dupPaths);
+
+          // Prepare retry instruction including the original model output verbatim and flagged paths
+          const originalModelOutput = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content ? data.choices[0].message.content : JSON.stringify(generatedContent);
+
+          const retryInstruction = [
+            'The model output contained near-duplicate goals/objectives in the following locations:',
+            dupPaths.join(', '),
+            '',
+            'Strict instruction: Rewrite ONLY the flagged items to be distinct; keep all other items unchanged; preserve schema and referenceIds; do not reduce counts; keep accommodations consistent. Return ONLY valid JSON with the same schema as before.'
+          ].join('\n');
+
+          // Call the LLM one more time, providing the original assistant content and the strict rewrite instruction
+          try {
+            const retryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: userPrompt },
+                  { role: 'assistant', content: originalModelOutput },
+                  { role: 'user', content: retryInstruction }
+                ],
+                temperature: 0.7,
+                response_format: { type: 'json_object' }
+              })
+            });
+
+            if (retryResponse && retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              try {
+                const parsedRetry = JSON.parse(retryData.choices[0].message.content);
+                console.log('Similarity guard retry succeeded; using revised LLM output.');
+                // replace generatedContent with parsedRetry
+                generatedContent = parsedRetry;
+              } catch (e) {
+                console.warn('Similarity guard retry returned invalid JSON; keeping original output.', e.message || e);
+                // keep original generatedContent
+              }
+            } else {
+              console.warn('Retry LLM call failed or returned non-OK status; keeping original output.');
+            }
+          } catch (e) {
+            console.warn('Error during similarity-guard retry call:', e.message || e);
+          }
+        }
+      } catch (e) {
+        console.warn('Similarity guard processing error:', e.message || e);
       }
 
     return NextResponse.json({

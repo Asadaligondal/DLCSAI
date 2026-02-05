@@ -99,6 +99,8 @@ export default function StudentDetail() {
         disabilityCategory: student.disabilities?.join(', ') || 'Not specified',
         instructionalSetting: student.instructionalSetting || 'General Education',
         exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : [],
+        studentId: id,
+        student_accommodations: student.student_accommodations || null,
         customGoals
       });
 
@@ -335,6 +337,9 @@ export default function StudentDetail() {
         instructionalSetting: student.instructionalSetting || 'General Education'
         ,
         exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : []
+        ,
+        studentId: id,
+        student_accommodations: student.student_accommodations || null
       });
 
       const aiData = response.data.data;

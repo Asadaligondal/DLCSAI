@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
     }
 
     const user = authResult.user;
-    const { id } = params;
+    const { id } = await params;
 
     // Connect to database
     await connectDB();
@@ -85,7 +85,7 @@ export async function PUT(request, { params }) {
     }
 
     const user = authResult.user;
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations } = body;
 
@@ -156,7 +156,7 @@ export async function DELETE(request, { params }) {
     }
 
     const user = authResult.user;
-    const { id } = params;
+    const { id } = await params;
 
     console.log('Attempting to delete student with ID:', id);
 
