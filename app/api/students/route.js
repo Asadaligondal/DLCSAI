@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
 import Goal from '@/models/Goal';
 import { protectRoute } from '@/lib/authMiddleware';
+import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 
 /**
  * GET /api/students
@@ -27,11 +28,22 @@ export async function GET(request) {
       .populate('assignedGoals', 'title description category priority')
       .sort({ createdAt: -1 });
 
+    // For performance, include accommodations_count and has_accommodations summary
+    const studentsOut = students.map(s => {
+      const accom = s.student_accommodations || null;
+      const count = accommodationsCount(accom);
+      return {
+        ...s.toObject(),
+        accommodations_count: count,
+        has_accommodations: count > 0
+      };
+    });
+
     return NextResponse.json(
       {
         success: true,
-        count: students.length,
-        students
+        count: studentsOut.length,
+        students: studentsOut
       },
       { status: 200 }
     );
@@ -62,7 +74,7 @@ export async function POST(request) {
 
     const user = authResult.user;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, student_accommodations } = body;
 
     // Validate required fields
     if (!name || !studentId || !gradeLevel || !age) {
@@ -90,7 +102,8 @@ export async function POST(request) {
       );
     }
 
-    // Create new student
+    // Normalize accommodations and create new student
+    const normalized = normalizeAccommodations(student_accommodations);
     const student = await Student.create({
       name,
       studentId,
@@ -99,6 +112,7 @@ export async function POST(request) {
       disabilities: disabilities || [],
       strengths: strengths || [],
       weaknesses: weaknesses || [],
+      student_accommodations: normalized,
       createdBy: user._id
     });
 

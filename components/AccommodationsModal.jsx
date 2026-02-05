@@ -30,6 +30,7 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
   const [selectedCategory, setSelectedCategory] = useState('presentation');
   const [selectedCollapsed, setSelectedCollapsed] = useState(true);
   const [selectedOnly, setSelectedOnly] = useState(false);
+  const [toast, setToast] = useState({ show: false, msg: '' });
   const [filterHasSubOptions, setFilterHasSubOptions] = useState(false);
   const [filterNeedsConsent, setFilterNeedsConsent] = useState(false);
 
@@ -40,6 +41,8 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
       { key: 'setting', label: 'Setting', items: ACCOMMODATIONS_MASTER.setting },
       { key: 'assistive', label: 'Other Assistive Technology or Device', items: ACCOMMODATIONS_MASTER.assistive }
     ], []);
+
+    
 
     const toggleItem = (catKey, item) => {
       const scopeObj = { ...data[scope] };
@@ -58,6 +61,42 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
       }
       scopeObj[catKey] = arr;
       setData({ ...data, [scope]: scopeObj });
+      // show subtle toast when adding
+      if (idx === -1) {
+        const total = totalSelectedCount({ ...data, [scope]: scopeObj });
+        setToast({ show: true, msg: `Added to Selected (${total})` });
+        setTimeout(() => setToast({ show: false, msg: '' }), 1800);
+      }
+    };
+
+    const removeSelected = (scopeKey, catKey, itemId) => {
+      const scopeObj = { ...data[scopeKey] };
+      const arr = [...(scopeObj[catKey] || [])];
+      const idx = arr.findIndex(a => a.id === itemId);
+      if (idx !== -1) arr.splice(idx, 1);
+      scopeObj[catKey] = arr;
+      setData(prev => ({ ...prev, [scopeKey]: scopeObj }));
+    };
+
+    const totalSelectedCount = (d) => {
+      const target = d || data;
+      const c1 = Object.values(target.classroom || {}).flat().length;
+      const c2 = Object.values(target.assessment || {}).flat().length;
+      return c1 + c2;
+    };
+
+    // highlight matched text in labels when searching
+    const highlightLabel = (label) => {
+      if (!query) return label;
+      const q = query.trim().toLowerCase();
+      if (!q) return label;
+      const lower = label.toLowerCase();
+      const idx = lower.indexOf(q);
+      if (idx === -1) return label;
+      const before = label.slice(0, idx);
+      const match = label.slice(idx, idx + q.length);
+      const after = label.slice(idx + q.length);
+      return (<span>{before}<mark className="bg-yellow-200 rounded">{match}</mark>{after}</span>);
     };
 
     // auto-apply when inline
@@ -103,6 +142,19 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
       const q = query.toLowerCase();
       return items.filter(it => it.label.toLowerCase().includes(q) || (it.subOptions || []).some(s => s.label && s.label.toLowerCase().includes(q)));
     };
+
+    const overallVisible = useMemo(() => {
+      return categories.reduce((acc, c) => {
+        const items = filteredItems(c.items || []);
+        const visible = items.filter(item => {
+          if (selectedOnly && !((data.classroom?.[c.key === 'assistive' ? 'assistive_technology_device' : c.key] || []).some(i=>i.id===item.id) || (data.assessment?.[c.key === 'assistive' ? 'assistive_technology_device' : c.key] || []).some(i=>i.id===item.id))) return false;
+          if (filterHasSubOptions && (!item.subOptions || item.subOptions.length === 0)) return false;
+          if (filterNeedsConsent && !((item.tags || []).includes('requires_consent') || (item.tags || []).includes('assessment_limited'))) return false;
+          return true;
+        });
+        return acc + visible.length;
+      }, 0);
+    }, [categories, query, selectedOnly, filterHasSubOptions, filterNeedsConsent, data]);
 
     const isSelected = (catKey, itemId) => {
       const arr = data[scope][catKey] || [];
@@ -171,53 +223,66 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
 
         {!inline ? (
           <div className="space-y-3">
-            {categories.map(({ key, label, items }) => (
-              <div key={key} className="border rounded-md">
-                <button
-                  onClick={() => setOpenCats({ ...openCats, [key]: !openCats[key] })}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{label}</span>
-                    <span className="text-xs text-gray-500">{savedCount(key)} selected</span>
+              {overallVisible === 0 ? (
+                <div key="empty-all" className="p-6 border border-gray-100 rounded-md bg-white text-center">
+                  <div className="text-lg font-semibold">No accommodations found</div>
+                  <div className="mt-2 text-sm text-gray-500">Try a different keyword or clear filters.</div>
+                  <div className="mt-4">
+                    <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
                   </div>
-                  <div className="text-sm text-gray-500">{openCats[key] ? '−' : '+'}</div>
-                </button>
-
-                {openCats[key] && (
-                  <div className="p-4">
-                    <div className="space-y-2">
-                      {filteredItems(items).map(item => (
-                        <div key={item.id} className="flex flex-col border-b pb-2">
-                          <label className="flex items-center gap-3">
-                            <input type="checkbox" checked={isSelected(key, item.id)} onChange={() => toggleItem(key, item)} />
-                            <span className="text-sm">{item.label}</span>
-                            {item.tags && item.tags.length > 0 && (
-                              <span className="ml-2 flex gap-1">
-                                {item.tags.map(t => (
-                                  TAG_BADGE_LABELS[t] ? (
-                                    <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{TAG_BADGE_LABELS[t]}</span>
-                                  ) : (
-                                    <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{t}</span>
-                                  )
-                                ))}
-                              </span>
-                            )}
-                          </label>
-
-                          {(item.note || item.helper || item.extras) && (
-                            <div className="ml-8 mt-1 text-xs text-gray-500">
-                              {item.helper || item.note || (item.extras ? 'Includes additional options — expand to view details.' : '')}
+                </div>
+              ) : (
+                categories.map(({ key, label, items }) => (
+                  <div key={key} className="border rounded-md">
+                    <button
+                      onClick={() => setOpenCats({ ...openCats, [key]: !openCats[key] })}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{label}</span>
+                        <span className="text-xs text-gray-500">{savedCount(key)} selected</span>
+                      </div>
+                      <div className="text-sm text-gray-500">{openCats[key] ? '−' : '+'}</div>
+                    </button>
+                  {openCats[key] && (
+                    <div className="p-4">
+                      <div className="space-y-2">
+                        {filteredItems(items).map(item => (
+                          <div key={item.id} className="flex flex-col border-b border-gray-200 pb-2">
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => toggleItem(key, item)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(key, item); } }}
+                              className="flex items-center gap-3 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer"
+                            >
+                              <input onClick={(e) => e.stopPropagation()} type="checkbox" checked={isSelected(key, item.id)} onChange={() => toggleItem(key, item)} />
+                              <span className="text-sm">{highlightLabel(item.label)}</span>
+                              {item.tags && item.tags.length > 0 && (
+                                <span className="ml-2 flex gap-1">
+                                  {item.tags.map(t => (
+                                    TAG_BADGE_LABELS[t] ? (
+                                      <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{TAG_BADGE_LABELS[t]}</span>
+                                    ) : (
+                                      <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{t}</span>
+                                    )
+                                  ))}
+                                </span>
+                              )}
                             </div>
-                          )}
 
-                          {isSelected(key, item.id) && (
-                            <div className="pl-8 mt-2 space-y-2">
+                            {(item.note || item.helper || item.extras) && (
+                              <div className="ml-8 mt-1 text-xs text-gray-500">
+                                {item.helper || item.note || (item.extras ? 'Includes additional options — expand to view details.' : '')}
+                              </div>
+                            )}
+
+                            <div style={{ overflow: 'hidden', transition: 'max-height 180ms ease, opacity 180ms ease', maxHeight: isSelected(key, item.id) ? '400px' : '0px', opacity: isSelected(key, item.id) ? 1 : 0 }} className="pl-8 mt-2">
                               {item.subOptions && item.subOptions.length > 0 && (
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded border border-gray-100">
                                   {item.subOptions.map(so => (
-                                    <label key={so.id} className="flex items-center gap-2 text-sm">
-                                      <input type="checkbox" onChange={() => toggleSubOption(key, item.id, so.id)} checked={(data[scope][key] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
+                                    <label key={so.id} className="flex items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                                      <input onClick={(e) => e.stopPropagation()} type="checkbox" onChange={() => toggleSubOption(key, item.id, so.id)} checked={(data[scope][key] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
                                       <span>{so.label}</span>
                                     </label>
                                   ))}
@@ -225,35 +290,35 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                               )}
 
                               {item.other && (
-                                <div>
-                                  <input placeholder="Specify other" className="w-full border rounded-md px-3 h-10" value={(data[scope][key] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(key, item.id, e.target.value)} />
+                                <div className="mt-2">
+                                  <input onClick={(e) => e.stopPropagation()} placeholder="Specify other" className="w-full border rounded-md px-3 h-10" value={(data[scope][key] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(key, item.id, e.target.value)} />
                                 </div>
                               )}
 
                               {item.textarea && (
-                                <textarea placeholder="Details..." className="w-full border rounded-md p-2" value={(data[scope][key] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(key, item.id, e.target.value)} />
+                                <textarea onClick={(e) => e.stopPropagation()} placeholder="Details..." className="w-full border rounded-md p-2" value={(data[scope][key] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(key, item.id, e.target.value)} />
                               )}
 
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          </div>
+                        ))}
 
-                      <div className="mt-2">
-                        <label className="text-sm font-medium">Notes (optional)</label>
-                        <textarea value={data[scope][key + '_notes'] || ''} onChange={(e) => updateCategoryNotes(key, e.target.value)} className="w-full border rounded-md p-2 mt-1" />
+                        <div className="mt-2">
+                          <label className="text-sm font-medium">Notes (optional)</label>
+                          <textarea value={data[scope][key + '_notes'] || ''} onChange={(e) => updateCategoryNotes(key, e.target.value)} className="w-full border rounded-md p-2 mt-1" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  )}
+                </div>
+              ))
+              )}
+            </div>
         ) : (
-          // Inline two-column layout
-          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 min-w-0">
-            {/* Left nav */}
-            <div className="hidden md:flex flex-col h-full min-w-0">
+          // Inline two-column layout with proper scroll containment
+          <div className="flex flex-col md:flex-row gap-4 w-full min-w-0" style={{ height: 'calc(100vh - 250px)', minHeight: '500px' }}>
+            {/* Left nav - sticky and always visible (no independent scroll) */}
+            <div className="hidden md:flex flex-col w-[260px] flex-shrink-0 border-r border-gray-200 pr-4">
               <div className="space-y-2">
                 {categories.map(({ key, label }) => (
                   <button key={key} onClick={() => setSelectedCategory(key)} className={`w-full text-left px-3 py-2 rounded-r-md flex items-center justify-between ${selectedCategory === key ? 'bg-white border-l-4 border-blue-500 shadow-sm' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'}`}>
@@ -271,8 +336,8 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
               </div>
             </div>
 
-            {/* Right panel */}
-            <div className="flex flex-col h-full min-w-0">
+            {/* Right panel - flex column with scrolling list only */}
+            <div className="flex flex-col flex-1 w-full min-w-0 overflow-hidden border border-gray-200 rounded-md">
               {/* Small screens: category dropdown */}
               <div className="md:hidden mb-3">
                 <label className="block text-xs text-gray-600 mb-1">Category</label>
@@ -304,53 +369,159 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
 
                 {/* Quick filter chips */}
                 <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => setSelectedOnly(!selectedOnly)} className={`text-sm px-3 py-1 rounded-full ${selectedOnly ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Selected only</button>
+                  <button onClick={() => setSelectedOnly(!selectedOnly)} className={`text-sm px-3 py-1 rounded-full ${selectedOnly ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Review selected</button>
                   <button onClick={() => setFilterHasSubOptions(!filterHasSubOptions)} className={`text-sm px-3 py-1 rounded-full ${filterHasSubOptions ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Has sub-options</button>
                   <button onClick={() => setFilterNeedsConsent(!filterNeedsConsent)} className={`text-sm px-3 py-1 rounded-full ${filterNeedsConsent ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Needs consent</button>
                 </div>
+                {(query || filterHasSubOptions || filterNeedsConsent) && (
+                  <div className="mt-2">
+                    <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="text-sm text-blue-600 underline">Clear all filters</button>
+                  </div>
+                )}
               </div>
 
-              <div className="mt-3 overflow-y-auto pb-24" style={{ minWidth: 0 }}>
-                <div className="space-y-3">
-                  {(() => {
-                    const items = filteredItems((ACCOMMODATIONS_MASTER[selectedCategory] || []));
-                    const visible = items.filter(item => {
-                      if (selectedOnly && !isSelected(selectedCategory, item.id)) return false;
-                      if (filterHasSubOptions && (!item.subOptions || item.subOptions.length === 0)) return false;
-                      if (filterNeedsConsent && !((item.tags || []).includes('requires_consent') || (item.tags || []).includes('assessment_limited'))) return false;
-                      return true;
-                    });
-                    return visible.map(item => (
-                      <div key={item.id} className="border rounded-md p-3 hover:bg-gray-50 hover:shadow-sm min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className="pt-1">
-                            <input type="checkbox" checked={isSelected(selectedCategory, item.id)} onChange={() => toggleItem(selectedCategory, item)} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="text-sm font-semibold truncate">{item.label}</div>
-                              {item.tags && item.tags.length > 0 && (
-                                <div className="flex-shrink-0 ml-2 flex gap-1">
-                                  {item.tags.map(t => (
-                                    TAG_BADGE_LABELS[t] ? (
-                                      <span key={t} className="text-xs px-1 py-0.5 rounded bg-amber-100 text-amber-800">{TAG_BADGE_LABELS[t]}</span>
-                                    ) : (
-                                      <span key={t} className="text-xs px-1 py-0.5 rounded bg-gray-100 text-gray-700">{t}</span>
-                                    )
-                                  ))}
-                                </div>
-                              )}
+              {/* Inline toast hint */}
+              {toast.show && (
+                <div className="mt-2 text-sm text-green-700 bg-green-50 px-3 py-1 rounded inline-block">{toast.msg}</div>
+              )}
+
+              {/* Selected Summary (non-scrolling) - above the scrollable list */}
+              <div className="flex-shrink-0 mt-3">
+                <div>
+                  <div className="border rounded-md bg-white shadow-sm p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">Selected ({totalSelectedCount()})</div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setSelectedCollapsed(!selectedCollapsed)} className="text-sm px-2 py-1 bg-gray-100 rounded">{selectedCollapsed ? 'Expand' : 'Collapse'}</button>
+                      </div>
+                    </div>
+
+                    {!selectedCollapsed && (
+                      <div className="mt-2 space-y-2">
+                        {['presentation','response','scheduling','setting','assistive_technology_device'].map(cat => {
+                          const label = categories.find(c => c.key === (cat === 'assistive_technology_device' ? 'assistive' : cat))?.label || cat;
+                          const items = (data.classroom?.[cat] || []).concat(data.assessment?.[cat] || []);
+                          if (!items || items.length === 0) return null;
+                          return (
+                            <div key={cat}>
+                              <div className="text-xs font-medium text-gray-600">{label} ({items.length})</div>
+                              <div className="mt-1 flex flex-wrap gap-2">
+                                {items.map(it => (
+                                  <div key={it.id} className="flex items-center bg-gray-100 px-2 py-1 rounded-full text-sm">
+                                    <span className="max-w-[160px] truncate pr-2">{it.label}{it.subOptions && it.subOptions.length ? ` (${it.subOptions.length} options)` : ''}</span>
+                                    <button onClick={() => removeSelected((data.classroom?.[cat] || []).find(i => i.id === it.id) ? 'classroom' : 'assessment', cat, it.id)} className="ml-1 text-xs text-gray-600 px-1">×</button>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-                            <div className="mt-2 text-sm text-gray-600">{item.helper || item.note}</div>
+              {/* Scrollable accommodations list - only this section scrolls */}
+              <div className="flex-1 overflow-y-auto mt-3 pb-24" style={{ minWidth: 0 }}>
+                <div className="space-y-3">
+                  {selectedOnly ? (
+                    // Review selected: show selected items grouped by category for current scope
+                    totalSelectedCount() === 0 ? (
+                      <div className="p-6 border border-gray-100 rounded-md bg-white text-center">
+                        <div className="text-lg font-semibold">No selections yet</div>
+                        <div className="mt-2 text-sm text-gray-500">Start selecting accommodations</div>
+                      </div>
+                    ) : (
+                      ['presentation','response','scheduling','setting','assistive_technology_device'].map(cat => {
+                        const sel = data[scope]?.[cat] || [];
+                        if (!sel || sel.length === 0) return null;
+                        const label = categories.find(c => c.key === (cat === 'assistive_technology_device' ? 'assistive' : cat))?.label || cat;
+                        return (
+                          <div key={cat} className="space-y-2">
+                            <div className="text-sm font-medium">{label} ({sel.length})</div>
+                            {sel.map(item => (
+                              <div key={item.id} className="border rounded-md p-3 bg-white">
+                                <div className="flex items-start gap-3">
+                                  <div className="pt-1">
+                                    <input type="checkbox" checked={true} onChange={() => removeSelected(scope, cat, item.id)} />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-sm font-semibold">{item.label}</div>
+                                    <div className="mt-2 text-sm text-gray-600">{item.notes || ''}</div>
+                                    <div className="mt-3 bg-gray-50 p-3 rounded border">
+                                      {item.subOptions && item.subOptions.length > 0 && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                          {item.subOptions.map(soId => (
+                                            <div key={soId} className="text-sm flex items-center gap-2">
+                                              <input type="checkbox" checked={(item.subOptions || []).includes(soId)} readOnly />
+                                              <span>{soId}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })
+                    )
+                  ) : (
+                    (() => {
+                      const items = filteredItems((ACCOMMODATIONS_MASTER[selectedCategory] || []));
+                      const visible = items.filter(item => {
+                        if (selectedOnly && !isSelected(selectedCategory, item.id)) return false;
+                        if (filterHasSubOptions && (!item.subOptions || item.subOptions.length === 0)) return false;
+                        if (filterNeedsConsent && !((item.tags || []).includes('requires_consent') || (item.tags || []).includes('assessment_limited'))) return false;
+                        return true;
+                      });
 
-                            {isSelected(selectedCategory, item.id) && (
-                              <div className="mt-3 bg-gray-50 p-3 rounded border">
+                      if (visible.length === 0) {
+                        // Empty state for inline search/filters
+                        return (
+                          <div className="p-6 border border-gray-100 rounded-md bg-white text-center">
+                            <div className="text-lg font-semibold">No accommodations found</div>
+                            <div className="mt-2 text-sm text-gray-500">Try a different keyword or clear filters.</div>
+                            <div className="mt-4">
+                              <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return visible.map(item => (
+                        <div key={item.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(selectedCategory, item); } }} onClick={() => toggleItem(selectedCategory, item)} className="border rounded-md p-3 hover:bg-gray-50 hover:shadow-sm min-w-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300">
+                          <div className="flex items-start gap-3">
+                            <div className="pt-1 flex-shrink-0">
+                              <input onClick={(e) => e.stopPropagation()} type="checkbox" checked={isSelected(selectedCategory, item.id)} onChange={() => toggleItem(selectedCategory, item)} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="text-sm font-semibold word-break break-words leading-snug">{highlightLabel(item.label)}</div>
+                                {item.tags && item.tags.length > 0 && (
+                                  <div className="flex-shrink-0 flex gap-1 flex-wrap justify-end">
+                                    {item.tags.map(t => (
+                                      TAG_BADGE_LABELS[t] ? (
+                                        <span key={t} className="text-xs px-1 py-0.5 rounded bg-amber-100 text-amber-800 whitespace-nowrap">{TAG_BADGE_LABELS[t]}</span>
+                                      ) : (
+                                        <span key={t} className="text-xs px-1 py-0.5 rounded bg-gray-100 text-gray-700 whitespace-nowrap">{t}</span>
+                                      )
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-2 text-sm text-gray-600">{item.helper || item.note}</div>
+
+                              <div style={{ overflow: 'hidden', transition: 'max-height 200ms ease, opacity 200ms ease', maxHeight: isSelected(selectedCategory, item.id) ? '400px' : '0px', opacity: isSelected(selectedCategory, item.id) ? 1 : 0 }} className="mt-3 bg-gray-50 p-3 rounded border">
                                 {item.subOptions && item.subOptions.length > 0 && (
-                                  <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid grid-cols-2 gap-2 bg-gray-50 p-0 rounded">
                                     {item.subOptions.map(so => (
-                                      <label key={so.id} className="flex items-center gap-2 text-sm">
-                                        <input type="checkbox" onChange={() => toggleSubOption(selectedCategory, item.id, so.id)} checked={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
+                                      <label key={so.id} className="flex items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
+                                        <input onClick={(e) => e.stopPropagation()} type="checkbox" onChange={() => toggleSubOption(selectedCategory, item.id, so.id)} checked={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
                                         <span>{so.label}</span>
                                       </label>
                                     ))}
@@ -360,85 +531,30 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                                 {item.other && (
                                   <div className="mt-2">
                                     <label className="text-xs text-gray-600">Specify</label>
-                                    <input placeholder="Specify" className="w-full border rounded-md px-3 h-9 mt-1" value={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(selectedCategory, item.id, e.target.value)} />
+                                    <input onClick={(e) => e.stopPropagation()} placeholder="Specify" className="w-full border rounded-md px-3 h-9 mt-1" value={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.otherText || ''} onChange={(e) => updateOtherText(selectedCategory, item.id, e.target.value)} />
                                   </div>
                                 )}
                               </div>
-                            )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  })()}
-                </div>
-
-                {/* Selected summary collapsible (moved to right panel top) */}
-                {/* Consent card */}
-                <div className="mt-6 p-4 border rounded-md bg-gray-50">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={data.consent.parentConsentObtained} onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentObtained: e.target.checked } })} />
-                    <span className="text-sm">Parent consent obtained{data.consent.parentConsentRequired ? ' (required for selected items)' : ''}</span>
-                  </label>
-                  <textarea placeholder="Consent notes / implications acknowledged..." className="w-full border rounded-md p-2 mt-2" value={data.consent.consentNotes} onChange={(e) => setData({ ...data, consent: { ...data.consent, consentNotes: e.target.value } })} />
-                  {data.consent.parentConsentObtained && (
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <div>
-                        <input type="text" value={data.consent.parentConsentName || ''} onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentName: e.target.value } })} className="w-full border rounded-md px-2 h-10" placeholder="Parent/Guardian name" />
-                      </div>
-                      <div>
-                        <input type="date" value={data.consent.parentConsentDate || ''} onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentDate: e.target.value } })} className="w-full border rounded-md px-2 h-10" />
-                      </div>
-                    </div>
+                      ))
+                    })()
                   )}
                 </div>
+
+                {/* Consent card moved to footer for better layout */}
               </div>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="w-2/3">
-            {hasAssessmentLimited && (
-              <div className="mb-2 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-amber-800 rounded">
-                Some selected classroom accommodations may not be allowable on statewide/district assessments. Parent consent is required for those classroom-only accommodations and must be obtained and recorded here before saving.
-              </div>
-            )}
-
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={data.consent.parentConsentObtained} onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentObtained: e.target.checked } })} />
-              <span className="text-sm">Parent consent obtained{data.consent.parentConsentRequired ? ' (required for selected items)' : ''}</span>
-            </label>
-            <textarea placeholder="Consent notes / implications acknowledged..." className="w-full border rounded-md p-2 mt-2" value={data.consent.consentNotes} onChange={(e) => setData({ ...data, consent: { ...data.consent, consentNotes: e.target.value } })} />
-
-            {data.consent.parentConsentObtained && (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-gray-600">Parent/Guardian name</label>
-                  <input
-                    type="text"
-                    value={data.consent.parentConsentName || ''}
-                    onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentName: e.target.value } })}
-                    className="w-full border rounded-md px-2 h-10"
-                    placeholder="Typed parent/guardian name"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">Consent date</label>
-                  <input
-                    type="date"
-                    value={data.consent.parentConsentDate || ''}
-                    onChange={(e) => setData({ ...data, consent: { ...data.consent, parentConsentDate: e.target.value } })}
-                    className="w-full border rounded-md px-2 h-10"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="text-xs text-gray-500">Actions</div>
-            <div className="flex gap-2">
-              <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-md">Cancel</button>
+        {/* Footer - sticky at bottom with minimal action buttons */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 z-20 w-full" style={{ overflowX: 'hidden' }}>
+          <div className="px-4 py-3 flex items-center justify-between gap-4 min-w-0">
+            <div className="text-xs text-gray-600 flex-shrink-0">{totalSelectedCount()} accommodations selected</div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button onClick={onClose} className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 whitespace-nowrap">Cancel</button>
               <button onClick={() => {
                 const html = generatePrintableHTML(data);
                 const w = window.open('', '_blank', 'noopener,noreferrer');
@@ -448,7 +564,7 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                   w.focus();
                   setTimeout(() => w.print(), 300);
                 }
-              }} className="px-4 py-2 bg-gray-200 rounded-md text-sm">Print Consent Summary</button>
+              }} className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 whitespace-nowrap">Print</button>
               <button
                 onClick={() => {
                   if (hasAssessmentLimited && !data.consent.parentConsentObtained) {
@@ -468,8 +584,8 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                   }
                   if (!inline && onClose) onClose();
                 }}
-                className={`px-4 py-2 ${hasAssessmentLimited && !data.consent.parentConsentObtained ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white'} rounded-md`}>
-                {inline ? 'Apply Accommodations' : 'Save Accommodations'}
+                className={`px-4 py-1.5 text-sm rounded-md font-medium whitespace-nowrap ${hasAssessmentLimited && !data.consent.parentConsentObtained ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                {inline ? 'Apply' : 'Save'}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
 import { protectRoute } from '@/lib/authMiddleware';
+import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 
 /**
  * GET /api/students/[id]
@@ -44,10 +45,17 @@ export async function GET(request, { params }) {
       console.log('✅ Is reviewed:', student.iep_plan_data.is_reviewed);
     }
 
+    // Ensure accommodations structure exists and is normalized for returned object
+    if (student) {
+      student.student_accommodations = normalizeAccommodations(student.student_accommodations);
+    }
+
+    const out = student ? ({ ...student.toObject(), accommodations_count: accommodationsCount(student.student_accommodations) }) : null;
+
     return NextResponse.json(
       {
         success: true,
-        student
+        student: out
       },
       { status: 200 }
     );
@@ -79,7 +87,7 @@ export async function PUT(request, { params }) {
     const user = authResult.user;
     const { id } = params;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations } = body;
 
     // Connect to database
     await connectDB();
@@ -108,6 +116,9 @@ export async function PUT(request, { params }) {
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
     if (annualGoals !== undefined) student.annualGoals = annualGoals;
     if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;
+    if (student_accommodations !== undefined) {
+      student.student_accommodations = normalizeAccommodations(student_accommodations);
+    }
 
     await student.save();
 
