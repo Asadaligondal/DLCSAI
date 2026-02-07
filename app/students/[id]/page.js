@@ -12,10 +12,13 @@ import { saveAs } from 'file-saver';
 import { ArrowLeft, Save } from 'lucide-react';
 
 import StudentInfoHeader from './components/StudentInfoHeader';
+import EditorHeader from './components/EditorHeader';
+import StickyActionBar from './components/StickyActionBar';
 import IEPPlanEditor from './components/IEPPlanEditor';
+import RightTOC from './components/RightTOC';
 import GoalsObjectivesSection from './components/GoalsObjectivesSection';
 import CustomizeGoalModal from './components/CustomizeGoalModal';
-import { HeaderActions, FooterActions } from './components/InterventionsAndFooterActions';
+import GoalsCard from './components/GoalsCard';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -582,6 +585,17 @@ export default function StudentDetail() {
         <Navbar />
 
         <div className="max-w-full px-8 py-6">
+          <EditorHeader student={student} />
+
+          <StickyActionBar
+            onRegenerate={handleGenerateIEP}
+            onSave={handleSaveChanges}
+            onDownload={handleExportToWord}
+            onReset={handleResetToOriginal}
+            isReviewed={isReviewed}
+            isBusy={isGenerating}
+          />
+
           <StudentInfoHeader
             student={student}
             isEditing={isEditing}
@@ -612,26 +626,53 @@ export default function StudentDetail() {
             />
           )}
 
+          {/* Goals Card - show always when student exists */}
+          <GoalsCard
+            student={student}
+            onCustomizeGoals={() => setShowCustomizeModal(true)}
+            onRegenerateCustomGoals={handleRegenerateFromHeader}
+            onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
+            isGenerating={isGenerating}
+            handleGenerateIEP={handleGenerateIEP}
+            hasExistingPlan={hasExistingPlan}
+          />
+
           {hasExistingPlan && generatedPlan && editablePlan && (
-            <IEPPlanEditor
-              originalAIPlan={originalAIPlan}
-              editablePlan={editablePlan}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              isReviewed={isReviewed}
-              setIsReviewed={setIsReviewed}
-              isGenerating={isGenerating}
-              handleGenerateIEP={handleGenerateIEP}
-              handleRegenerateOriginal={handleGenerateIEP}
-              handleResetToOriginal={handleResetToOriginal}
-              handleSaveChanges={handleSaveChanges}
-              handleExportToWord={handleExportToWord}
-              removeGoal={removeGoal}
-              removeObjective={removeObjective}
-              updateGoal={updateGoal}
-              updateObjective={updateObjective}
-              setEditablePlan={setEditablePlan}
-            />
+            <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
+              <div>
+                <IEPPlanEditor
+                  originalAIPlan={originalAIPlan}
+                  editablePlan={editablePlan}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  isReviewed={isReviewed}
+                  setIsReviewed={setIsReviewed}
+                  isGenerating={isGenerating}
+                  handleGenerateIEP={handleGenerateIEP}
+                  handleRegenerateOriginal={handleGenerateIEP}
+                  handleResetToOriginal={handleResetToOriginal}
+                  handleSaveChanges={handleSaveChanges}
+                  handleExportToWord={handleExportToWord}
+                  removeGoal={removeGoal}
+                  removeObjective={removeObjective}
+                  updateGoal={updateGoal}
+                  updateObjective={updateObjective}
+                  setEditablePlan={setEditablePlan}
+                />
+              </div>
+
+              <div>
+                <RightTOC sections={[
+                  { id: 'plaafp-narrative', label: 'PLAAFP Narrative' },
+                  { id: 'goals-objectives-by-exceptionality', label: 'Goals & Objectives by Exceptionality' },
+                  { id: 'annual-goals', label: 'Annual Goals' },
+                  { id: 'short-term-objectives', label: 'Short-Term Objectives' },
+                  { id: 'custom-goals', label: 'Custom Goals' },
+                  { id: 'intervention-recommendations', label: 'Intervention Recommendations' },
+                  { id: 'final-review', label: 'Final Review' }
+                ]} />
+              </div>
+            </div>
           )}
 
         </div>

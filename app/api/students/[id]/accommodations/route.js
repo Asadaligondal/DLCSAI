@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
     const authResult = await protectRoute(request);
     if (authResult.error) return authResult.response;
     const user = authResult.user;
-    const { id } = params;
+    const { id } = await params;
 
     await connectDB();
 
@@ -29,7 +29,7 @@ export async function POST(request, { params }) {
     const authResult = await protectRoute(request);
     if (authResult.error) return authResult.response;
     const user = authResult.user;
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     await connectDB();
