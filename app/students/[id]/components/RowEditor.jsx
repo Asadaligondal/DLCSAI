@@ -16,7 +16,7 @@ export default function RowEditor({ index, value, onChange, onDelete, placeholde
 
   return (
     <div className="flex items-start gap-3 py-2 hover:bg-slate-50 p-1 rounded">
-      <div className={`flex-shrink-0 w-6 h-6 ${badgeColor} text-white rounded-full flex items-start justify-center text-xs font-semibold pt-1`}>{index + 1}</div>
+      <div className={`flex-shrink-0 w-6 h-6 ${badgeColor} text-white rounded-full flex items-start justify-center text-xs font-semibold pt-1`}>{Number.isFinite(index) ? index + 1 : '?'}</div>
 
       <div className="flex-1">
         <textarea

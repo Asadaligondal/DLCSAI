@@ -79,23 +79,31 @@ export default function GoalsObjectivesSection({
                 {originalAIPlan.annualGoalsByExceptionality.map((group) => (
                   <SectionCard key={group.exceptionality} title={group.exceptionality} subtitle={`${group.goals?.length || 0} goals`}>
                     <div className="space-y-2">
-                      {group.goals?.map((g, gi) => (
-                        <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
-                          <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
-                          <p className="text-gray-700 text-sm">{formatAnnualGoal(g)}</p>
-                        </div>
-                      ))}
+                      {group.goals?.map((g, gi) => {
+                        const parsedG = parseInt(g?.referenceId, 10);
+                        const gDisplayIndex = Number.isFinite(parsedG) ? parsedG : gi;
+                        return (
+                          <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
+                            <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{gDisplayIndex + 1}</div>
+                            <p className="text-gray-700 text-sm">{formatAnnualGoal(g)}</p>
+                          </div>
+                        );
+                      })}
 
                       {originalAIPlan.shortTermObjectivesByExceptionality && originalAIPlan.shortTermObjectivesByExceptionality.length > 0 && (
                         <div className="mt-2">
                           <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
                           <div className="space-y-2">
-                            {(originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
-                              <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
-                                <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
-                                <p className="text-gray-700 text-sm">{formatObjective(o)}</p>
-                              </div>
-                            ))}
+                            {(originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o, oi) => {
+                              const parsedO = parseInt(o?.referenceId, 10);
+                              const oDisplayIndex = Number.isFinite(parsedO) ? parsedO : oi;
+                              return (
+                                <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
+                                  <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{oDisplayIndex + 1}</div>
+                                  <p className="text-gray-700 text-sm">{formatObjective(o)}</p>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -185,7 +193,7 @@ export default function GoalsObjectivesSection({
                       {group.goals?.map((g, gi) => (
                         <RowEditor
                           key={`eg-${g.referenceId}`}
-                          index={parseInt(g.referenceId, 10)}
+                          index={parseInt(g.referenceId, 10) || gi}
                           value={formatAnnualGoal(g)}
                           onChange={(val) => updateGroupedGoal(gIdx, gi, val)}
                           onDelete={null}
@@ -201,7 +209,7 @@ export default function GoalsObjectivesSection({
                               return (
                                   <RowEditor
                                     key={`eo-${objGroupIndex}-${oi}-${o.referenceId ?? oi}`}
-                                    index={parseInt(o.referenceId, 10)}
+                                    index={parseInt(o.referenceId, 10) || oi}
                                     value={formatObjective(o)}
                                     onChange={(val) => updateGroupedObjective(objGroupIndex, oi, val)}
                                     onDelete={null}

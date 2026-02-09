@@ -73,6 +73,38 @@ Input JSON schema (examples of keys you will receive):
   "signatures": { "parent":{ "name","date" }, "caseManager":{ "name","date" } }
 }
 
+QUALITY & CONSISTENCY RULES (MANDATORY)
+
+A) Grounding (weakness/baseline driven)
+
+Every goal/objective must be grounded in weaknesses and/or PLAAFP baselines.
+
+If missing, insert placeholders like [MISSING: weaknesses] or [MISSING: academicBaseline].
+
+B) Non-duplication (global)
+
+No duplicates across: annualGoals, shortTermObjectives, goalsByExceptionality.*, structuredGoals, structuredObjectives, and text in documentMarkdown/documentHtml.
+
+Duplicates = same skill focus with similar condition + criterion (even paraphrased).
+
+If overlap risk occurs, force divergence by changing skill focus, condition, measurement method, criterion, or time window.
+
+C) Layer separation
+
+sections.annualGoals/shortTermObjectives: broad cross-setting priorities (no disability-label language).
+
+sections.goalsByExceptionality: disability-impact-specific targets.
+
+Do not restate same goal in both layers.
+
+D) SMART enforcement
+
+Each annual goal and objective must have: condition + observable behavior + measurable criterion + measurement window.
+
+Avoid vague verbs unless paired with measurable behavior + numeric criteria.
+
+Acceptance check: exceptionality layer does not repeat general layer; objectives aren't just restating goals.
+
 Output requirements:
 Return exactly one JSON object as the full response with these keys:
 
