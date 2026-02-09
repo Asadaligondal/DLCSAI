@@ -556,7 +556,18 @@ export default function StudentDetail() {
   // Update a specific annual goal text (keeps same behavior)
   const updateGoal = (index, text) => {
     const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
-    newGoals[index] = text;
+    const existing = newGoals[index];
+    if (existing == null || typeof existing === 'string') {
+      newGoals[index] = text;
+    } else if (typeof existing === 'object') {
+      const g = { ...existing };
+      if ('title' in g) g.title = text;
+      else if ('goal' in g) g.goal = text;
+      else g.title = text;
+      newGoals[index] = g;
+    } else {
+      newGoals[index] = text;
+    }
     setEditablePlan({ ...editablePlan, annual_goals: newGoals });
   };
 
@@ -565,7 +576,18 @@ export default function StudentDetail() {
     const newObjectives = Array.isArray(editablePlan?.short_term_objectives)
       ? [...editablePlan.short_term_objectives]
       : [];
-    newObjectives[index] = text;
+    const existing = newObjectives[index];
+    if (existing == null || typeof existing === 'string') {
+      newObjectives[index] = text;
+    } else if (typeof existing === 'object') {
+      const o = { ...existing };
+      if ('text' in o) o.text = text;
+      else if ('objective' in o) o.objective = text;
+      else o.text = text;
+      newObjectives[index] = o;
+    } else {
+      newObjectives[index] = text;
+    }
     setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
   };
 

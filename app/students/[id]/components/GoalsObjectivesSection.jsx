@@ -3,6 +3,24 @@ import { X } from 'lucide-react';
 import SectionCard from './SectionCard';
 import RowEditor from './RowEditor';
 
+// Helpers to safely format goals/objectives that may be strings or objects
+function formatAnnualGoal(goal) {
+  if (typeof goal === 'string') return goal;
+  if (!goal) return '';
+  if (goal.title) return goal.title;
+  if (goal.goal) return goal.goal;
+  // fallback compose
+  return [goal.condition, goal.behavior, goal.criteria].filter(Boolean).join(' ').trim();
+}
+
+function formatObjective(obj) {
+  if (typeof obj === 'string') return obj;
+  if (!obj) return '';
+  if (obj.text) return obj.text;
+  if (obj.objective) return obj.objective;
+  return [obj.text, obj.criteria].filter(Boolean).join(' ').trim();
+}
+
 export default function GoalsObjectivesSection({
   originalAIPlan,
   editablePlan,
@@ -64,7 +82,7 @@ export default function GoalsObjectivesSection({
                       {group.goals?.map((g, gi) => (
                         <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
                           <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(g.referenceId, 10) + 1}</div>
-                          <p className="text-gray-700 text-sm">{g.goal}</p>
+                          <p className="text-gray-700 text-sm">{formatAnnualGoal(g)}</p>
                         </div>
                       ))}
 
@@ -75,7 +93,7 @@ export default function GoalsObjectivesSection({
                             {(originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o) => (
                               <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
                                 <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{parseInt(o.referenceId, 10) + 1}</div>
-                                <p className="text-gray-700 text-sm">{o.objective}</p>
+                                <p className="text-gray-700 text-sm">{formatObjective(o)}</p>
                               </div>
                             ))}
                           </div>
@@ -93,7 +111,7 @@ export default function GoalsObjectivesSection({
               {originalAIPlan.annual_goals?.map((goal, index) => (
                 <div key={index} className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                  <p className="text-gray-700 text-sm pt-0.5">{goal}</p>
+                  <p className="text-gray-700 text-sm pt-0.5">{formatAnnualGoal(goal)}</p>
                 </div>
               ))}
             </div>
@@ -104,7 +122,7 @@ export default function GoalsObjectivesSection({
               {originalAIPlan.short_term_objectives?.map((objective, index) => (
                 <div key={index} className="flex gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                  <p className="text-gray-700 text-sm pt-0.5">{objective}</p>
+                  <p className="text-gray-700 text-sm pt-0.5">{formatObjective(objective)}</p>
                 </div>
               ))}
             </div>
@@ -168,7 +186,7 @@ export default function GoalsObjectivesSection({
                         <RowEditor
                           key={`eg-${g.referenceId}`}
                           index={parseInt(g.referenceId, 10)}
-                          value={g.goal}
+                          value={formatAnnualGoal(g)}
                           onChange={(val) => updateGroupedGoal(gIdx, gi, val)}
                           onDelete={null}
                         />
@@ -181,14 +199,14 @@ export default function GoalsObjectivesSection({
                             {(editablePlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o, oi) => {
                               const objGroupIndex = editablePlan.shortTermObjectivesByExceptionality.findIndex(sg => sg.exceptionality === group.exceptionality);
                               return (
-                                <RowEditor
-                                  key={`eo-${objGroupIndex}-${oi}-${o.referenceId ?? oi}`}
-                                  index={parseInt(o.referenceId, 10)}
-                                  value={o.objective}
-                                  onChange={(val) => updateGroupedObjective(objGroupIndex, oi, val)}
-                                  onDelete={null}
-                                />
-                              );
+                                  <RowEditor
+                                    key={`eo-${objGroupIndex}-${oi}-${o.referenceId ?? oi}`}
+                                    index={parseInt(o.referenceId, 10)}
+                                    value={formatObjective(o)}
+                                    onChange={(val) => updateGroupedObjective(objGroupIndex, oi, val)}
+                                    onDelete={null}
+                                  />
+                                );
                             })}
                           </div>
                         </div>
@@ -202,11 +220,11 @@ export default function GoalsObjectivesSection({
 
           <SectionCard id="annual-goals" title="Annual Goals" subtitle="Edit goals in rows" open={openGoals} onToggle={() => setOpenGoals(s => !s)}>
             <div className="space-y-2">
-              {editablePlan.annual_goals?.map((goal, index) => (
+                      {editablePlan.annual_goals?.map((goal, index) => (
                 <RowEditor
                   key={index}
                   index={index}
-                  value={goal}
+                  value={formatAnnualGoal(goal)}
                   onChange={(val) => updateGoal(index, val)}
                   onDelete={() => removeGoal(index)}
                   badgeColor={'bg-slate-400'}
@@ -221,7 +239,7 @@ export default function GoalsObjectivesSection({
                 <RowEditor
                   key={index}
                   index={index}
-                  value={objective}
+                  value={formatObjective(objective)}
                   onChange={(val) => updateObjective(index, val)}
                   onDelete={() => removeObjective(index)}
                   badgeColor={'bg-slate-400'}
