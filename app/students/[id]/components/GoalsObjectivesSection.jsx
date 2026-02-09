@@ -141,14 +141,23 @@ export default function GoalsObjectivesSection({
           </SectionCard>
 
           <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Suggested custom goals" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
+            {(() => {
+              console.log('🎯 Custom Goals Debug - originalAIPlan.custom_goals:', originalAIPlan.custom_goals);
+              console.log('🎯 Custom Goals Debug - Array.isArray:', Array.isArray(originalAIPlan.custom_goals));
+              console.log('🎯 Custom Goals Debug - Length:', originalAIPlan.custom_goals?.length);
+              return null;
+            })()}
             {originalAIPlan.custom_goals && originalAIPlan.custom_goals.length > 0 ? (
               <div className="space-y-2">
-                {originalAIPlan.custom_goals.map((cg, idx) => (
-                  <div key={`cg-${idx}`} className="p-2 border border-gray-100 rounded">
-                    <div className="text-sm font-medium text-gray-800">{cg.title}</div>
-                    <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || ''}</div>
-                  </div>
-                ))}
+                {originalAIPlan.custom_goals.map((cg, idx) => {
+                  console.log(`🎯 Custom Goal ${idx}:`, cg);
+                  return (
+                    <div key={`cg-${idx}`} className="p-2 border border-gray-100 rounded">
+                      <div className="text-sm font-medium text-gray-800">{cg.title}</div>
+                      <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || cg.description || ''}</div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-start gap-3 text-sm text-gray-600">
