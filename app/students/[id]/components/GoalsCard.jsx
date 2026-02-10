@@ -7,7 +7,6 @@ import SectionCard from './SectionCard';
 export default function GoalsCard({
   student,
   onCustomizeGoals,
-  onRegenerateCustomGoals,
   isGenerating,
   handleGenerateIEP,
   hasExistingPlan
@@ -23,15 +22,6 @@ export default function GoalsCard({
       >
         <Target className="w-4 h-4" />
         {goals.length > 0 ? 'View Custom Goals' : 'Customize Goals'}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onRegenerateCustomGoals && onRegenerateCustomGoals()}
-        disabled={!(goals.length > 0)}
-        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg w-full sm:w-auto ${!(goals.length > 0) ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-      >
-        Regenerate IEP with Custom Goals
       </button>
     </div>
   );

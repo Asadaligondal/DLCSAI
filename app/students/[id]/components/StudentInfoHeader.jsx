@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import MultiSelect from '@/components/MultiSelect';
-import { X, Save } from 'lucide-react';
+import { X, Save, Target } from 'lucide-react';
 import AccommodationsModal from '@/components/AccommodationsModal';
+import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
 
 export default function StudentInfoHeader({
@@ -20,11 +21,13 @@ export default function StudentInfoHeader({
   strengthsOptions,
   weaknessesOptions
   , onCustomizeGoals,
-  onRegenerateCustomGoals
-  , onAccommodationsSaved
+  onCustomGoalsSaved,
+  onAccommodationsSaved
 }) {
   const [showAccommodations, setShowAccommodations] = useState(false);
   const [accommodationsInitial, setAccommodationsInitial] = useState(null);
+  const [showCustomGoals, setShowCustomGoals] = useState(false);
+  const [customGoals, setCustomGoals] = useState([]);
   const [showAccomDetails, setShowAccomDetails] = useState(false);
 
   const openAccommodations = async () => {
@@ -67,6 +70,12 @@ export default function StudentInfoHeader({
     }
 
     if (onAccommodationsSaved) onAccommodationsSaved();
+  };
+
+  const handleCustomGoalsSave = (goals) => {
+    setCustomGoals(goals);
+    setShowCustomGoals(false);
+    if (onCustomGoalsSaved) onCustomGoalsSaved(goals);
   };
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -209,6 +218,23 @@ export default function StudentInfoHeader({
 
               <div>
                 <button onClick={openAccommodations} className="px-3 py-1 text-sm bg-gray-100 rounded-md">Edit accommodations</button>
+              </div>
+            </div>
+
+            <div className="mt-2 border-t border-slate-100 pt-2 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-medium text-gray-700">Custom Goals</div>
+                <div className="text-sm text-gray-500">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
+              </div>
+
+              <div>
+                <button 
+                  onClick={() => setShowCustomGoals(true)} 
+                  className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200"
+                >
+                  <Target className="w-3 h-3" />
+                  Edit custom goals
+                </button>
               </div>
             </div>
 
@@ -372,6 +398,14 @@ export default function StudentInfoHeader({
             onSave={(data) => { handleSaveAccommodations(data); setShowAccommodations(false); if (onAccommodationsSaved) onAccommodationsSaved(); }}
           />
         </Modal>
+      )}
+
+      {showCustomGoals && (
+        <CustomGoalsModal
+          initial={customGoals}
+          onClose={() => setShowCustomGoals(false)}
+          onSave={handleCustomGoalsSave}
+        />
       )}
     </div>
   );

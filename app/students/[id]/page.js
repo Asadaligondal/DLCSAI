@@ -18,7 +18,7 @@ import IEPPlanEditor from './components/IEPPlanEditor';
 import RightTOC from './components/RightTOC';
 import GoalsObjectivesSection from './components/GoalsObjectivesSection';
 import CustomizeGoalModal from './components/CustomizeGoalModal';
-import GoalsCard from './components/GoalsCard';
+// GoalsCard removed from main layout; custom goals are managed via StudentInfoHeader modal
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -83,113 +83,7 @@ export default function StudentDetail() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
-
-  // Handle regeneration initiated from CustomizeGoalModal via event
-  // REFACTORED: Now uses isolated custom goals endpoint - only updates custom_goals,
-  // leaving all other IEP sections (PLAAFP, annual goals, objectives, interventions) unchanged
-  const regenerateIEPWithCustomGoals = async (goalsList) => {
-    try {
-      if (!goalsList || goalsList.length === 0) {
-        toast.info('No custom goals to include');
-        return;
-      }
-
-      setIsGenerating(true);
-
-      // Prepare existing IEP snapshot for de-duplication context (read-only)
-      const existingIEPSnapshot = editablePlan ? {
-        annualGoals: editablePlan.annual_goals || [],
-        shortTermObjectives: editablePlan.short_term_objectives || [],
-        goalsByExceptionality: editablePlan.annualGoalsByExceptionality || {}
-      } : null;
-
-      const customGoalsInput = goalsList.map(g => ({
-        title: g.title || g,
-        description: g.description || '',
-        category: g.category || 'Academic'
-      }));
-
-      // Call the new isolated custom goals endpoint
-      const res = await axios.post('/api/iep/custom-goals', {
-        student: {
-          id,
-          gradeLevel: student.gradeLevel,
-          age: student.age,
-          disabilities: student.disabilities,
-          areaOfNeed: student.areaOfNeed,
-          performanceQuantitative: student.performanceQuantitative,
-          performanceNarrative: student.performanceNarrative,
-          instructionalSetting: student.instructionalSetting
-        },
-        plaafp: editablePlan ? {
-          presentLevels: editablePlan.plaafp_narrative,
-          academicBaseline: student.performanceQuantitative,
-          functionalBaseline: student.performanceNarrative
-        } : null,
-        strengths: student.strengths || [],
-        weaknesses: student.weaknesses || [],
-        accommodations: student.student_accommodations || {},
-        existingIEPSnapshot,
-        customGoalsInput
-      });
-
-      const customGoalsData = res.data.data;
-      if (!customGoalsData || !customGoalsData.customGoals) {
-        toast.error('Failed to generate custom goals');
-        return;
-      }
-
-      console.log('🎯 Custom Goals Response:', customGoalsData);
-      console.log('🎯 Custom Goals Array:', customGoalsData.customGoals);
-
-      // ISOLATED UPDATE: Only update custom goals, leave everything else untouched
-      if (editablePlan && originalAIPlan) {
-        const updatedEditablePlan = {
-          ...editablePlan,
-          custom_goals: customGoalsData.customGoals
-        };
-        
-        const updatedOriginalPlan = {
-          ...originalAIPlan,
-          custom_goals: customGoalsData.customGoals
-        };
-
-        console.log('🔄 Updated Original Plan custom_goals:', updatedOriginalPlan.custom_goals);
-        console.log('🔄 Updated Editable Plan custom_goals:', updatedEditablePlan.custom_goals);
-
-        setEditablePlan(updatedEditablePlan);
-        setOriginalAIPlan(updatedOriginalPlan);
-        setGeneratedPlan(updatedEditablePlan);
-
-        // Save only the updated custom goals, keeping all other IEP content unchanged
-        await axios.put(`/api/students/${id}/save-iep`, {
-          original_ai_draft: updatedOriginalPlan,
-          user_edited_version: updatedEditablePlan,
-          is_reviewed: isReviewed
-        }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
-
-        console.log('✅ Custom Goals Updated Successfully - Rest of IEP Unchanged');
-        toast.success('Custom goals generated successfully');
-      } else {
-        toast.error('No existing IEP to update custom goals');
-      }
-    } catch (err) {
-      console.error('Custom Goals Regenerate Error:', err);
-      toast.error(err.response?.data?.error || 'Failed to regenerate custom goals');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  useEffect(() => {
-    const handler = (e) => {
-      const goalsList = e.detail?.goals || [];
-      regenerateIEPWithCustomGoals(goalsList);
-    };
-
-    window.addEventListener('customGoalsRegenerate', handler);
-    return () => window.removeEventListener('customGoalsRegenerate', handler);
-  }, [student, id]);
+  const [customGoals, setCustomGoals] = useState([]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [formData, setFormData] = useState({
@@ -373,7 +267,8 @@ export default function StudentDetail() {
   const handleGenerateIEP = async () => {
     setIsGenerating(true);
     try {
-      console.log('🎯 Generating IEP for student:', student);
+      // Convert custom goals to the format expected by the API
+      const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
       
       const response = await axios.post('/api/generate-iep', {
         studentGrade: student.gradeLevel,
@@ -381,12 +276,11 @@ export default function StudentDetail() {
         areaOfNeed: student.areaOfNeed || 'General Education',
         currentPerformance: `Quantitative: ${student.performanceQuantitative || 'Not specified'}, Narrative: ${student.performanceNarrative || 'Not specified'}`,
         disabilityCategory: student.disabilities?.join(', ') || 'Not specified',
-        instructionalSetting: student.instructionalSetting || 'General Education'
-        ,
-        exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : []
-        ,
+        instructionalSetting: student.instructionalSetting || 'General Education',
+        exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : [],
         studentId: id,
-        student_accommodations: student.student_accommodations || null
+        student_accommodations: student.student_accommodations || null,
+        customGoals: customGoalsForAPI // Include custom goals in main generation
       });
 
       const aiData = response.data.data;
@@ -676,7 +570,7 @@ export default function StudentDetail() {
             strengthsOptions={STRENGTHS_OPTIONS}
             weaknessesOptions={WEAKNESSES_OPTIONS}
             onCustomizeGoals={() => setShowCustomizeModal(true)}
-            onRegenerateCustomGoals={handleRegenerateFromHeader}
+            onCustomGoalsSaved={(goals) => setCustomGoals(goals)}
             onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
           />
 
@@ -692,16 +586,7 @@ export default function StudentDetail() {
             />
           )}
 
-          {/* Goals Card - show always when student exists */}
-          <GoalsCard
-            student={student}
-            onCustomizeGoals={() => setShowCustomizeModal(true)}
-            onRegenerateCustomGoals={handleRegenerateFromHeader}
-            onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
-            isGenerating={isGenerating}
-            handleGenerateIEP={handleGenerateIEP}
-            hasExistingPlan={hasExistingPlan}
-          />
+          {/* Custom goals are edited from the Student Context card (Edit custom goals) */}
 
           {hasExistingPlan && generatedPlan && editablePlan && (
             <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
