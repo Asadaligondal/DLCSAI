@@ -7,16 +7,16 @@ export default function SectionCard({ id, title, subtitle, count, rightUtilities
   const isControlled = typeof onToggle === 'function';
 
   return (
-    <div id={id} style={{ scrollMarginTop: '120px' }} className="bg-white border border-gray-100 rounded-lg">
+    <div id={id} style={{ scrollMarginTop: '120px' }} className="bg-white rounded-xl shadow-sm">
       <div className="flex items-center justify-between px-4 py-3">
         <div>
           <div className="flex items-center gap-3">
-            <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+            <h4 className="text-[15px] font-semibold text-slate-900">{title}</h4>
             {typeof count === 'number' && (
-              <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{count}</span>
+              <span className="text-xs text-slate-700 px-3 py-1.5 rounded-xl bg-slate-100">{count}</span>
             )}
           </div>
-          {subtitle && <div className="text-xs text-slate-500 mt-1">{subtitle}</div>}
+          {subtitle && <div className="text-[13px] text-slate-500 mt-1">{subtitle}</div>}
         </div>
 
         <div className="flex items-center gap-3">

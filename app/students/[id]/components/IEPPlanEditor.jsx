@@ -22,8 +22,8 @@ export default function IEPPlanEditor({
   setEditablePlan
 }) {
   return (
-    <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">IEP Plan - Review & Edit</h2>
+    <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+      <h2 className="text-[21px] font-semibold text-gray-900 mb-4">IEP Plan - Review & Edit</h2>
 
       {/* Toggle Between Original and Edited - segmented tabs, sticky inside card */}
       <div className="sticky top-0 bg-white z-10 -mx-6 px-6 pt-0 pb-4">

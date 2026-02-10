@@ -1,10 +1,12 @@
-'use client';
+"use client";
 
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function Modal({ isOpen = true, onClose, title, children, size = 'md' }) {
   useEffect(() => {
+    // disable background scroll while modal is mounted
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
@@ -20,17 +22,19 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
     xl: 'max-w-6xl'
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[100]"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-[16px] shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 border border-gray-100`}
+        className={`relative z-[110] bg-white rounded-xl shadow-sm w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200`}
         style={{ overflowX: 'hidden' }}
         role="dialog"
         aria-modal="true"
@@ -52,6 +56,7 @@ export default function Modal({ isOpen = true, onClose, title, children, size = 
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

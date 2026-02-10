@@ -52,21 +52,6 @@ export function FooterActions({ editablePlan, setEditablePlan, isReviewed, setIs
           rows="6"
         />
       </div>
-
-      <div className="p-4 border-2 border-yellow-400 bg-yellow-50 rounded-lg">
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            id="review-checkbox"
-            checked={isReviewed}
-            onChange={(e) => setIsReviewed(e.target.checked)}
-            className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-          />
-          <label htmlFor="review-checkbox" className="flex-1 text-sm text-gray-900 font-medium cursor-pointer">
-            I have reviewed this content for accuracy and professional standards. This IEP plan meets Florida Department of Education requirements and is ready for export.
-          </label>
-        </div>
-      </div>
     </>
   );
 }

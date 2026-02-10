@@ -37,20 +37,20 @@ export default function GoalsCard({
         {goals.length > 0 ? (
           <div className="space-y-2">
             {goals.map((goal) => (
-              <div key={goal._id} className="flex items-start justify-between p-3 border border-gray-100 rounded-md hover:border-blue-200 transition-colors">
+              <div key={goal._id} className="flex items-start justify-between p-3 border border-gray-100 rounded-xl shadow-sm hover:border-blue-200 transition-colors">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-gray-900 truncate">{goal.title}</div>
                   <div className="text-xs text-gray-500 mt-1 line-clamp-2">{goal.description}</div>
                 </div>
 
                 <div className="ml-4 flex-shrink-0">
-                  <span className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">{goal.category}</span>
+                  <span className="inline-flex items-center px-3 py-1.5 text-xs bg-gray-100 text-gray-800 rounded-xl">{goal.category}</span>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-6 bg-gray-50 rounded-md flex items-center justify-center">
+          <div className="py-6 bg-gray-50 rounded-xl shadow-sm flex items-center justify-center">
             <div className="text-center">
               <div className="text-gray-400 mb-2">—</div>
               <div className="text-sm text-gray-600">No custom goals yet</div>

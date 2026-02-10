@@ -76,7 +76,7 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
     >
       <div className="space-y-6">
         {/* Add/Edit Goal Form */}
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 shadow-sm">
           <h4 className="text-sm font-medium text-gray-900 mb-3">
             {editingId !== null ? 'Edit Goal' : 'Add New Goal'}
           </h4>
@@ -89,7 +89,7 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
                 value={newGoal.title}
                 onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
                 placeholder="e.g. Improve reading comprehension"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -100,7 +100,7 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
                 onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
                 placeholder="Detailed description of the goal and expected outcomes"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -109,7 +109,7 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
               <select
                 value={newGoal.category}
                 onChange={(e) => setNewGoal({ ...newGoal, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {GOAL_CATEGORIES.map(cat => (
                   <option key={cat.key} value={cat.key}>{cat.label}</option>
@@ -121,7 +121,7 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
               <button
                 onClick={handleAddGoal}
                 disabled={!newGoal.title.trim()}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 {editingId !== null ? 'Update Goal' : 'Add Goal'}
@@ -152,12 +152,12 @@ export default function CustomGoalsModal({ initial = [], onClose, onSave, inline
             <div className="text-center py-8 text-gray-500">
               <Target className="w-8 h-8 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">No custom goals added yet</p>
-              <p className="text-xs text-gray-400 mt-1">Add goals above to include in IEP generation</p>
+              <p className="text-xs text-gray-400 mt-1">Add goals above to include them in IEP generation</p>
             </div>
           ) : (
             <div className="space-y-3">
               {goalsByCategory.map(cat => (
-                <div key={cat.key} className="border border-gray-200 rounded-lg">
+                <div key={cat.key} className="border border-gray-200 rounded-xl shadow-sm">
                   <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                     <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       {cat.label} ({cat.goals.length})

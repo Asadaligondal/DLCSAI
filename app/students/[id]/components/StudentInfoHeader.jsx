@@ -81,7 +81,7 @@ export default function StudentInfoHeader({
     <div className="grid grid-cols-1 gap-6">
       <div>
         {!isEditing ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Student Context</h3>
               <div className="text-xs text-gray-500">Summary</div>
@@ -118,14 +118,14 @@ export default function StudentInfoHeader({
                   {Array.isArray(student?.disabilities) && student.disabilities.length > 0 ? (
                     <>
                       {student.disabilities.slice(0,6).map((d, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{d}</span>
+                        <span key={i} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{d}</span>
                       ))}
                       {student.disabilities.length > 6 && (
-                        <span className="px-2 py-1 bg-gray-100 text-xs rounded-full">+{student.disabilities.length - 6} more</span>
+                        <span className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">+{student.disabilities.length - 6} more</span>
                       )}
                     </>
                   ) : (
-                    <div className="text-xs text-gray-500">None</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500"><Target className="w-4 h-4 text-gray-300" />None</div>
                   )}
                 </div>
               </div>
@@ -136,10 +136,10 @@ export default function StudentInfoHeader({
                   {Array.isArray(student?.strengths) && student.strengths.length > 0 ? (
                     <>
                       {student.strengths.slice(0,6).map((s, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{s}</span>
+                        <span key={i} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{s}</span>
                       ))}
                       {student.strengths.length > 6 && (
-                        <span className="px-2 py-1 bg-gray-100 text-xs rounded-full">+{student.strengths.length - 6} more</span>
+                        <span className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">+{student.strengths.length - 6} more</span>
                       )}
                     </>
                   ) : (
@@ -154,10 +154,10 @@ export default function StudentInfoHeader({
                   {Array.isArray(student?.weaknesses) && student.weaknesses.length > 0 ? (
                     <>
                       {student.weaknesses.slice(0,6).map((w, i) => (
-                        <span key={i} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{w}</span>
+                        <span key={i} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{w}</span>
                       ))}
                       {student.weaknesses.length > 6 && (
-                        <span className="px-2 py-1 bg-gray-100 text-xs rounded-full">+{student.weaknesses.length - 6} more</span>
+                        <span className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">+{student.weaknesses.length - 6} more</span>
                       )}
                     </>
                   ) : (
@@ -170,7 +170,7 @@ export default function StudentInfoHeader({
             <div className="mt-3 border-t border-slate-100 pt-3 flex items-center justify-between">
               <div>
                 <div className="text-xs font-medium text-gray-700">Accommodations</div>
-                <div className="text-sm text-gray-500">{(() => {
+                <div className="text-[13px] text-gray-500">{(() => {
                   const acc = student.student_accommodations || {};
                   const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
                   const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
@@ -179,20 +179,20 @@ export default function StudentInfoHeader({
               </div>
 
               <div>
-                <button onClick={openAccommodations} className="px-3 py-1 text-sm bg-gray-100 rounded-md">Edit accommodations</button>
+                <button onClick={openAccommodations} className="px-3 py-1 text-sm bg-gray-100 rounded-xl">Edit accommodations</button>
               </div>
             </div>
 
             <div className="mt-2 border-t border-slate-100 pt-2 flex items-center justify-between">
               <div>
                 <div className="text-xs font-medium text-gray-700">Custom Goals</div>
-                <div className="text-sm text-gray-500">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
+                <div className="text-[13px] text-gray-500">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
               </div>
 
               <div>
                 <button 
                   onClick={() => setShowCustomGoals(true)} 
-                  className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200"
+                  className="flex items-center gap-1 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200"
                 >
                   <Target className="w-3 h-3" />
                   Edit custom goals
@@ -213,7 +213,7 @@ export default function StudentInfoHeader({
                         <div className="text-xs font-medium text-gray-600">Classroom</div>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {Object.values(student.student_accommodations.classroom).flat().map((it, idx) => (
-                            <span key={`c-${idx}`} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{it.label || it}</span>
+                            <span key={`c-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
                           ))}
                         </div>
                       </div>
@@ -224,7 +224,7 @@ export default function StudentInfoHeader({
                         <div className="text-xs font-medium text-gray-600">Assessment / District</div>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {Object.values(student.student_accommodations.assessment).flat().map((it, idx) => (
-                            <span key={`a-${idx}`} className="px-2 py-1 bg-gray-100 text-xs rounded-full">{it.label || it}</span>
+                            <span key={`a-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
                           ))}
                         </div>
                       </div>

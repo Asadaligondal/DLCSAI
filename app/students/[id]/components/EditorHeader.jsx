@@ -26,8 +26,8 @@ export default function EditorHeader({ student }) {
             Back
           </button>
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">IEP Writer</h1>
-            <p className="text-sm text-slate-600 mt-1">Review & Edit</p>
+            <h1 className="text-[21px] font-semibold text-slate-900">IEP Writer</h1>
+            <p className="text-[13px] text-slate-600 mt-1">Review & Edit</p>
           </div>
         </div>
 
