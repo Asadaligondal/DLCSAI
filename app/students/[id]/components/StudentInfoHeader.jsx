@@ -91,60 +91,22 @@ export default function StudentInfoHeader({
               <div className="col-span-2 grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-gray-600">Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-2 h-8 text-sm border border-gray-200 rounded focus:outline-none"
-                    required
-                  />
+                  <div className="w-full px-2 h-8 text-sm border border-gray-200 rounded bg-gray-50 flex items-center">{formData.name || student?.name || '—'}</div>
                 </div>
 
                 <div>
                   <label className="text-xs text-gray-600">Student ID</label>
-                  <input
-                    type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    required
-                    className="w-full px-2 h-8 text-sm border border-gray-200 rounded focus:outline-none"
-                  />
+                  <div className="w-full px-2 h-8 text-sm border border-gray-200 rounded bg-gray-50 flex items-center">{formData.studentId || student?.studentId || '—'}</div>
                 </div>
 
                 <div>
                   <label className="text-xs text-gray-600">Age</label>
-                  <input
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    required
-                    className="w-full px-2 h-8 text-sm border border-gray-200 rounded focus:outline-none"
-                  />
+                  <div className="w-full px-2 h-8 text-sm border border-gray-200 rounded bg-gray-50 flex items-center">{formData.age || student?.age || '—'}</div>
                 </div>
 
                 <div>
                   <label className="text-xs text-gray-600">Grade</label>
-                  <select
-                    value={formData.gradeLevel}
-                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                    required
-                    className="w-full px-2 h-8 text-sm border border-gray-200 rounded focus:outline-none"
-                  >
-                    <option value="">Select grade...</option>
-                    <option>Kindergarten (K)</option>
-                    <option>Grade 1</option>
-                    <option>Grade 2</option>
-                    <option>Grade 3</option>
-                    <option>Grade 4</option>
-                    <option>Grade 5</option>
-                    <option>Grade 6</option>
-                    <option>Grade 7</option>
-                    <option>Grade 8</option>
-                    <option>Grade 9 (Freshman)</option>
-                    <option>Grade 10 (Sophomore)</option>
-                    <option>Grade 11 (Junior)</option>
-                    <option>Grade 12 (Senior)</option>
-                  </select>
+                  <div className="w-full px-2 h-8 text-sm border border-gray-200 rounded bg-gray-50 flex items-center">{formData.gradeLevel || student?.gradeLevel || '—'}</div>
                 </div>
               </div>
             </div>
