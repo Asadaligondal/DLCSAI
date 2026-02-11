@@ -240,6 +240,7 @@ export default function Dashboard() {
     performanceQuantitative: '',
     performanceNarrative: '',
     areaOfNeed: ''
+    ,studentNotes: ''
   });
   const [showAccommodations, setShowAccommodations] = useState(false);
   const [accommodations, setAccommodations] = useState(null);
@@ -831,6 +832,24 @@ export default function Dashboard() {
                       />
                     </div>
                   )}
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Additional Student Context (Optional)</label>
+                    <textarea
+                      value={formData.studentNotes}
+                      onChange={(e) => {
+                        const val = e.target.value.slice(0, 500);
+                        setFormData({ ...formData, studentNotes: val });
+                      }}
+                      placeholder="e.g., learning style, interests, triggers, what supports work best…"
+                      maxLength={500}
+                      className="w-full min-h-[96px] px-3 pt-2 pb-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                    <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+                      <div>Optional notes to help tailor the IEP.</div>
+                      <div>{formData.studentNotes ? formData.studentNotes.length : 0}/500</div>
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
