@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const body = await req.json();
+    console.log('📥 /api/generate-iep received student.additionalContext:', (body && body.student && (body.student.additionalContext ?? body.student.studentNotes)) ?? 'MISSING');
     const {
       studentGrade,
       studentAge,

@@ -74,7 +74,9 @@ export async function POST(request) {
 
     const user = authResult.user;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, student_accommodations } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, student_accommodations, studentNotes } = body;
+
+    console.log('📥 POST /api/students received studentNotes:', studentNotes);
 
     // Validate required fields
     if (!name || !studentId || !gradeLevel || !age) {
@@ -113,6 +115,7 @@ export async function POST(request) {
       strengths: strengths || [],
       weaknesses: weaknesses || [],
       student_accommodations: normalized,
+      studentNotes: studentNotes || '',
       createdBy: user._id
     });
 

@@ -52,6 +52,8 @@ export async function GET(request, { params }) {
 
     const out = student ? ({ ...student.toObject(), accommodations_count: accommodationsCount(student.student_accommodations) }) : null;
 
+    console.log('📤 GET /api/students/[id] returning studentNotes:', out?.studentNotes);
+
     return NextResponse.json(
       {
         success: true,
@@ -87,7 +89,7 @@ export async function PUT(request, { params }) {
     const user = authResult.user;
     const { id } = await params;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations, studentNotes } = body;
 
     // Connect to database
     await connectDB();
@@ -113,6 +115,7 @@ export async function PUT(request, { params }) {
     if (disabilities !== undefined) student.disabilities = disabilities;
     if (strengths !== undefined) student.strengths = strengths;
     if (weaknesses !== undefined) student.weaknesses = weaknesses;
+    if (studentNotes !== undefined) student.studentNotes = studentNotes;
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
     if (annualGoals !== undefined) student.annualGoals = annualGoals;
     if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;

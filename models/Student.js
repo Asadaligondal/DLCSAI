@@ -32,6 +32,10 @@ const StudentSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  studentNotes: {
+    type: String,
+    default: ''
+  },
   state: {
     type: String,
     default: 'Florida'

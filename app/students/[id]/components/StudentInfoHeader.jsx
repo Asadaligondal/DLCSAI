@@ -341,6 +341,24 @@ export default function StudentInfoHeader({
                 </div>
               )}
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Student Context (Optional)</label>
+                <textarea
+                  value={formData.studentNotes || ''}
+                  onChange={(e) => {
+                    const val = e.target.value.slice(0, 500);
+                    setFormData({ ...formData, studentNotes: val });
+                  }}
+                  placeholder="e.g., learning style, interests, triggers, what supports work best…"
+                  maxLength={500}
+                  className="w-full min-h-[96px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+                  <div>Optional notes to help tailor the IEP.</div>
+                  <div>{formData.studentNotes ? formData.studentNotes.length : 0}/500</div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"

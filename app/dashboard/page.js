@@ -301,7 +301,8 @@ export default function Dashboard() {
       instructionalSetting: '',
       performanceQuantitative: '',
       performanceNarrative: '',
-      areaOfNeed: ''
+      areaOfNeed: '',
+      studentNotes: ''
     });
     setWizardStep(1);
     setShowModal(true);
@@ -321,7 +322,8 @@ export default function Dashboard() {
       instructionalSetting: '',
       performanceQuantitative: '',
       performanceNarrative: '',
-      areaOfNeed: ''
+      areaOfNeed: '',
+      studentNotes: ''
     });
   };
 
@@ -473,6 +475,8 @@ export default function Dashboard() {
     try {
       const payload = { ...formData, age: parseInt(formData.age) };
       if (accommodations) payload.student_accommodations = accommodations;
+      console.log('📤 Add Student payload being sent:', JSON.stringify(payload, null, 2));
+      console.log('📤 studentNotes in payload:', payload.studentNotes);
       await axios.post('/api/students', payload, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Student added successfully');
       fetchStudents();

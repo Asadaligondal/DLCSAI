@@ -95,7 +95,8 @@ export default function StudentDetail() {
     strengths: [],
     strengthsOther: '',
     weaknesses: [],
-    weaknessesOther: ''
+    weaknessesOther: '',
+    studentNotes: ''
   });
 
   useEffect(() => {
@@ -128,7 +129,8 @@ export default function StudentDetail() {
         strengths: studentData.strengths || [],
         strengthsOther: studentData.strengthsOther || '',
         weaknesses: studentData.weaknesses || [],
-        weaknessesOther: studentData.weaknessesOther || ''
+        weaknessesOther: studentData.weaknessesOther || '',
+        studentNotes: studentData.studentNotes || ''
       });
 
       // Load existing IEP plan if available
@@ -249,7 +251,8 @@ export default function StudentDetail() {
           strengths: formData.strengths,
           strengthsOther: formData.strengthsOther,
           weaknesses: formData.weaknesses,
-          weaknessesOther: formData.weaknessesOther
+          weaknessesOther: formData.weaknessesOther,
+          studentNotes: formData.studentNotes
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -270,7 +273,14 @@ export default function StudentDetail() {
       // Convert custom goals to the format expected by the API
       const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
       
-      const response = await axios.post('/api/generate-iep', {
+      console.log('🔍 Debug student.studentNotes before payload:', student.studentNotes);
+      console.log('🔍 Debug formData.studentNotes:', formData.studentNotes);
+      console.log('🔍 Debug student object keys:', Object.keys(student || {}));
+      
+      // Use formData.studentNotes as primary source (user may have edited), fallback to student record
+      const studentNotesValue = formData.studentNotes || student.studentNotes || '';
+      
+      const payload = {
         studentGrade: student.gradeLevel,
         studentAge: student.age,
         areaOfNeed: student.areaOfNeed || 'General Education',
@@ -280,8 +290,16 @@ export default function StudentDetail() {
         exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : [],
         studentId: id,
         student_accommodations: student.student_accommodations || null,
-        customGoals: customGoalsForAPI // Include custom goals in main generation
-      });
+        customGoals: customGoalsForAPI, // Include custom goals in main generation
+        student: {
+          additionalContext: studentNotesValue
+        }
+      };
+
+      console.log('➡️ Outgoing LLM payload:', JSON.stringify(payload, null, 2));
+      console.log('➡️ student.additionalContext being sent:', payload.student?.additionalContext ?? '"" (empty)');
+
+      const response = await axios.post('/api/generate-iep', payload);
 
       const aiData = response.data.data;
       console.log('🤖 AI Response Data:', JSON.stringify(aiData, null, 2));
