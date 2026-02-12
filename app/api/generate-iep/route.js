@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export async function POST(req) {
   try {
     const body = await req.json();
-    console.log('📥 /api/generate-iep received student.additionalContext:', (body && body.student && (body.student.additionalContext ?? body.student.studentNotes)) ?? 'MISSING');
     const {
       studentGrade,
       studentAge,
@@ -224,7 +223,9 @@ Begin using only the input JSON you receive. Generate the IEP now.`;
       `AccommodationsSummary: ${accommodationsSummary}`,
       'Please provide a structured JSON response with these exact keys:',
       '{',
-      '  "plaafp_narrative": "A detailed Present Level of Academic Achievement and Functional Performance narrative (3-4 paragraphs describing current abilities, challenges, and how disability impacts learning)",',
+      '  "recommendedAccommodations": ["Array of 5-10 accommodation strings derived from weaknesses/PLAafp and existing accommodations catalog. No duplicates. Prefer from selected accommodations if present."],',
+      '  "academicPerformanceAchievement": "Concise paragraph summarizing current academic achievement/performance grounded in plaafp + assessments + weaknesses/strengths. Use [MISSING: ...] placeholders if inputs are missing.",',
+      '  "plaafp_narrative": "A detailed Present Level of Academic Achievement and Functional Performance narrative (3-4 paragraphs describing current abilities, challenges, and how disability impacts learning)",',,
       '  "annual_goals": ["Array of 3-4 BROAD, cross-exceptionality annual goals that address the student\'s overall strengths and weaknesses across domains"],',
       '  "short_term_objectives": ["Array of 6-8 SPECIFIC but BROADER short-term objectives that operationalize the annual goals at a classroom/grade level (do NOT repeat exceptionality-specific objectives here)"],',
       '  "intervention_recommendations": "Detailed recommendations for accommodations, modifications, and instructional strategies specific to Florida standards",',
@@ -369,6 +370,18 @@ Begin using only the input JSON you receive. Generate the IEP now.`;
     const data = await openaiResponse.json();
     let generatedContent = JSON.parse(data.choices[0].message.content);
 
+    // Extract and validate new top-level fields
+    const recommendedAccommodations = Array.isArray(generatedContent.recommendedAccommodations) 
+      ? generatedContent.recommendedAccommodations 
+      : [];
+    const academicPerformanceAchievement = typeof generatedContent.academicPerformanceAchievement === 'string'
+      ? generatedContent.academicPerformanceAchievement
+      : '';
+    
+    console.log('📊 New LLM fields extracted:');
+    console.log('📋 recommendedAccommodations:', recommendedAccommodations);
+    console.log('🎓 academicPerformanceAchievement:', academicPerformanceAchievement);
+
     // Add grouping of annual goals and short-term objectives by provided exceptionalities
     try {
       const exList = Array.isArray(exceptionalities) && exceptionalities.length > 0 ? exceptionalities : [];
@@ -479,6 +492,10 @@ Begin using only the input JSON you receive. Generate the IEP now.`;
       } catch (e) {
         console.warn('Similarity guard processing error:', e.message || e);
       }
+
+    // Attach the extracted new fields to the final response
+    generatedContent.recommendedAccommodations = recommendedAccommodations;
+    generatedContent.academicPerformanceAchievement = academicPerformanceAchievement;
 
     return NextResponse.json({
       success: true,

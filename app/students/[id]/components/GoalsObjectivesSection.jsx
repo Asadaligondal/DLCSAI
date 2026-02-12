@@ -54,9 +54,11 @@ export default function GoalsObjectivesSection({
     });
   };
   const [openPlaafp, setOpenPlaafp] = useState(true);
+  const [openAcademicPerformance, setOpenAcademicPerformance] = useState(true);
   const [openGrouped, setOpenGrouped] = useState(true);
   const [openGoals, setOpenGoals] = useState(true);
   const [openObjectives, setOpenObjectives] = useState(true);
+  const [openRecommendedAccommodations, setOpenRecommendedAccommodations] = useState(true);
   const [openInterventions, setOpenInterventions] = useState(true);
   const [openCustomGoals, setOpenCustomGoals] = useState(true);
 
@@ -156,6 +158,48 @@ export default function GoalsObjectivesSection({
                 <div>
                   <div className="font-medium text-gray-900">No custom goals yet</div>
                   <div className="text-xs text-gray-500">Add custom goals or regenerate with custom inputs.</div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Academic Performance Achievement (AI Generated) */}
+          <SectionCard id="academic-performance-achievement" title="Academic Performance Achievement" subtitle="AI-generated performance indicators" open={openAcademicPerformance} onToggle={() => setOpenAcademicPerformance(s => !s)}>
+            {originalAIPlan.academicPerformanceAchievement ? (
+              <div className="space-y-2">
+                {originalAIPlan.academicPerformanceAchievement.split('\n').filter(line => line.trim()).map((line, idx) => (
+                  <div key={idx} className="p-2 bg-blue-50 border border-blue-100 rounded text-sm text-gray-700">
+                    {line.trim()}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 text-sm text-gray-600">
+                <div className="text-2xl">📈</div>
+                <div>
+                  <div className="font-medium text-gray-900">No performance data yet</div>
+                  <div className="text-xs text-gray-500">Generate IEP to see academic performance indicators.</div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Recommended Accommodations (AI Generated) */}
+          <SectionCard id="recommended-accommodations" title="Recommended Accommodations" subtitle="AI-suggested accommodations" open={openRecommendedAccommodations} onToggle={() => setOpenRecommendedAccommodations(s => !s)}>
+            {originalAIPlan.recommendedAccommodations && originalAIPlan.recommendedAccommodations.length > 0 ? (
+              <div className="space-y-2">
+                {originalAIPlan.recommendedAccommodations.map((accommodation, idx) => (
+                  <div key={idx} className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium mr-1 mb-1">
+                    {accommodation}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 text-sm text-gray-600">
+                <div className="text-2xl">🎯</div>
+                <div>
+                  <div className="font-medium text-gray-900">No accommodations yet</div>
+                  <div className="text-xs text-gray-500">Generate IEP to see recommended accommodations.</div>
                 </div>
               </div>
             )}
@@ -285,6 +329,38 @@ export default function GoalsObjectivesSection({
                 <div>
                   <div className="font-medium text-gray-900">No custom goals yet</div>
                   <div className="text-xs text-gray-500">Add custom goals or regenerate with custom inputs.</div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Academic Performance Achievement (Editable) */}
+          <SectionCard id="academic-performance-achievement" title="Academic Performance Achievement" subtitle="Edit performance indicators" open={openAcademicPerformance} onToggle={() => setOpenAcademicPerformance(s => !s)}>
+            <textarea
+              value={editablePlan.academicPerformanceAchievement || ''}
+              onChange={(e) => setEditablePlan({ ...editablePlan, academicPerformanceAchievement: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-200 rounded text-sm leading-relaxed resize-none"
+              rows={4}
+              placeholder="Edit academic performance indicators..."
+            />
+          </SectionCard>
+
+          {/* Recommended Accommodations (Read-Only in Edited View) */}
+          <SectionCard id="recommended-accommodations" title="Recommended Accommodations" subtitle="AI-suggested accommodations (read-only)" open={openRecommendedAccommodations} onToggle={() => setOpenRecommendedAccommodations(s => !s)}>
+            {editablePlan.recommendedAccommodations && editablePlan.recommendedAccommodations.length > 0 ? (
+              <div className="space-y-2">
+                {editablePlan.recommendedAccommodations.map((accommodation, idx) => (
+                  <div key={idx} className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium mr-1 mb-1">
+                    {accommodation}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 text-sm text-gray-600">
+                <div className="text-2xl">🎯</div>
+                <div>
+                  <div className="font-medium text-gray-900">No accommodations yet</div>
+                  <div className="text-xs text-gray-500">Generate IEP to see recommended accommodations.</div>
                 </div>
               </div>
             )}

@@ -273,10 +273,6 @@ export default function StudentDetail() {
       // Convert custom goals to the format expected by the API
       const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
       
-      console.log('🔍 Debug student.studentNotes before payload:', student.studentNotes);
-      console.log('🔍 Debug formData.studentNotes:', formData.studentNotes);
-      console.log('🔍 Debug student object keys:', Object.keys(student || {}));
-      
       // Use formData.studentNotes as primary source (user may have edited), fallback to student record
       const studentNotesValue = formData.studentNotes || student.studentNotes || '';
       
@@ -307,6 +303,11 @@ export default function StudentDetail() {
       console.log('🎯 Annual goals count:', aiData.annual_goals?.length);
       console.log('🎯 Objectives count:', aiData.short_term_objectives?.length);
       console.log('💡 Recommendations length:', aiData.intervention_recommendations?.length);
+      
+      // Log new fields for verification
+      console.log('🆕 New LLM fields received:');
+      console.log('📋 recommendedAccommodations:', Array.isArray(aiData.recommendedAccommodations) ? `Array(${aiData.recommendedAccommodations.length})` : 'Not array', aiData.recommendedAccommodations);
+      console.log('🎓 academicPerformanceAchievement:', typeof aiData.academicPerformanceAchievement === 'string' ? `String(${aiData.academicPerformanceAchievement.length} chars)` : 'Not string', aiData.academicPerformanceAchievement);
       
       setGeneratedPlan(aiData);
       setOriginalAIPlan(aiData);

@@ -52,8 +52,6 @@ export async function GET(request, { params }) {
 
     const out = student ? ({ ...student.toObject(), accommodations_count: accommodationsCount(student.student_accommodations) }) : null;
 
-    console.log('📤 GET /api/students/[id] returning studentNotes:', out?.studentNotes);
-
     return NextResponse.json(
       {
         success: true,

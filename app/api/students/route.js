@@ -76,8 +76,6 @@ export async function POST(request) {
     const body = await request.json();
     const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, student_accommodations, studentNotes } = body;
 
-    console.log('📥 POST /api/students received studentNotes:', studentNotes);
-
     // Validate required fields
     if (!name || !studentId || !gradeLevel || !age) {
       return NextResponse.json(
