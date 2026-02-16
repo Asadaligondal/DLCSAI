@@ -371,10 +371,11 @@ export default function StudentInfoHeader({
         )}
       </div>
       {showAccommodations && (
-        <Modal title="Student Accommodations" onClose={() => setShowAccommodations(false)} size="lg">
+        <Modal title="Student Accommodations" onClose={() => setShowAccommodations(false)} size="wizard">
           <AccommodationsModal
             inline
             initial={accommodationsInitial}
+            onClose={() => setShowAccommodations(false)}
             onSave={(data) => { handleSaveAccommodations(data); setShowAccommodations(false); if (onAccommodationsSaved) onAccommodationsSaved(); }}
           />
         </Modal>

@@ -16,7 +16,7 @@ const TAG_BADGE_LABELS = {
   'valid_thru_dec_2022': 'Deprecated after Dec 2022'
 };
 
-export default function AccommodationsModal({ initial = null, onClose, onSave, inline = false, onApply = null }) {
+export default function AccommodationsModal({ initial = null, onClose, onSave, inline = false, onApply = null, hideFooter = false }) {
   const init = initial || {
     consent: { parentConsentRequired: false, parentConsentObtained: false, consentNotes: '', parentConsentName: '', parentConsentDate: '' },
     classroom: { presentation: [], response: [], scheduling: [], setting: [], assistive_technology_device: [] },
@@ -35,11 +35,11 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
   const [filterNeedsConsent, setFilterNeedsConsent] = useState(false);
 
     const categories = useMemo(() => [
-      { key: 'presentation', label: 'Presentation', items: ACCOMMODATIONS_MASTER.presentation },
-      { key: 'response', label: 'Response', items: ACCOMMODATIONS_MASTER.response },
-      { key: 'scheduling', label: 'Scheduling', items: ACCOMMODATIONS_MASTER.scheduling },
-      { key: 'setting', label: 'Setting', items: ACCOMMODATIONS_MASTER.setting },
-      { key: 'assistive', label: 'Other Assistive Technology or Device', items: ACCOMMODATIONS_MASTER.assistive }
+      { key: 'presentation', label: 'Presentation', shortLabel: 'Presentation', items: ACCOMMODATIONS_MASTER.presentation },
+      { key: 'response', label: 'Response', shortLabel: 'Response', items: ACCOMMODATIONS_MASTER.response },
+      { key: 'scheduling', label: 'Scheduling', shortLabel: 'Scheduling', items: ACCOMMODATIONS_MASTER.scheduling },
+      { key: 'setting', label: 'Setting', shortLabel: 'Setting', items: ACCOMMODATIONS_MASTER.setting },
+      { key: 'assistive', label: 'Other Assistive Technology or Device', shortLabel: 'Assistive Tech', items: ACCOMMODATIONS_MASTER.assistive }
     ], []);
 
     
@@ -236,13 +236,13 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                   <div key={key} className="border rounded-md">
                     <button
                       onClick={() => setOpenCats({ ...openCats, [key]: !openCats[key] })}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-gray-50"
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 min-w-0"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium">{label}</span>
-                        <span className="text-xs text-gray-500">{savedCount(key)} selected</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-medium truncate" title={label}>{label}</span>
+                        <span className="text-xs text-gray-500 flex-shrink-0">{savedCount(key)} selected</span>
                       </div>
-                      <div className="text-sm text-gray-500">{openCats[key] ? '−' : '+'}</div>
+                      <div className="text-sm text-gray-500 flex-shrink-0">{openCats[key] ? '−' : '+'}</div>
                     </button>
                   {openCats[key] && (
                     <div className="p-4">
@@ -254,21 +254,23 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                               tabIndex={0}
                               onClick={() => toggleItem(key, item)}
                               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(key, item); } }}
-                              className="flex items-center gap-3 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer"
+                              className="flex items-start gap-3 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer min-w-0"
                             >
-                              <input onClick={(e) => e.stopPropagation()} type="checkbox" checked={isSelected(key, item.id)} onChange={() => toggleItem(key, item)} />
-                              <span className="text-sm">{highlightLabel(item.label)}</span>
-                              {item.tags && item.tags.length > 0 && (
-                                <span className="ml-2 flex gap-1">
-                                  {item.tags.map(t => (
-                                    TAG_BADGE_LABELS[t] ? (
-                                      <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{TAG_BADGE_LABELS[t]}</span>
-                                    ) : (
-                                      <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{t}</span>
-                                    )
-                                  ))}
-                                </span>
-                              )}
+                              <input onClick={(e) => e.stopPropagation()} type="checkbox" checked={isSelected(key, item.id)} onChange={() => toggleItem(key, item)} className="flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm break-words">{highlightLabel(item.label)}</span>
+                                {item.tags && item.tags.length > 0 && (
+                                  <span className="ml-0 mt-1 flex gap-1 flex-wrap">
+                                    {item.tags.map(t => (
+                                      TAG_BADGE_LABELS[t] ? (
+                                        <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">{TAG_BADGE_LABELS[t]}</span>
+                                      ) : (
+                                        <span key={t} className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{t}</span>
+                                      )
+                                    ))}
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {(item.note || item.helper || item.extras) && (
@@ -316,114 +318,102 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
             </div>
         ) : (
           // Inline two-column layout with proper scroll containment
-          <div className="flex flex-col md:flex-row gap-4 w-full min-w-0" style={{ height: 'calc(100vh - 250px)', minHeight: '500px' }}>
-            {/* Left nav - sticky and always visible (no independent scroll) */}
-            <div className="hidden md:flex flex-col w-[260px] flex-shrink-0 border-r border-gray-200 pr-4">
-              <div className="space-y-2">
-                {categories.map(({ key, label }) => (
-                  <button key={key} onClick={() => setSelectedCategory(key)} className={`w-full text-left px-3 py-2 rounded-r-md flex items-center justify-between ${selectedCategory === key ? 'bg-white border-l-4 border-blue-500 shadow-sm' : 'bg-gray-50 hover:bg-gray-100 border border-transparent'}`}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate">{label}</span>
-                    </div>
-                    <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-700">{savedCount(key)}</span>
+          <div className="flex flex-col md:flex-row gap-4 w-full min-w-0 flex-1 min-h-0" style={{ minHeight: '420px' }}>
+            {/* Left nav - compact, sticky when scrolling accommodations */}
+            <div className="hidden md:flex flex-col w-[200px] flex-shrink-0 border-r border-gray-200 pr-3 min-w-0 sticky top-0 self-start bg-white">
+              <div className="space-y-1">
+                {categories.map(({ key, label, shortLabel }) => (
+                  <button key={key} onClick={() => setSelectedCategory(key)} className={`w-full text-left px-3 py-2 rounded-md flex items-center justify-between gap-2 min-w-0 ${selectedCategory === key ? 'bg-blue-50 border-l-2 border-blue-600 text-blue-700 font-medium' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}>
+                    <span className="text-sm truncate" title={label}>{shortLabel || label}</span>
+                    <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 flex-shrink-0">{savedCount(key)}</span>
                   </button>
                 ))}
               </div>
-
-              <div className="mt-auto p-3 border-t">
-                <div className="text-sm font-medium">Selected ({(data && data[scope]) ? Object.values(data[scope]).flat().length : 0})</div>
-                <div className="mt-2 text-xs text-gray-600">Click an item on the right to remove it.</div>
+              <div className="mt-auto pt-3 border-t border-gray-100 text-xs text-gray-500">
+                <span className="font-medium text-gray-700">{(data && data[scope]) ? Object.values(data[scope]).flat().length : 0} selected</span>
               </div>
             </div>
 
             {/* Right panel - flex column with scrolling list only */}
-            <div className="flex flex-col flex-1 w-full min-w-0 overflow-hidden border border-gray-200 rounded-md">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border border-gray-200 rounded-lg bg-white">
               {/* Small screens: category dropdown */}
-              <div className="md:hidden mb-3">
+              <div className="md:hidden mb-2">
                 <label className="block text-xs text-gray-600 mb-1">Category</label>
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full h-10 border rounded-md px-3">
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full h-9 border border-gray-200 rounded-md px-3 text-sm">
                   {categories.map(c => (
                     <option key={c.key} value={c.key}>{c.label}</option>
                   ))}
                 </select>
               </div>
-              <div className="sticky top-0 bg-white z-10 py-3">
-                {/* Row A: Tabs */}
-                <div className="flex items-center gap-3">
-                  <div className={`px-3 py-1 rounded-md text-sm cursor-pointer ${scope === 'classroom' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setScope('classroom')}>Classroom ({Object.values(data.classroom || {}).flat().length})</div>
-                  <div className={`px-3 py-1 rounded-md text-sm cursor-pointer ${scope === 'assessment' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setScope('assessment')}>State/Districtwide Assessment ({Object.values(data.assessment || {}).flat().length})</div>
+              <div className="flex-shrink-0 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                {/* Scope tabs - with proper spacing */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button type="button" onClick={() => setScope('classroom')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${scope === 'classroom' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                    Classroom ({Object.values(data.classroom || {}).flat().length})
+                  </button>
+                  <button type="button" onClick={() => setScope('assessment')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${scope === 'assessment' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                    Assessment ({Object.values(data.assessment || {}).flat().length})
+                  </button>
                 </div>
+                <p className="mt-2 text-xs text-gray-500">Match assessment accommodations to classroom supports when possible.</p>
 
-                <div className="mt-1 text-xs text-gray-500">Use statewide/district assessment accommodations that match classroom supports when possible.</div>
-
-                {/* Row B: Search + actions */}
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="flex-1">
-                    <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search accommodations..." className="w-full px-3 h-10 border rounded-md" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => { setQuery(''); setSelectedOnly(false); setFilterHasSubOptions(false); }} className="h-10 px-3 text-sm text-gray-600 border rounded-md bg-white hover:bg-gray-50">Clear</button>
-                    <button onClick={() => { const html = generatePrintableHTML(data); const w = window.open('', '_blank', 'noopener,noreferrer'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } }} className="h-10 px-3 text-sm text-gray-600 border rounded-md bg-white hover:bg-gray-50">Print</button>
-                  </div>
+                {/* Search + actions */}
+                <div className="mt-3 flex items-center gap-2">
+                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search accommodations..." className="flex-1 min-w-0 h-9 px-3 border border-gray-200 rounded-md text-sm" />
+                  <button type="button" onClick={() => { setQuery(''); setSelectedOnly(false); setFilterHasSubOptions(false); }} className="h-9 px-3 text-sm text-gray-600 border border-gray-200 rounded-md bg-white hover:bg-gray-50 flex-shrink-0">Clear</button>
+                  <button type="button" onClick={() => { const html = generatePrintableHTML(data); const w = window.open('', '_blank', 'noopener,noreferrer'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); } }} className="h-9 px-3 text-sm text-gray-600 border border-gray-200 rounded-md bg-white hover:bg-gray-50 flex-shrink-0">Print</button>
                 </div>
 
                 {/* Quick filter chips */}
-                <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => setSelectedOnly(!selectedOnly)} className={`text-sm px-3 py-1 rounded-full ${selectedOnly ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Review selected</button>
-                  <button onClick={() => setFilterHasSubOptions(!filterHasSubOptions)} className={`text-sm px-3 py-1 rounded-full ${filterHasSubOptions ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Has sub-options</button>
-                  <button onClick={() => setFilterNeedsConsent(!filterNeedsConsent)} className={`text-sm px-3 py-1 rounded-full ${filterNeedsConsent ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>Needs consent</button>
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <button type="button" onClick={() => setSelectedOnly(!selectedOnly)} className={`text-xs px-2.5 py-1 rounded-full ${selectedOnly ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Selected only</button>
+                  <button type="button" onClick={() => setFilterHasSubOptions(!filterHasSubOptions)} className={`text-xs px-2.5 py-1 rounded-full ${filterHasSubOptions ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Has sub-options</button>
+                  <button type="button" onClick={() => setFilterNeedsConsent(!filterNeedsConsent)} className={`text-xs px-2.5 py-1 rounded-full ${filterNeedsConsent ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Needs consent</button>
+                  {(query || filterHasSubOptions || filterNeedsConsent) && (
+                    <button type="button" onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="text-xs text-blue-600 hover:underline">Clear filters</button>
+                  )}
                 </div>
-                {(query || filterHasSubOptions || filterNeedsConsent) && (
-                  <div className="mt-2">
-                    <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="text-sm text-blue-600 underline">Clear all filters</button>
-                  </div>
-                )}
               </div>
 
-              {/* Inline toast hint */}
               {toast.show && (
-                <div className="mt-2 text-sm text-green-700 bg-green-50 px-3 py-1 rounded inline-block">{toast.msg}</div>
+                <div className="mx-4 mt-2 text-sm text-green-700 bg-green-50 px-3 py-1.5 rounded-md">{toast.msg}</div>
               )}
 
-              {/* Selected Summary (non-scrolling) - above the scrollable list */}
-              <div className="flex-shrink-0 mt-3">
-                <div>
-                  <div className="border rounded-md bg-white shadow-sm p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">Selected ({totalSelectedCount()})</div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setSelectedCollapsed(!selectedCollapsed)} className="text-sm px-2 py-1 bg-gray-100 rounded">{selectedCollapsed ? 'Expand' : 'Collapse'}</button>
-                      </div>
-                    </div>
-
-                    {!selectedCollapsed && (
-                      <div className="mt-2 space-y-2">
-                        {['presentation','response','scheduling','setting','assistive_technology_device'].map(cat => {
-                          const label = categories.find(c => c.key === (cat === 'assistive_technology_device' ? 'assistive' : cat))?.label || cat;
-                          const items = (data.classroom?.[cat] || []).concat(data.assessment?.[cat] || []);
-                          if (!items || items.length === 0) return null;
-                          return (
-                            <div key={cat}>
-                              <div className="text-xs font-medium text-gray-600">{label} ({items.length})</div>
-                              <div className="mt-1 flex flex-wrap gap-2">
-                                {items.map(it => (
-                                  <div key={it.id} className="flex items-center bg-gray-100 px-2 py-1 rounded-full text-sm">
-                                    <span className="max-w-[160px] truncate pr-2">{it.label}{it.subOptions && it.subOptions.length ? ` (${it.subOptions.length} options)` : ''}</span>
-                                    <button onClick={() => removeSelected((data.classroom?.[cat] || []).find(i => i.id === it.id) ? 'classroom' : 'assessment', cat, it.id)} className="ml-1 text-xs text-gray-600 px-1">×</button>
-                                  </div>
-                                ))}
-                              </div>
+              {/* Selected Summary - compact */}
+              <div className="flex-shrink-0 mx-4 mt-2">
+                <div className="rounded-md border border-gray-100 bg-gray-50/50 p-2">
+                  <button type="button" onClick={() => setSelectedCollapsed(!selectedCollapsed)} className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-700">
+                    <span>Selected ({totalSelectedCount()})</span>
+                    <span className="text-xs text-gray-500">{selectedCollapsed ? 'Expand' : 'Collapse'}</span>
+                  </button>
+                  {!selectedCollapsed && (
+                    <div className="mt-2 space-y-1.5 pt-2 border-t border-gray-100">
+                      {['presentation','response','scheduling','setting','assistive_technology_device'].map(cat => {
+                        const catInfo = categories.find(c => c.key === (cat === 'assistive_technology_device' ? 'assistive' : cat));
+                        const label = catInfo?.shortLabel || catInfo?.label || cat;
+                        const items = (data.classroom?.[cat] || []).concat(data.assessment?.[cat] || []);
+                        if (!items || items.length === 0) return null;
+                        return (
+                          <div key={cat}>
+                            <div className="text-xs font-medium text-gray-500">{label} ({items.length})</div>
+                            <div className="mt-0.5 flex flex-wrap gap-1.5">
+                              {items.map(it => (
+                                <span key={it.id} className="inline-flex items-center gap-1 bg-white border border-gray-200 rounded-full px-2 py-0.5 text-xs">
+                                  <span className="max-w-[140px] truncate">{it.label}{it.subOptions?.length ? ` (+${it.subOptions.length})` : ''}</span>
+                                  <button type="button" onClick={() => removeSelected((data.classroom?.[cat] || []).find(i => i.id === it.id) ? 'classroom' : 'assessment', cat, it.id)} className="text-gray-400 hover:text-red-600">×</button>
+                                </span>
+                              ))}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Scrollable accommodations list - only this section scrolls */}
-              <div className="flex-1 overflow-y-auto mt-3 pb-24" style={{ minWidth: 0 }}>
+              {/* Scrollable accommodations list */}
+              <div className="flex-1 overflow-y-auto mt-2 px-4 pb-4 min-h-0" style={{ minWidth: 0 }}>
                 <div className="space-y-3">
                   {selectedOnly ? (
                     // Review selected: show selected items grouped by category for current scope
@@ -520,9 +510,9 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                                 {item.subOptions && item.subOptions.length > 0 && (
                                   <div className="grid grid-cols-2 gap-2 bg-gray-50 p-0 rounded">
                                     {item.subOptions.map(so => (
-                                      <label key={so.id} className="flex items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
-                                        <input onClick={(e) => e.stopPropagation()} type="checkbox" onChange={() => toggleSubOption(selectedCategory, item.id, so.id)} checked={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
-                                        <span>{so.label}</span>
+                                      <label key={so.id} className="flex items-center gap-2 text-sm min-w-0" onClick={(e) => e.stopPropagation()}>
+                                        <input onClick={(e) => e.stopPropagation()} type="checkbox" className="flex-shrink-0" onChange={() => toggleSubOption(selectedCategory, item.id, so.id)} checked={(data[scope][selectedCategory] || []).find(it => it.id === item.id)?.subOptions.includes(so.id) || false} />
+                                        <span className="break-words min-w-0">{so.label}</span>
                                       </label>
                                     ))}
                                   </div>
@@ -549,47 +539,39 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
           </div>
         )}
 
-        {/* Footer - sticky at bottom with minimal action buttons */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 z-20 w-full" style={{ overflowX: 'hidden' }}>
-          <div className="px-4 py-3 flex items-center justify-between gap-4 min-w-0">
-            <div className="text-xs text-gray-600 flex-shrink-0">{totalSelectedCount()} accommodations selected</div>
-            <div className="flex gap-2 flex-shrink-0">
-              <button onClick={onClose} className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 whitespace-nowrap">Cancel</button>
-              <button onClick={() => {
-                const html = generatePrintableHTML(data);
-                const w = window.open('', '_blank', 'noopener,noreferrer');
-                if (w) {
-                  w.document.write(html);
-                  w.document.close();
-                  w.focus();
-                  setTimeout(() => w.print(), 300);
-                }
-              }} className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 whitespace-nowrap">Print</button>
-              <button
-                onClick={() => {
-                  if (hasAssessmentLimited && !data.consent.parentConsentObtained) {
-                    alert('Parent consent is required for selected classroom-only accommodations. Please obtain consent before saving.');
-                    return;
-                  }
-                  if (data.consent.parentConsentObtained) {
-                    if (!data.consent.parentConsentName || !data.consent.parentConsentDate) {
+        {/* Footer - hidden when embedded in wizard (hideFooter) to avoid overlap with parent buttons */}
+        {!hideFooter && (
+          <div className="flex-shrink-0 mt-4 pt-4 border-t border-gray-200 bg-white">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="text-sm text-gray-600">{totalSelectedCount()} accommodations selected</div>
+              <div className="flex gap-2">
+                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+                <button type="button" onClick={() => {
+                  const html = generatePrintableHTML(data);
+                  const w = window.open('', '_blank', 'noopener,noreferrer');
+                  if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); }
+                }} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Print</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hasAssessmentLimited && !data.consent.parentConsentObtained) {
+                      alert('Parent consent is required for selected classroom-only accommodations. Please obtain consent before saving.');
+                      return;
+                    }
+                    if (data.consent.parentConsentObtained && (!data.consent.parentConsentName || !data.consent.parentConsentDate)) {
                       alert('Please provide parent/guardian name and consent date before saving.');
                       return;
                     }
-                  }
-                  if (inline && onApply) {
-                    onApply(data);
-                  } else {
                     if (onSave) onSave(data);
-                  }
-                  if (!inline && onClose) onClose();
-                }}
-                className={`px-4 py-1.5 text-sm rounded-md font-medium whitespace-nowrap ${hasAssessmentLimited && !data.consent.parentConsentObtained ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                {inline ? 'Apply' : 'Save'}
-              </button>
+                    if (onClose) onClose();
+                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg ${hasAssessmentLimited && !data.consent.parentConsentObtained ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                  Save
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </div>
     );

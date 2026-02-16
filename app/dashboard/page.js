@@ -685,8 +685,9 @@ export default function Dashboard() {
       </div>
 
       {showModal && (
-        <Modal title="Add Student" onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'}>
-          <form onSubmit={handleSubmit} className="relative grid gap-6 pb-24">
+        <Modal title="Add Student" onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'} noScroll>
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
             {wizardStep === 1 ? (
               <>
                 {/* PDF Upload Feature Card */}
@@ -951,6 +952,7 @@ export default function Dashboard() {
               <div className="pt-4 border-t">
                 <AccommodationsModal
                   inline
+                  hideFooter
                   initial={accommodations}
                   onApply={(data) => {
                     setAccommodations(data);
@@ -959,9 +961,10 @@ export default function Dashboard() {
                 />
               </div>
             )}
+            </div>
 
-            {/* Sticky footer actions (wizard) */}
-            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-100 pt-4 pb-4 mt-6 flex justify-between items-center">
+            {/* Footer - fixed at modal bottom */}
+            <div className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-4 flex justify-between items-center">
               <div>
                 <button
                   type="button"
