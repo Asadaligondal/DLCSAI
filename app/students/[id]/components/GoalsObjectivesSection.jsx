@@ -67,7 +67,7 @@ export default function GoalsObjectivesSection({
       {/* PLAAFP first for Original view */}
       {viewMode === 'original' && (
         <SectionCard id="plaafp-narrative" title="PLAAFP Narrative" subtitle="Read-only original AI draft" open={openPlaafp} onToggle={() => setOpenPlaafp(s => !s)}>
-          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
+          <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
         </SectionCard>
       )}
 
@@ -85,24 +85,24 @@ export default function GoalsObjectivesSection({
                         const parsedG = parseInt(g?.referenceId, 10);
                         const gDisplayIndex = Number.isFinite(parsedG) ? parsedG : gi;
                         return (
-                          <div key={`g-${g.referenceId}-${gi}`} className="flex gap-3 items-start">
-                            <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{gDisplayIndex + 1}</div>
-                            <p className="text-gray-700 text-sm">{formatAnnualGoal(g)}</p>
+                          <div key={`g-${g.referenceId}-${gi}`} className="flex gap-4 items-start">
+                            <div className="flex-shrink-0 w-7 h-7 bg-slate-400 text-white rounded-lg flex items-center justify-center text-xs font-semibold mt-0.5">{gDisplayIndex + 1}</div>
+                            <p className="text-slate-700 text-[15px] leading-relaxed flex-1">{formatAnnualGoal(g)}</p>
                           </div>
                         );
                       })}
 
                       {originalAIPlan.shortTermObjectivesByExceptionality && originalAIPlan.shortTermObjectivesByExceptionality.length > 0 && (
-                        <div className="mt-2">
-                          <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
+                        <div className="mt-3">
+                          <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Short-Term Objectives</div>
                           <div className="space-y-2">
                             {(originalAIPlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o, oi) => {
                               const parsedO = parseInt(o?.referenceId, 10);
                               const oDisplayIndex = Number.isFinite(parsedO) ? parsedO : oi;
                               return (
-                                <div key={`o-${o.referenceId}`} className="flex gap-3 items-start">
-                                  <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold mt-1">{oDisplayIndex + 1}</div>
-                                  <p className="text-gray-700 text-sm">{formatObjective(o)}</p>
+                                <div key={`o-${o.referenceId}`} className="flex gap-4 items-start">
+                                  <div className="flex-shrink-0 w-7 h-7 bg-slate-400 text-white rounded-lg flex items-center justify-center text-xs font-semibold mt-0.5">{oDisplayIndex + 1}</div>
+                                  <p className="text-slate-700 text-[15px] leading-relaxed flex-1">{formatObjective(o)}</p>
                                 </div>
                               );
                             })}
@@ -117,47 +117,47 @@ export default function GoalsObjectivesSection({
           )}
 
           <SectionCard id="annual-goals" title="Annual Goals" subtitle="Editable list in numbered rows" open={openGoals} onToggle={() => setOpenGoals(s => !s)}>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {originalAIPlan.annual_goals?.map((goal, index) => (
-                <div key={index} className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                  <p className="text-gray-700 text-sm pt-0.5">{formatAnnualGoal(goal)}</p>
+                <div key={index} className="flex gap-4">
+                  <div className="flex-shrink-0 w-7 h-7 bg-slate-400 text-white rounded-lg flex items-center justify-center text-xs font-semibold">{index + 1}</div>
+                  <p className="text-slate-700 text-[15px] leading-relaxed pt-0.5 flex-1">{formatAnnualGoal(goal)}</p>
                 </div>
               ))}
             </div>
           </SectionCard>
 
           <SectionCard id="short-term-objectives" title="Short-Term Objectives" subtitle="Editable list in numbered rows" open={openObjectives} onToggle={() => setOpenObjectives(s => !s)}>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {originalAIPlan.short_term_objectives?.map((objective, index) => (
-                <div key={index} className="flex gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-slate-300 text-white rounded-full flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                  <p className="text-gray-700 text-sm pt-0.5">{formatObjective(objective)}</p>
+                <div key={index} className="flex gap-4">
+                  <div className="flex-shrink-0 w-7 h-7 bg-slate-400 text-white rounded-lg flex items-center justify-center text-xs font-semibold">{index + 1}</div>
+                  <p className="text-slate-700 text-[15px] leading-relaxed pt-0.5 flex-1">{formatObjective(objective)}</p>
                 </div>
               ))}
             </div>
           </SectionCard>
 
           <SectionCard id="intervention-recommendations" title="Intervention Recommendations" subtitle="AI suggested interventions" open={openInterventions} onToggle={() => setOpenInterventions(s => !s)}>
-            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
+            <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
           </SectionCard>
 
           <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Suggested custom goals" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
             {originalAIPlan.custom_goals && originalAIPlan.custom_goals.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {originalAIPlan.custom_goals.map((cg, idx) => (
-                  <div key={`cg-${idx}`} className="p-2 border border-gray-100 rounded">
-                    <div className="text-sm font-medium text-gray-800">{cg.title}</div>
-                    <div className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || cg.description || ''}</div>
+                  <div key={`cg-${idx}`} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
+                    <div className="text-sm font-semibold text-slate-800">{cg.title}</div>
+                    <div className="text-[15px] text-slate-600 mt-1.5 leading-relaxed whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || cg.description || ''}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-start gap-3 text-sm text-gray-600">
+              <div className="flex items-start gap-4 py-4 text-slate-500">
                 <div className="text-2xl">📭</div>
                 <div>
-                  <div className="font-medium text-gray-900">No custom goals yet</div>
-                  <div className="text-xs text-gray-500">Add custom goals or regenerate with custom inputs.</div>
+                  <div className="font-medium text-slate-900">No custom goals yet</div>
+                  <div className="text-sm text-slate-500 mt-0.5">Add custom goals or regenerate with custom inputs.</div>
                 </div>
               </div>
             )}
@@ -168,17 +168,17 @@ export default function GoalsObjectivesSection({
             {originalAIPlan.academicPerformanceAchievement ? (
               <div className="space-y-2">
                 {originalAIPlan.academicPerformanceAchievement.split('\n').filter(line => line.trim()).map((line, idx) => (
-                  <div key={idx} className="p-2 bg-blue-50 border border-blue-100 rounded text-sm text-gray-700">
+                  <div key={idx} className="px-4 py-2.5 bg-blue-50/80 border border-blue-100 rounded-lg text-[15px] text-slate-700 leading-relaxed">
                     {line.trim()}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-start gap-3 text-sm text-gray-600">
+              <div className="flex items-start gap-4 py-4 text-slate-500">
                 <div className="text-2xl">📈</div>
                 <div>
-                  <div className="font-medium text-gray-900">No performance data yet</div>
-                  <div className="text-xs text-gray-500">Generate IEP to see academic performance indicators.</div>
+                  <div className="font-medium text-slate-900">No performance data yet</div>
+                  <div className="text-sm text-slate-500 mt-0.5">Generate IEP to see academic performance indicators.</div>
                 </div>
               </div>
             )}
@@ -187,19 +187,19 @@ export default function GoalsObjectivesSection({
           {/* Recommended Accommodations (AI Generated) */}
           <SectionCard id="recommended-accommodations" title="Recommended Accommodations" subtitle="AI-suggested accommodations" open={openRecommendedAccommodations} onToggle={() => setOpenRecommendedAccommodations(s => !s)}>
             {originalAIPlan.recommendedAccommodations && originalAIPlan.recommendedAccommodations.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {originalAIPlan.recommendedAccommodations.map((accommodation, idx) => (
-                  <div key={idx} className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium mr-1 mb-1">
+                  <span key={idx} className="inline-flex px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg text-sm font-medium border border-emerald-100">
                     {accommodation}
-                  </div>
+                  </span>
                 ))}
               </div>
             ) : (
-              <div className="flex items-start gap-3 text-sm text-gray-600">
+              <div className="flex items-start gap-4 py-4 text-slate-500">
                 <div className="text-2xl">🎯</div>
                 <div>
-                  <div className="font-medium text-gray-900">No accommodations yet</div>
-                  <div className="text-xs text-gray-500">Generate IEP to see recommended accommodations.</div>
+                  <div className="font-medium text-slate-900">No accommodations yet</div>
+                  <div className="text-sm text-slate-500 mt-0.5">Generate IEP to see recommended accommodations.</div>
                 </div>
               </div>
             )}
@@ -212,7 +212,7 @@ export default function GoalsObjectivesSection({
             <textarea
               value={editablePlan.plaafp_narrative}
               onChange={(e) => setEditablePlan({ ...editablePlan, plaafp_narrative: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded text-sm leading-relaxed resize-none"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg text-[15px] leading-relaxed resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
               rows={6}
             />
           </SectionCard>
@@ -245,8 +245,8 @@ export default function GoalsObjectivesSection({
                       ))}
 
                       {editablePlan.shortTermObjectivesByExceptionality && (
-                        <div className="mt-2">
-                          <div className="text-xs font-medium text-gray-600 mb-2">Short-Term Objectives</div>
+                        <div className="mt-3">
+                          <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Short-Term Objectives</div>
                           <div className="space-y-2">
                             {(editablePlan.shortTermObjectivesByExceptionality.find(sg => sg.exceptionality === group.exceptionality)?.objectives || []).map((o, oi) => {
                               const objGroupIndex = editablePlan.shortTermObjectivesByExceptionality.findIndex(sg => sg.exceptionality === group.exceptionality);
@@ -279,7 +279,7 @@ export default function GoalsObjectivesSection({
                   value={formatAnnualGoal(goal)}
                   onChange={(val) => updateGoal(index, val)}
                   onDelete={() => removeGoal(index)}
-                  badgeColor={'bg-slate-400'}
+                  badgeColor={'bg-slate-500'}
                 />
               ))}
             </div>
@@ -294,7 +294,7 @@ export default function GoalsObjectivesSection({
                   value={formatObjective(objective)}
                   onChange={(val) => updateObjective(index, val)}
                   onDelete={() => removeObjective(index)}
-                  badgeColor={'bg-slate-400'}
+                  badgeColor={'bg-slate-500'}
                 />
               ))}
             </div>
@@ -302,10 +302,10 @@ export default function GoalsObjectivesSection({
 
           <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Edit or accept suggested custom goals" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
             {editablePlan.custom_goals && editablePlan.custom_goals.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {editablePlan.custom_goals.map((cg, idx) => (
-                  <div key={`eg-edit-${idx}`} className="p-2 border border-gray-100 rounded">
-                    <div className="text-sm font-medium text-gray-800 mb-1">{cg.title}</div>
+                  <div key={`eg-edit-${idx}`} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
+                    <div className="text-sm font-semibold text-slate-800 mb-2">{cg.title}</div>
                     <textarea
                       value={cg.recommendation || ''}
                       onChange={(e) => {
@@ -318,17 +318,17 @@ export default function GoalsObjectivesSection({
                         });
                       }}
                       rows={3}
-                      className="w-full px-2 py-1 border border-gray-200 rounded text-sm"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[15px] leading-relaxed focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                     />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-start gap-3 text-sm text-gray-600">
+              <div className="flex items-start gap-4 py-4 text-slate-500">
                 <div className="text-2xl">📭</div>
                 <div>
-                  <div className="font-medium text-gray-900">No custom goals yet</div>
-                  <div className="text-xs text-gray-500">Add custom goals or regenerate with custom inputs.</div>
+                  <div className="font-medium text-slate-900">No custom goals yet</div>
+                  <div className="text-sm text-slate-500 mt-0.5">Add custom goals or regenerate with custom inputs.</div>
                 </div>
               </div>
             )}
@@ -339,7 +339,7 @@ export default function GoalsObjectivesSection({
             <textarea
               value={editablePlan.academicPerformanceAchievement || ''}
               onChange={(e) => setEditablePlan({ ...editablePlan, academicPerformanceAchievement: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded text-sm leading-relaxed resize-none"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg text-[15px] leading-relaxed resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
               rows={4}
               placeholder="Edit academic performance indicators..."
             />
@@ -348,19 +348,19 @@ export default function GoalsObjectivesSection({
           {/* Recommended Accommodations (Read-Only in Edited View) */}
           <SectionCard id="recommended-accommodations" title="Recommended Accommodations" subtitle="AI-suggested accommodations (read-only)" open={openRecommendedAccommodations} onToggle={() => setOpenRecommendedAccommodations(s => !s)}>
             {editablePlan.recommendedAccommodations && editablePlan.recommendedAccommodations.length > 0 ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {editablePlan.recommendedAccommodations.map((accommodation, idx) => (
-                  <div key={idx} className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium mr-1 mb-1">
+                  <span key={idx} className="inline-flex px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg text-sm font-medium border border-emerald-100">
                     {accommodation}
-                  </div>
+                  </span>
                 ))}
               </div>
             ) : (
-              <div className="flex items-start gap-3 text-sm text-gray-600">
+              <div className="flex items-start gap-4 py-4 text-slate-500">
                 <div className="text-2xl">🎯</div>
                 <div>
-                  <div className="font-medium text-gray-900">No accommodations yet</div>
-                  <div className="text-xs text-gray-500">Generate IEP to see recommended accommodations.</div>
+                  <div className="font-medium text-slate-900">No accommodations yet</div>
+                  <div className="text-sm text-slate-500 mt-0.5">Generate IEP to see recommended accommodations.</div>
                 </div>
               </div>
             )}
@@ -371,7 +371,7 @@ export default function GoalsObjectivesSection({
             <textarea
               value={editablePlan.intervention_recommendations}
               onChange={(e) => setEditablePlan({ ...editablePlan, intervention_recommendations: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 rounded text-sm leading-relaxed resize-none"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg text-[15px] leading-relaxed resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
               rows={4}
             />
           </SectionCard>

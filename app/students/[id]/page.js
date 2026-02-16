@@ -557,13 +557,13 @@ export default function StudentDetail() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F7F9FB] font-sans text-slate-800">
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 antialiased">
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
         <Navbar />
 
-        <div className="max-w-full px-8 py-6">
+        <div className="max-w-full px-8 py-6 lg:px-10">
           <EditorHeader student={student} />
 
           <StickyActionBar
