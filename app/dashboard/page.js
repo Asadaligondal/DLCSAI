@@ -812,6 +812,7 @@ export default function Dashboard() {
                     value={formData.strengths}
                     onChange={(value) => setFormData({ ...formData, strengths: value })}
                     placeholder="Select strengths..."
+                    allowMultiplePerGroup
                   />
 
                   {formData.strengths.includes('Others') && (

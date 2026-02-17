@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
-export default function MultiSelect({ label, options, value = [], onChange, placeholder = 'Select options...' }) {
+export default function MultiSelect({ label, options, value = [], onChange, placeholder = 'Select options...', allowMultiplePerGroup = false }) {
   const [isOpen, setIsOpen] = useState(false);
 
   // Determine if options is grouped (array of { label, options }) or flat (array of strings)
@@ -22,6 +22,8 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
     const isSelected = value.includes(option);
     if (isSelected) {
       onChange(value.filter((v) => v !== option));
+    } else if (allowMultiplePerGroup) {
+      onChange([...value, option]);
     } else {
       // remove any other selected option from the same group, then add this one
       const filtered = value.filter((v) => !groupOptions.includes(v));
@@ -76,8 +78,8 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
                     className={`px-4 py-2 cursor-pointer hover:bg-gray-50 flex items-center gap-2 ${value.includes(opt) ? 'bg-blue-50' : ''}`}
                   >
                     <input
-                      type="radio"
-                      name={group.label}
+                      type={allowMultiplePerGroup ? 'checkbox' : 'radio'}
+                      name={allowMultiplePerGroup ? undefined : group.label}
                       checked={value.includes(opt)}
                       onChange={() => {}}
                       className="w-4 h-4 text-blue-600 rounded"
