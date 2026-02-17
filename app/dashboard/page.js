@@ -9,7 +9,7 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
-import { Plus, Search, Trash2, Zap, Upload } from 'lucide-react';
+import { Plus, Search, Trash2, Zap, Upload, FileText, Users } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -506,111 +506,119 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-[#F7F9FB] font-sans text-slate-800">
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 antialiased">
       {/* Left Sidebar */}
       <Sidebar user={user} onLogout={handleLogout} />
 
       {/* Right Main Content */}
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-          <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Dashboard</h2>
-            <div className="text-sm text-slate-500">Welcome, {user?.name}</div>
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+              <Users className="w-5 h-5 text-slate-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Dashboard</h2>
+              <div className="text-sm text-slate-500">Welcome, {user?.name}</div>
+            </div>
           </div>
-          <div />
         </header>
 
         <main className="p-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-3xl font-semibold text-slate-900">Students</h1>
-                <p className="text-xs uppercase tracking-wide text-gray-500 mt-1">{filteredStudents.length} total</p>
+                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Students</h1>
+                <p className="text-sm text-slate-500 mt-1">{filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}</p>
               </div>
               <button
                 onClick={handleOpenModal}
-                className="flex items-center gap-2 h-10 bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-md shadow-sm text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex items-center gap-2 h-11 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 aria-label="Add Student"
               >
-                <Plus className="w-4 h-4 opacity-90" />
-                <span className="leading-none">Add Student</span>
+                <Plus className="w-4 h-4" />
+                Add Student
               </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-4 border-b border-gray-100">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search students..."
+                placeholder="Search by name or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-10 rounded-md text-sm bg-white border border-gray-200 shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow"
+                className="w-full pl-10 pr-4 h-10 rounded-lg text-sm bg-white border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Student ID
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Age
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Grade
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Goals
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     IEP Plan
                   </th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center">
-                      <div className="flex items-center justify-center gap-2 text-gray-500">
-                        <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <td colSpan="7" className="px-6 py-16 text-center">
+                      <div className="flex items-center justify-center gap-3 text-slate-500">
+                        <svg className="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span className="text-sm">Loading students...</span>
+                        <span className="text-sm font-medium">Loading students...</span>
                       </div>
                     </td>
                   </tr>
                 ) : filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500 text-sm">
-                      No students found
+                    <td colSpan="7" className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-500">
+                        <Users className="w-12 h-12 text-slate-300" />
+                        <span className="text-sm font-medium">No students found</span>
+                        <span className="text-xs">Add a student or try a different search</span>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
+                    <tr key={student._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full flex items-center justify-center flex-shrink-0 ring-1 ring-white shadow">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
                             <span className="text-white font-semibold text-sm">
                               {student.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-slate-900">{student.name}</div>
-                            <div className="text-xs text-gray-500">{student.gradeLevel} • {student.age} yrs</div>
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-sm font-semibold text-slate-900">{student.name}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">{student.gradeLevel} • {student.age} yrs</div>
+                            <div className="text-xs text-slate-400 mt-0.5">
                               {(() => {
                                 const acc = student.student_accommodations || {};
                                 const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
@@ -621,18 +629,18 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 font-mono">{student.studentId}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{student.age}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{student.gradeLevel}</td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-5 py-4 text-sm text-slate-600 font-mono">{student.studentId}</td>
+                      <td className="px-5 py-4 text-sm text-slate-600">{student.age}</td>
+                      <td className="px-5 py-4 text-sm text-slate-600">{student.gradeLevel}</td>
+                      <td className="px-5 py-4">
                         {student?.assignedGoals && student.assignedGoals.length > 0 ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white">Created</span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">Created</span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-600 text-white">Not created</span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Not created</span>
                         )}
                       </td>
 
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-5 py-4">
                         {(
                           student?.iep_plan_data && (
                             student.iep_plan_data.original_ai_draft?.plaafp_narrative ||
@@ -641,31 +649,32 @@ export default function Dashboard() {
                             (student.iep_plan_data.user_edited_version?.annual_goals && student.iep_plan_data.user_edited_version.annual_goals.length > 0)
                           )
                         ) ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white">Generated</span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">Generated</span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-600 text-white">Pending</span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">Pending</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => router.push(`/students/${student._id}`)}
-                            className="px-3 py-1.5 bg-white border border-gray-200 hover:border-gray-300 text-indigo-600 hover:bg-indigo-50 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                             title="IEP"
                           >
+                            <FileText className="w-4 h-4" />
                             IEP
                           </button>
                           <button
                             onClick={() => router.push(`/services/${student._id}`)}
-                            className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-md text-sm font-medium flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                            className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                             title="View Recs"
                           >
                             <Zap className="w-4 h-4" />
-                            <span>View Recs</span>
+                            View Recs
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(student)}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-200"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20"
                             title="Delete"
                             aria-label="Delete student"
                           >
@@ -691,12 +700,17 @@ export default function Dashboard() {
             {wizardStep === 1 ? (
               <>
                 {/* PDF Upload Feature Card */}
-                <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-lg border border-indigo-100">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">Auto-fill from PDF</p>
-                    <p className="text-xs text-slate-500 mt-1">Upload a report or intake form to extract student information</p>
+                <div className="flex items-center justify-between p-5 bg-blue-50/80 rounded-xl border border-blue-100">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Auto-fill from PDF</p>
+                      <p className="text-xs text-slate-600 mt-0.5">Upload a report or intake form to extract student information</p>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end">
+                  <div>
                     <input
                       type="file"
                       id="pdf-upload"
@@ -705,10 +719,9 @@ export default function Dashboard() {
                       className="hidden"
                       disabled={uploading}
                     />
-                      <div className="mt-3" />
                     <label
                       htmlFor="pdf-upload"
-                      className={`inline-flex items-center gap-2 h-11 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`inline-flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {uploading ? (
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -718,9 +731,8 @@ export default function Dashboard() {
                       ) : (
                         <Upload className="w-4 h-4" />
                       )}
-                      <span className="leading-none">{uploading ? 'Analyzing...' : 'Upload PDF'}</span>
+                      {uploading ? 'Analyzing...' : 'Upload PDF'}
                     </label>
-                    
                   </div>
                 </div>
 
