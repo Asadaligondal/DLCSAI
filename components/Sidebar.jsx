@@ -23,7 +23,7 @@ export default function Sidebar({ user, onLogout }) {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Accommodations', icon: Accessibility, path: '/accommodations' },
     { name: 'Manage Classrooms', icon: Users, path: '/students' },
-    { name: 'IEP Writer', icon: FileText, path: '/iep-writer' },
+    { name: 'IEP Writer', icon: FileText, path: '/iep-writer', badge: 'WIP' },
     { name: 'Billing / Plan', icon: CreditCard, path: '/billing' },
     { name: 'Settings', icon: Settings, path: '/settings' }
   ];
@@ -66,8 +66,17 @@ export default function Sidebar({ user, onLogout }) {
                 active ? 'bg-indigo-600 text-white' : 'hover:bg-slate-800'
               }`}
             >
-              <Icon className="w-5 h-5" />
-              {!collapsed && <span className="text-sm font-medium">{item.name}</span>}
+              <Icon className="w-5 h-5 shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="text-sm font-medium flex-1">{item.name}</span>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/20 text-amber-300">
+                      {item.badge}
+                    </span>
+                  )}
+                </>
+              )}
             </Link>
           );
         })}

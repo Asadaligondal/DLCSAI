@@ -83,9 +83,9 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <Link href="/settings" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
               <Settings className="w-5 h-5 text-gray-600" />
-            </button>
+            </Link>
 
             <div className="relative" ref={dropdownRef}>
               <button
@@ -99,6 +99,14 @@ export default function Navbar() {
 
               {open && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                  <Link
+                    href="/settings"
+                    onClick={() => setOpen(false)}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    My Profile
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"

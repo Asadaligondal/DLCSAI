@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import MultiSelect from '@/components/MultiSelect';
-import { X, Save, Target } from 'lucide-react';
+import { X, Save, Target, ChevronDown } from 'lucide-react';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
@@ -29,6 +29,7 @@ export default function StudentInfoHeader({
   const [showCustomGoals, setShowCustomGoals] = useState(false);
   const [customGoals, setCustomGoals] = useState([]);
   const [showAccomDetails, setShowAccomDetails] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const openAccommodations = async () => {
     // try to fetch existing accommodations for this student
@@ -81,13 +82,37 @@ export default function StudentInfoHeader({
     <div className="grid grid-cols-1 gap-6">
       <div>
         {!isEditing ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Collapsible header - always visible */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded((e) => !e)}
+              className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50/50 transition-colors"
+            >
               <h3 className="text-base font-semibold text-slate-900">Student Context</h3>
-              <span className="text-xs text-slate-500 font-medium">Summary</span>
-            </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-sm text-slate-600 truncate">
+                  {[
+                    formData.name || student?.name || '—',
+                    formData.gradeLevel || student?.gradeLevel || '—',
+                    Array.isArray(student?.disabilities) && student.disabilities[0] ? student.disabilities[0] : null,
+                    (() => {
+                      const acc = student?.student_accommodations || {};
+                      const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
+                      const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
+                      return total > 0 ? `${total} accommodations` : null;
+                    })(),
+                    customGoals.length > 0 ? `${customGoals.length} custom goals` : '0 custom goals'
+                  ].filter(Boolean).join(' • ')}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Expandable content */}
+            {isExpanded && (
+            <div className="px-5 pb-5 pt-0 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-4 pt-4">
               <div className="col-span-2 grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
@@ -232,6 +257,8 @@ export default function StudentInfoHeader({
                   </div>
                 )}
               </>
+            )}
+            </div>
             )}
           </div>
         ) : (

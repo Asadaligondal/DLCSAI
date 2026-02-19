@@ -1,11 +1,28 @@
 "use client";
 
-import React from 'react';
-import { Save, Wand2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Save, Wand2, Download, ChevronDown, FileText, FileType } from 'lucide-react';
 
 export default function StickyActionBar({ onRegenerate, onSave, onDownload, onReset, isReviewed, isBusy, savedAt }) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef(null);
+
   // savedAt is optional ISO timestamp; if not provided show 'Ready'
   const statusText = savedAt ? `Saved ${savedAt}` : 'Ready';
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (exportRef.current && !exportRef.current.contains(e.target)) {
+        setExportOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const exportDisabled = !isReviewed;
+  const secondaryDisabled = isBusy;
 
   return (
     <div style={{ position: 'sticky', top: 0, zIndex: 60 }} className="bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -18,6 +35,7 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onRe
 
           <div className="ml-auto flex flex-col items-end">
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Primary: Save Changes */}
               <button
                 onClick={onSave}
                 disabled={isBusy}
@@ -27,32 +45,64 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onRe
                 Save Changes
               </button>
 
+              <div className="w-px h-8 bg-slate-200 shrink-0 mx-1" aria-hidden />
+
+              {/* Secondary: Regenerate, Reset */}
               <button
                 onClick={onRegenerate}
-                disabled={isBusy}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${isBusy ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-white' : 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50'}`}
+                disabled={secondaryDisabled}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${secondaryDisabled ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-white' : 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50'}`}
               >
                 <Wand2 className="w-4 h-4" />
                 Regenerate IEP
               </button>
 
               <button
-                onClick={onDownload}
-                disabled={!isReviewed}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${isReviewed ? 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50' : 'text-slate-400 border-slate-200 cursor-not-allowed bg-white'}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download Word Doc
-              </button>
-
-              <button
                 onClick={onReset}
-                className="px-4 py-2.5 text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition-colors"
+                disabled={secondaryDisabled}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${secondaryDisabled ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-white' : 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50'}`}
               >
                 Reset to Original
               </button>
+
+              <div className="w-px h-8 bg-slate-200 shrink-0 mx-1" aria-hidden />
+
+              {/* Export dropdown */}
+              <div className="relative" ref={exportRef}>
+                <button
+                  onClick={() => !exportDisabled && setExportOpen((o) => !o)}
+                  disabled={exportDisabled}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${exportDisabled ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-white' : 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50'}`}
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                  <ChevronDown className={`w-4 h-4 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {exportOpen && (
+                  <div className="absolute right-0 mt-1 w-52 py-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                    <button
+                      onClick={() => {
+                        onDownload();
+                        setExportOpen(false);
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
+                    >
+                      <FileType className="w-4 h-4 text-slate-500" />
+                      Word Document (.docx)
+                    </button>
+                    <button
+                      disabled
+                      title="Coming soon"
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-400 cursor-not-allowed text-left"
+                    >
+                      <FileText className="w-4 h-4" />
+                      PDF
+                      <span className="ml-auto text-xs text-slate-400">Coming soon</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="text-xs text-slate-500 mt-2">{statusText}</div>
           </div>
