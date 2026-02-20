@@ -522,6 +522,13 @@ export default function Dashboard() {
               <div className="text-sm text-slate-500">Welcome, {user?.name}</div>
             </div>
           </div>
+          <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
+            {user?.profilePicture ? (
+              <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-medium text-slate-600">{user?.name?.[0] || '?'}</span>
+            )}
+          </div>
         </header>
 
         <main className="p-8">

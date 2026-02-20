@@ -35,6 +35,9 @@ dist-ssr
 build
 out
 
+# User uploads
+public/uploads/
+
 # Next.js
 .next/
 next-env.d.ts

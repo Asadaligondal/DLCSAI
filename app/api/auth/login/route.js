@@ -62,7 +62,8 @@ export async function POST(request) {
           name: user.name,
           email: user.email,
           role: user.role,
-          schoolId: user.schoolId
+          schoolId: user.schoolId,
+          profilePicture: user.profilePicture || null
         }
       },
       { status: 200 }

@@ -8,16 +8,23 @@ import { Users, Target, LogOut, User, Settings, LayoutDashboard, Home } from 'lu
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
   const dropdownRef = useRef(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const u = JSON.parse(localStorage.getItem('user') || 'null');
-    if (u) {
-      setUserRole(u.role);
-    }
-  }, []);
+    const loadUser = () => {
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      if (u) {
+        setUserRole(u.role);
+        setProfilePicture(u.profilePicture || null);
+      }
+    };
+    loadUser();
+    window.addEventListener('user-updated', loadUser);
+    return () => window.removeEventListener('user-updated', loadUser);
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -92,8 +99,12 @@ export default function Navbar() {
                 onClick={() => setOpen(!open)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden bg-blue-600">
+                  {profilePicture ? (
+                    <img src={profilePicture} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
                 </div>
               </button>
 
