@@ -1,5 +1,5 @@
-import React from 'react';
-import { Save, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronRight, FileSearch } from 'lucide-react';
 import GoalsObjectivesSection from './GoalsObjectivesSection';
 
 export default function IEPPlanEditor({
@@ -19,8 +19,10 @@ export default function IEPPlanEditor({
   removeObjective,
   updateGoal,
   updateObjective,
-  setEditablePlan
+  setEditablePlan,
+  ragContext
 }) {
+  const [showRagContext, setShowRagContext] = useState(false);
   return (
     <div className="mt-6 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div className="px-6 pt-6 pb-4">
@@ -78,6 +80,38 @@ export default function IEPPlanEditor({
           <div className="h-20" /> {/* spacer so content won't be hidden behind sticky footer */}
         </div>
       )}
+
+      {/* Raw Retrieved Context (for analysis) - collapsible dropdown, always visible */}
+      <div id="raw-retrieved-context" className="mt-6 border border-amber-200 rounded-lg bg-amber-50/50 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowRagContext(s => !s)}
+          className="w-full flex items-center gap-2 px-4 py-3 text-left text-sm font-medium text-amber-900 hover:bg-amber-100/80 transition-colors"
+        >
+          {showRagContext ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <FileSearch className="w-4 h-4" />
+          Raw Retrieved Context (for analysis)
+          {ragContext ? (
+            <span className="text-xs font-normal text-amber-700 ml-1">— {ragContext.length} chars</span>
+          ) : (
+            <span className="text-xs font-normal text-amber-600 ml-1">— not available (regenerate IEP with uploaded documents)</span>
+          )}
+        </button>
+        {showRagContext && (
+          <div className="border-t border-amber-200 p-4">
+            {ragContext ? (
+              <textarea
+                readOnly
+                value={ragContext}
+                rows={16}
+                className="w-full px-3 py-2.5 text-[13px] font-mono text-slate-700 bg-white border border-amber-200 rounded-lg resize-y focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
+              />
+            ) : (
+              <p className="text-sm text-amber-800 py-4">No retrieved context from last generation. Regenerate IEP with uploaded documents to see the raw context used for goals and objectives.</p>
+            )}
+          </div>
+        )}
+      </div>
       </div>
 
       {/* Sticky bottom review bar inside editor container */}

@@ -21,7 +21,7 @@ export async function PUT(req, { params }) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const body = await req.json();
-    const { original_ai_draft, user_edited_version, is_reviewed } = body;
+    const { original_ai_draft, user_edited_version, is_reviewed, rag_context } = body;
 
     console.log('💾 Save IEP Request Body:', body);
     console.log('📝 Original AI Draft keys:', original_ai_draft ? Object.keys(original_ai_draft) : 'null');
@@ -108,10 +108,12 @@ export async function PUT(req, { params }) {
 
     // Update the IEP plan data (with normalized contents)
     student.iep_plan_data = {
+      ...(student.iep_plan_data && typeof student.iep_plan_data === 'object' ? student.iep_plan_data : {}),
       original_ai_draft: normalizedOriginal,
       user_edited_version: normalizedUserEdited,
       is_reviewed: is_reviewed,
-      last_updated: new Date()
+      last_updated: new Date(),
+      ...(rag_context != null && rag_context !== '' ? { rag_context } : {})
     };
 
     console.log('📦 New IEP data to save:', student.iep_plan_data);

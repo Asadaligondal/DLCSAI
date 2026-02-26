@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import {
   Upload,
@@ -11,7 +12,8 @@ import {
   Layers,
   Zap,
   ChevronDown,
-  FileCode
+  FileCode,
+  Trash2
 } from 'lucide-react';
 
 const STEPS = [
@@ -86,19 +88,93 @@ const colorMap = {
 };
 
 export default function IEPWriterPage() {
+  const router = useRouter();
+  const fileInputRef = useRef(null);
   const [user, setUser] = useState({ name: 'Guest' });
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const fetchDocuments = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await fetch('/api/documents', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.documents || []);
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const raw = localStorage.getItem('user');
       if (raw) setUser(JSON.parse(raw));
+      fetchDocuments();
     } catch {}
   }, []);
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push('/login');
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadError('Only PDF files are supported');
+      return;
+    }
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/documents/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.message || 'Upload failed');
+        return;
+      }
+      await fetchDocuments();
+    } catch (err) {
+      setUploadError('Upload failed');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/documents/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) await fetchDocuments();
+    } catch {}
+    finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-slate-50">
-      <Sidebar user={user} />
+      <Sidebar user={user} onLogout={handleLogout} />
 
       <div className="flex-1 overflow-auto p-8">
         <header className="mb-8">
@@ -163,6 +239,67 @@ export default function IEPWriterPage() {
               This flow will combine document retrieval (RAG) with student context to generate personalized IEPs.
             </p>
           </div>
+
+          {/* Institutional Documents */}
+          <section className="mt-10 pt-8 border-t border-slate-200">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Institutional Documents</h2>
+            <p className="text-sm text-slate-600 mb-4">
+              Upload PDFs (goals, objectives, standards) to improve IEP generation with RAG context.
+            </p>
+
+            <div className="mb-6">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Uploading...' : 'Upload PDF'}
+              </button>
+              {uploadError && (
+                <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+              )}
+            </div>
+
+            {documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-white"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 truncate">{doc.originalFilename}</p>
+                        <p className="text-xs text-slate-500">
+                          {doc.chunkCount} chunks · {doc.status}
+                          {doc.pageCount ? ` · ${doc.pageCount} pages` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      disabled={deletingId === doc.id}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 py-4">No documents uploaded yet.</p>
+            )}
+          </section>
         </div>
       </div>
     </div>

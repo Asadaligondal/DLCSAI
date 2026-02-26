@@ -142,13 +142,28 @@ export default function GoalsObjectivesSection({
             <p className="text-slate-700 text-[15px] leading-relaxed whitespace-pre-wrap">{originalAIPlan.intervention_recommendations}</p>
           </SectionCard>
 
-          <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Suggested custom goals" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
+          <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Suggested custom goals with retrieved objectives from documents" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
             {originalAIPlan.custom_goals && originalAIPlan.custom_goals.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {originalAIPlan.custom_goals.map((cg, idx) => (
                   <div key={`cg-${idx}`} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
                     <div className="text-sm font-semibold text-slate-800">{cg.title}</div>
-                    <div className="text-[15px] text-slate-600 mt-1.5 leading-relaxed whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || cg.description || ''}</div>
+                    {(cg.recommendation || cg.recommendation_text || cg.description) && (
+                      <div className="text-[15px] text-slate-600 mt-1.5 leading-relaxed whitespace-pre-wrap">{cg.recommendation || cg.recommendation_text || cg.description}</div>
+                    )}
+                    {Array.isArray(cg.retrieved_objectives) && cg.retrieved_objectives.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Retrieved objectives from documents</div>
+                        <ul className="space-y-1.5">
+                          {cg.retrieved_objectives.map((obj, oi) => (
+                            <li key={oi} className="flex gap-2 items-start text-[15px] text-slate-700">
+                              <span className="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-700 rounded flex items-center justify-center text-xs font-medium mt-0.5">{oi + 1}</span>
+                              <span className="leading-relaxed">{obj}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -300,26 +315,40 @@ export default function GoalsObjectivesSection({
             </div>
           </SectionCard>
 
-          <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Edit or accept suggested custom goals" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
+          <SectionCard id="custom-goals" title="Custom Goals (LLM Recommendations)" subtitle="Edit or accept suggested custom goals with retrieved objectives" open={openCustomGoals} onToggle={() => setOpenCustomGoals(s => !s)}>
             {editablePlan.custom_goals && editablePlan.custom_goals.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {editablePlan.custom_goals.map((cg, idx) => (
                   <div key={`eg-edit-${idx}`} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50">
                     <div className="text-sm font-semibold text-slate-800 mb-2">{cg.title}</div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Strategy recommendation</label>
                     <textarea
                       value={cg.recommendation || ''}
                       onChange={(e) => {
                         setEditablePlan(prev => {
                           const next = JSON.parse(JSON.stringify(prev || {}));
                           if (!Array.isArray(next.custom_goals)) next.custom_goals = [];
-                          next.custom_goals[idx] = next.custom_goals[idx] || { title: cg.title, recommendation: '' };
+                          next.custom_goals[idx] = next.custom_goals[idx] || { title: cg.title, recommendation: '', retrieved_objectives: [] };
                           next.custom_goals[idx].recommendation = e.target.value;
                           return next;
                         });
                       }}
-                      rows={3}
+                      rows={2}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[15px] leading-relaxed focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
                     />
+                    {Array.isArray(cg.retrieved_objectives) && cg.retrieved_objectives.length > 0 && (
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Retrieved objectives from documents</div>
+                        <ul className="space-y-1.5">
+                          {cg.retrieved_objectives.map((obj, oi) => (
+                            <li key={oi} className="flex gap-2 items-start text-[15px] text-slate-700">
+                              <span className="flex-shrink-0 w-5 h-5 bg-blue-100 text-blue-700 rounded flex items-center justify-center text-xs font-medium mt-0.5">{oi + 1}</span>
+                              <span className="leading-relaxed">{obj}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

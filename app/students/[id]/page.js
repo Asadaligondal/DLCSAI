@@ -86,6 +86,7 @@ export default function StudentDetail() {
   const [customGoals, setCustomGoals] = useState([]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
+  const [ragContext, setRagContext] = useState(null); // Raw retrieved context from last generation (for analysis)
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -189,6 +190,7 @@ export default function StudentDetail() {
         setEditablePlan(sanitizedEdited);
         setIsReviewed(studentData.iep_plan_data.is_reviewed || false);
         setGeneratedPlan(sanitizedOriginal);
+        setRagContext(studentData.iep_plan_data.rag_context || null);
         setViewMode('edited');
       } else {
         console.log('❌ No existing IEP plan found');
@@ -312,6 +314,7 @@ export default function StudentDetail() {
       setGeneratedPlan(aiData);
       setOriginalAIPlan(aiData);
       setEditablePlan(aiData);
+      setRagContext(response.data.ragContext || null);
       setIsReviewed(false);
       setHasExistingPlan(true);
       setViewMode('edited');
@@ -346,7 +349,8 @@ export default function StudentDetail() {
         {
           original_ai_draft: originalAIPlan,
           user_edited_version: editablePlan,
-          is_reviewed: isReviewed
+          is_reviewed: isReviewed,
+          rag_context: ragContext || undefined
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -628,17 +632,19 @@ export default function StudentDetail() {
                   updateGoal={updateGoal}
                   updateObjective={updateObjective}
                   setEditablePlan={setEditablePlan}
+                  ragContext={ragContext}
                 />
               </div>
 
               <div>
-                <RightTOC sections={[
+                <                RightTOC sections={[
                   { id: 'plaafp-narrative', label: 'PLAAFP Narrative' },
                   { id: 'goals-objectives-by-exceptionality', label: 'Goals & Objectives by Exceptionality' },
                   { id: 'annual-goals', label: 'Annual Goals' },
                   { id: 'short-term-objectives', label: 'Short-Term Objectives' },
                   { id: 'custom-goals', label: 'Custom Goals' },
                   { id: 'intervention-recommendations', label: 'Intervention Recommendations' },
+                  { id: 'raw-retrieved-context', label: 'Raw Retrieved Context' },
                   { id: 'final-review', label: 'Final Review' }
                 ]} />
               </div>
