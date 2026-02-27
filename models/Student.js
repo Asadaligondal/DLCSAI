@@ -81,33 +81,23 @@ const StudentSchema = new mongoose.Schema({
     original_ai_draft: {
       plaafp_narrative: String,
       annual_goals: [String],
-      // Grouped goals by exceptionality (added to persist AI-generated grouping)
       annualGoalsByExceptionality: [
         {
           exceptionality: String,
-          goals: [
-            {
-              referenceId: String,
-              goal: String
-            }
-          ]
+          goals: [{ referenceId: String, goal: String }]
         }
       ],
       short_term_objectives: [String],
-      // Grouped short-term objectives by exceptionality
       shortTermObjectivesByExceptionality: [
         {
           exceptionality: String,
-          objectives: [
-            {
-              referenceId: String,
-              objective: String,
-              alignedAnnualGoalReferenceId: String
-            }
-          ]
+          objectives: [{ referenceId: String, objective: String, alignedAnnualGoalReferenceId: String }]
         }
       ],
-      intervention_recommendations: String
+      intervention_recommendations: String,
+      recommendedAccommodations: [String],
+      academicPerformanceAchievement: String,
+      custom_goals: [{ title: String, recommendation: String, retrieved_objectives: [String] }]
     },
     user_edited_version: {
       plaafp_narrative: String,
@@ -115,37 +105,24 @@ const StudentSchema = new mongoose.Schema({
       annualGoalsByExceptionality: [
         {
           exceptionality: String,
-          goals: [
-            {
-              referenceId: String,
-              goal: String
-            }
-          ]
+          goals: [{ referenceId: String, goal: String }]
         }
       ],
       short_term_objectives: [String],
       shortTermObjectivesByExceptionality: [
         {
           exceptionality: String,
-          objectives: [
-            {
-              referenceId: String,
-              objective: String,
-              alignedAnnualGoalReferenceId: String
-            }
-          ]
+          objectives: [{ referenceId: String, objective: String, alignedAnnualGoalReferenceId: String }]
         }
       ],
-      intervention_recommendations: String
+      intervention_recommendations: String,
+      recommendedAccommodations: [String],
+      academicPerformanceAchievement: String,
+      custom_goals: [{ title: String, recommendation: String, retrieved_objectives: [String] }]
     },
-    is_reviewed: {
-      type: Boolean,
-      default: false
-    },
-    last_updated: {
-      type: Date,
-      default: Date.now
-    }
+    is_reviewed: { type: Boolean, default: false },
+    last_updated: { type: Date, default: Date.now },
+    rag_context: String
   },
   annualGoals: {
     type: String,

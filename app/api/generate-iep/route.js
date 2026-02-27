@@ -34,7 +34,7 @@ QUALITY RULES (MANDATORY)
 
 2) Generate goals ONLY when evidenced — Only create goals when there is clear need from weaknesses, strengths, baselines, assessments, accommodations, custom goals, or institutional context. Do NOT generate goals by default. Do NOT add fake percentages, trial counts, or measurement windows.
 
-3) Prioritize quality over quantity — 2–4 annual goals total unless input justifies more. Each annual goal should have 2–3 short-term objectives.
+3) Quantity — Aim for 3–6 annual goals and 3–5 short-term objectives per goal. Do not artificially limit to 1–2; include enough to cover the student's needs.
 
 4) ABSOLUTE NON-DUPLICATION — This is the most critical rule:
    - annual_goals and short_term_objectives are BROAD cross-exceptionality goals applicable school-wide.
@@ -46,19 +46,19 @@ QUALITY RULES (MANDATORY)
 
 6) Accommodations linkage — Reference provided accommodations in goal conditions (e.g., "Given text-to-speech...") when relevant. Do NOT invent accommodations not in the input. Distribute them logically across goals.
 
-7) Institutional context (MANDATORY when provided) — When "Relevant institutional context" is provided below, you MUST use it as the primary source for ALL goals and objectives. ALIGNMENT RULES: (a) Match Content Strands and Annual Goals from the institutional context to the student's weaknesses, strengths, accommodations, and custom goals. (b) Use the EXACT or near-exact wording of objectives from the institutional context — e.g., "Respond when name is called", "Indicate what type of assistance is needed", "Demonstrate awareness of letter/sound relationships", "Identify sequence of events, main ideas, and details or facts in literary and informational text". Do NOT replace these with generic paraphrases. (c) For custom_goals, include retrieved_objectives: an array of the exact objective strings from the institutional context that match each custom goal. Do NOT invent goals. If no institutional context is provided, only create goals from the provided weaknesses, strengths, accommodations, or custom goals.
+7) Institutional context (MANDATORY when provided) — When "Relevant institutional context" is provided below, you MUST use it as the primary source for ALL goals and objectives. ALIGNMENT RULES: (a) Match Content Strands and Annual Goals from the institutional context to the student's weaknesses, strengths, accommodations, and custom goals. (b) Use the EXACT or near-exact wording of objectives from the institutional context — e.g., "Respond when name is called", "Indicate what type of assistance is needed", "Demonstrate awareness of letter/sound relationships", "Identify sequence of events, main ideas, and details or facts in literary and informational text". Do NOT replace these with generic paraphrases. (c) For custom_goals: When institutional context exists, match each custom goal to similar Content Strands or objectives in the context. Use the exact wording and phrasing from the context — do NOT write generic one-liners. Populate retrieved_objectives with the exact objective strings from the context that align with each custom goal. The recommendation should also reference the retrieved content. If no institutional context is provided, only create goals from the provided weaknesses, strengths, accommodations, or custom goals.
 
 Output: Return ONLY a single JSON object with exactly these top-level keys (no extra keys, no wrapper):
 {
   "recommendedAccommodations": ["5-10 accommodation strings from weaknesses/PLAAFP. Prefer from selected accommodations. No duplicates."],
   "academicPerformanceAchievement": "Concise paragraph summarizing current academic achievement grounded in PLAAFP + assessments + strengths/weaknesses.",
   "plaafp_narrative": "3-4 paragraph PLAAFP narrative describing current abilities, challenges, and disability impact on learning.",
-  "annual_goals": ["2-4 BROAD annual goal strings — use EXACT wording from institutional context objectives when available"],
-  "short_term_objectives": ["4-8 BROAD objective strings — copy or minimally adapt EXACT objective text from institutional context (e.g., 'Respond when name is called', 'Demonstrate awareness of letter/sound relationships')"],
+  "annual_goals": ["3-6 BROAD annual goal strings — use EXACT wording from institutional context when available"],
+  "short_term_objectives": ["3-5 per goal, 8-15 total — copy or minimally adapt EXACT objective text from institutional context"],
   "annualGoalsByExceptionality": [{"exceptionality": "Name", "goals": [{"referenceId": "0", "goal": "Targeted goal — use EXACT wording from institutional context"}]}],
   "shortTermObjectivesByExceptionality": [{"exceptionality": "Name", "objectives": [{"referenceId": "0", "objective": "Targeted objective — copy EXACT text from institutional context", "alignedAnnualGoalReferenceId": "0"}]}],
   "intervention_recommendations": "Detailed intervention/strategy recommendations specific to Florida standards.",
-  "custom_goals": [{"title": "Custom goal title", "recommendation": "Brief strategy recommendation", "retrieved_objectives": ["Exact objective string from institutional context", "Another objective from context"]}]
+  "custom_goals": [{"title": "Custom goal title", "recommendation": "Strategy tied to retrieved context — not generic", "retrieved_objectives": ["Exact objective strings from institutional context that match this goal"]}]
 }
 
 Tone: professional, concise, plain-language suitable for parent review and IEP team.
@@ -187,7 +187,7 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
         'Relevant institutional context (from uploaded documents — you MUST derive goals and objectives from this content):',
         ragContext,
         '',
-        'ALIGNMENT MANDATE: Use the EXACT wording of objectives from the institutional context above. Examples: "Respond when name is called", "Indicate what type of assistance is needed", "Demonstrate awareness of letter/sound relationships", "Identify sequence of events, main ideas, and details or facts in literary and informational text", "Greet others and respond to greeting", "Use appropriate tone and facial expression". Do NOT replace these with generic statements. For custom_goals, populate retrieved_objectives with the exact objective strings from the context that match each custom goal. Match Content Strands (e.g., Communication, Decoding and Word Recognition, Pragmatics) to the student\'s weaknesses and custom goals.',
+        'ALIGNMENT MANDATE: Use the EXACT wording of objectives from the institutional context above. For custom_goals: match each custom goal to similar content in the context and use that wording. Do NOT write generic one-liners. Populate retrieved_objectives with exact objective strings from the context. Match Content Strands to the student\'s weaknesses and custom goals.',
         ''
       ] : []),
       'Return valid JSON only with the exact keys specified in the system prompt.',

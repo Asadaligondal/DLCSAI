@@ -121,6 +121,12 @@ export default function StudentDetail() {
       console.log('📦 IEP plan data:', studentData.iep_plan_data);
       
       setStudent(studentData);
+      // Sync custom goals from assigned goals (persistent, used in similarity search)
+      const assigned = studentData.assignedGoals || [];
+      const goalsForRag = assigned
+        .filter(g => g && typeof g === 'object' && g?.title)
+        .map(g => ({ title: g.title, _id: g._id, description: g.description, category: g.category }));
+      setCustomGoals(goalsForRag);
       setFormData({
         name: studentData.name,
         studentId: studentData.studentId,
@@ -167,9 +173,11 @@ export default function StudentDetail() {
           annual_goals: Array.isArray(originalDraft?.annual_goals) ? originalDraft.annual_goals : [],
           short_term_objectives: Array.isArray(originalDraft?.short_term_objectives) ? originalDraft.short_term_objectives : [],
           intervention_recommendations: originalDraft?.intervention_recommendations || '',
-          // new grouped fields returned by LLM (camelCase)
           annualGoalsByExceptionality: Array.isArray(originalDraft?.annualGoalsByExceptionality) ? originalDraft.annualGoalsByExceptionality : Array.isArray(originalDraft?.annual_goals_by_exceptionality) ? originalDraft.annual_goals_by_exceptionality : [],
-          shortTermObjectivesByExceptionality: Array.isArray(originalDraft?.shortTermObjectivesByExceptionality) ? originalDraft.shortTermObjectivesByExceptionality : Array.isArray(originalDraft?.short_term_objectives_by_exceptionality) ? originalDraft.short_term_objectives_by_exceptionality : []
+          shortTermObjectivesByExceptionality: Array.isArray(originalDraft?.shortTermObjectivesByExceptionality) ? originalDraft.shortTermObjectivesByExceptionality : Array.isArray(originalDraft?.short_term_objectives_by_exceptionality) ? originalDraft.short_term_objectives_by_exceptionality : [],
+          recommendedAccommodations: Array.isArray(originalDraft?.recommendedAccommodations) ? originalDraft.recommendedAccommodations : [],
+          academicPerformanceAchievement: originalDraft?.academicPerformanceAchievement || '',
+          custom_goals: Array.isArray(originalDraft?.custom_goals) ? originalDraft.custom_goals : []
         };
         
         const sanitizedEdited = editedVersion ? {
@@ -177,10 +185,12 @@ export default function StudentDetail() {
           annual_goals: Array.isArray(editedVersion?.annual_goals) ? editedVersion.annual_goals : [],
           short_term_objectives: Array.isArray(editedVersion?.short_term_objectives) ? editedVersion.short_term_objectives : [],
           intervention_recommendations: editedVersion?.intervention_recommendations || '',
-          // preserve grouped fields when present
           annualGoalsByExceptionality: Array.isArray(editedVersion?.annualGoalsByExceptionality) ? editedVersion.annualGoalsByExceptionality : Array.isArray(editedVersion?.annual_goals_by_exceptionality) ? editedVersion.annual_goals_by_exceptionality : [],
-          shortTermObjectivesByExceptionality: Array.isArray(editedVersion?.shortTermObjectivesByExceptionality) ? editedVersion.shortTermObjectivesByExceptionality : Array.isArray(editedVersion?.short_term_objectives_by_exceptionality) ? editedVersion.short_term_objectives_by_exceptionality : []
-        } : sanitizedOriginal;
+          shortTermObjectivesByExceptionality: Array.isArray(editedVersion?.shortTermObjectivesByExceptionality) ? editedVersion.shortTermObjectivesByExceptionality : Array.isArray(editedVersion?.short_term_objectives_by_exceptionality) ? editedVersion.short_term_objectives_by_exceptionality : [],
+          recommendedAccommodations: Array.isArray(editedVersion?.recommendedAccommodations) ? editedVersion.recommendedAccommodations : [],
+          academicPerformanceAchievement: editedVersion?.academicPerformanceAchievement || '',
+          custom_goals: Array.isArray(editedVersion?.custom_goals) ? editedVersion.custom_goals : []
+        } : { ...sanitizedOriginal };
         
         console.log('🔧 Sanitized original:', JSON.stringify(sanitizedOriginal, null, 2));
         console.log('🔧 Sanitized edited:', JSON.stringify(sanitizedEdited, null, 2));
@@ -480,13 +490,14 @@ export default function StudentDetail() {
       const blob = await Packer.toBlob(doc);
       saveAs(blob, `IEP_${student.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.docx`);
       
-      // Save to database
+      // Save to database (include all IEP fields for consistency)
       await axios.put(
         `/api/students/${id}/save-iep`,
         {
           original_ai_draft: originalAIPlan,
           user_edited_version: editablePlan,
-          is_reviewed: isReviewed
+          is_reviewed: isReviewed,
+          rag_context: ragContext || undefined
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -595,6 +606,7 @@ export default function StudentDetail() {
             onCustomizeGoals={() => setShowCustomizeModal(true)}
             onCustomGoalsSaved={(goals) => setCustomGoals(goals)}
             onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
+            customGoals={customGoals}
           />
 
           {showCustomizeModal && (
@@ -602,8 +614,7 @@ export default function StudentDetail() {
               isOpen={showCustomizeModal}
               onClose={() => setShowCustomizeModal(false)}
               student={student}
-              onSaved={(goal) => {
-                // Refresh student to pick up the assigned goal
+              onSaved={() => {
                 fetchStudent(localStorage.getItem('token'));
               }}
             />

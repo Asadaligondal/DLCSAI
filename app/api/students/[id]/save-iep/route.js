@@ -66,39 +66,33 @@ export async function PUT(req, { params }) {
       if (!content || typeof content !== 'object') return content;
       const copy = { ...content };
 
-      // Top-level arrays
-      if (Array.isArray(copy.annual_goals)) {
-        copy.annual_goals = copy.annual_goals.map(pickStringFromItem);
-      }
-      if (Array.isArray(copy.short_term_objectives)) {
-        copy.short_term_objectives = copy.short_term_objectives.map(pickStringFromItem);
-      }
+      if (Array.isArray(copy.annual_goals)) copy.annual_goals = copy.annual_goals.map(pickStringFromItem);
+      if (Array.isArray(copy.short_term_objectives)) copy.short_term_objectives = copy.short_term_objectives.map(pickStringFromItem);
 
-      // Grouped structures may contain nested objects; ensure inner strings
       if (Array.isArray(copy.annualGoalsByExceptionality)) {
         copy.annualGoalsByExceptionality = copy.annualGoalsByExceptionality.map((grp) => ({
           exceptionality: grp.exceptionality,
-          goals: Array.isArray(grp.goals)
-            ? grp.goals.map((g) => ({
-                referenceId: g.referenceId,
-                goal: pickStringFromItem(g.goal)
-              }))
-            : []
+          goals: Array.isArray(grp.goals) ? grp.goals.map((g) => ({ referenceId: g.referenceId, goal: pickStringFromItem(g.goal) })) : []
         }));
       }
-
       if (Array.isArray(copy.shortTermObjectivesByExceptionality)) {
         copy.shortTermObjectivesByExceptionality = copy.shortTermObjectivesByExceptionality.map((grp) => ({
           exceptionality: grp.exceptionality,
-          objectives: Array.isArray(grp.objectives)
-            ? grp.objectives.map((o) => ({
-                referenceId: o.referenceId,
-                alignedAnnualGoalReferenceId: o.alignedAnnualGoalReferenceId,
-                objective: pickStringFromItem(o.objective)
-              }))
-            : []
+          objectives: Array.isArray(grp.objectives) ? grp.objectives.map((o) => ({
+            referenceId: o.referenceId,
+            alignedAnnualGoalReferenceId: o.alignedAnnualGoalReferenceId,
+            objective: pickStringFromItem(o.objective)
+          })) : []
         }));
       }
+
+      // Preserve recommendedAccommodations, academicPerformanceAchievement, custom_goals
+      if (Array.isArray(copy.recommendedAccommodations)) copy.recommendedAccommodations = copy.recommendedAccommodations.map((a) => (typeof a === 'string' ? a : String(a)));
+      if (Array.isArray(copy.custom_goals)) copy.custom_goals = copy.custom_goals.map((cg) => ({
+        title: cg?.title || '',
+        recommendation: cg?.recommendation || '',
+        retrieved_objectives: Array.isArray(cg?.retrieved_objectives) ? cg.retrieved_objectives : []
+      }));
 
       return copy;
     }

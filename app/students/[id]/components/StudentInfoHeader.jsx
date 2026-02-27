@@ -19,16 +19,17 @@ export default function StudentInfoHeader({
   hasExistingPlan,
   disabilitiesOptions,
   strengthsOptions,
-  weaknessesOptions
-  , onCustomizeGoals,
+  weaknessesOptions,
+  onCustomizeGoals,
   onCustomGoalsSaved,
-  onAccommodationsSaved
+  onAccommodationsSaved,
+  customGoals = []
 }) {
   const [showAccommodations, setShowAccommodations] = useState(false);
   const [accommodationsInitial, setAccommodationsInitial] = useState(null);
   const [showCustomGoals, setShowCustomGoals] = useState(false);
-  const [customGoals, setCustomGoals] = useState([]);
   const [showAccomDetails, setShowAccomDetails] = useState(false);
+  const [showCustomGoalDetails, setShowCustomGoalDetails] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const openAccommodations = async () => {
@@ -74,7 +75,6 @@ export default function StudentInfoHeader({
   };
 
   const handleCustomGoalsSave = (goals) => {
-    setCustomGoals(goals);
     setShowCustomGoals(false);
     if (onCustomGoalsSaved) onCustomGoalsSaved(goals);
   };
@@ -138,7 +138,7 @@ export default function StudentInfoHeader({
 
             <div className="mt-4 grid grid-cols-1 gap-4">
               <div>
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Disabilities</div>
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Exceptionalities</div>
                 <div className="flex flex-wrap gap-2">
                   {Array.isArray(student?.disabilities) && student.disabilities.length > 0 ? (
                     <>
@@ -192,72 +192,89 @@ export default function StudentInfoHeader({
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-slate-600">Accommodations</div>
-                <div className="text-sm text-slate-500 mt-0.5">{(() => {
-                  const acc = student.student_accommodations || {};
-                  const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
-                  const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
-                  return total > 0 ? `${total} selected` : 'None';
-                })()}</div>
-              </div>
-
-              <div>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-slate-600">Accommodations</div>
+                  <div className="text-sm text-slate-500 mt-0.5">{(() => {
+                    const acc = student.student_accommodations || {};
+                    const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
+                    const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
+                    return total > 0 ? `${total} selected` : 'None';
+                  })()}</div>
+                </div>
                 <button onClick={openAccommodations} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit accommodations</button>
               </div>
+              {student.student_accommodations && (() => {
+                const acc = student.student_accommodations;
+                const hasAny = (acc.classroom && Object.values(acc.classroom).flat().length) || (acc.assessment && Object.values(acc.assessment).flat().length);
+                if (!hasAny) return null;
+                return (
+                  <>
+                    <div className="mt-2 text-xs text-blue-600 cursor-pointer" onClick={() => setShowAccomDetails(s => !s)}>
+                      {showAccomDetails ? 'Hide details' : 'Show details'}
+                    </div>
+                    {showAccomDetails && (
+                      <div className="mt-2 max-h-28 overflow-auto text-xs text-gray-700 space-y-2">
+                        {acc.classroom && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-600">Classroom</div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {Object.values(acc.classroom).flat().map((it, idx) => (
+                                <span key={`c-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {acc.assessment && (
+                          <div>
+                            <div className="text-xs font-medium text-gray-600">Assessment / District</div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {Object.values(acc.assessment).flat().map((it, idx) => (
+                                <span key={`a-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-semibold text-slate-600">Custom Goals</div>
-                <div className="text-sm text-slate-500 mt-0.5">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
-              </div>
-
-              <div>
-                <button 
-                  onClick={() => setShowCustomGoals(true)} 
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
-                >
-                  <Target className="w-4 h-4" />
-                  Edit custom goals
-                </button>
-              </div>
-            </div>
-
-            {student.student_accommodations && (
-              <>
-                <div className="mt-2 text-xs text-blue-600 cursor-pointer" onClick={() => setShowAccomDetails(s => !s)}>
-                  {showAccomDetails ? 'Hide details' : 'Show details'}
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-slate-600">Custom Goals</div>
+                  <div className="text-sm text-slate-500 mt-0.5">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
                 </div>
-
-                {showAccomDetails && (
-                  <div className="mt-2 max-h-28 overflow-auto text-xs text-gray-700 space-y-2">
-                    {student.student_accommodations.classroom && (
-                      <div>
-                        <div className="text-xs font-medium text-gray-600">Classroom</div>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {Object.values(student.student_accommodations.classroom).flat().map((it, idx) => (
-                            <span key={`c-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {student.student_accommodations.assessment && (
-                      <div>
-                        <div className="text-xs font-medium text-gray-600">Assessment / District</div>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {Object.values(student.student_accommodations.assessment).flat().map((it, idx) => (
-                            <span key={`a-${idx}`} className="px-3 py-1.5 text-xs rounded-xl bg-gray-100">{it.label || it}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                <div className="flex gap-2">
+                  <button onClick={onCustomizeGoals} className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
+                    <Target className="w-4 h-4" />
+                    Add goal
+                  </button>
+                  <button onClick={() => setShowCustomGoals(true)} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit selection</button>
+                </div>
+              </div>
+              {customGoals.length > 0 && (
+                <>
+                  <div className="mt-2 text-xs text-blue-600 cursor-pointer" onClick={() => setShowCustomGoalDetails(s => !s)}>
+                    {showCustomGoalDetails ? 'Hide details' : 'Show details'}
                   </div>
-                )}
-              </>
-            )}
+                  {showCustomGoalDetails && (
+                    <div className="mt-2 max-h-28 overflow-auto text-xs text-gray-700 space-y-2">
+                      {customGoals.map((g, i) => (
+                        <div key={i} className="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                          <div className="font-medium text-slate-800">{g.title || g}</div>
+                          {g.description && <div className="mt-0.5 text-slate-600">{g.description}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
             </div>
             )}
           </div>
@@ -410,7 +427,7 @@ export default function StudentInfoHeader({
 
       {showCustomGoals && (
         <CustomGoalsModal
-          initial={customGoals}
+          initial={customGoals.map(g => ({ ...g, id: g._id || g.id || g.title }))}
           onClose={() => setShowCustomGoals(false)}
           onSave={handleCustomGoalsSave}
         />
