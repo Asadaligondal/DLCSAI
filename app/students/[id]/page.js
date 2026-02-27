@@ -353,12 +353,21 @@ export default function StudentDetail() {
       console.log('📝 Original AI Plan:', originalAIPlan);
       console.log('✏️ Editable Plan:', editablePlan);
       console.log('✅ Is Reviewed:', isReviewed);
-      
+      // Merge any AI-generated fields from the original draft into the
+      // user-edited version if they are missing. This ensures fields like
+      // recommendedAccommodations, academicPerformanceAchievement and
+      // custom_goals are persisted even when the edited object doesn't
+      // include them (minimal, non-invasive fix).
+      const mergedUserEdited = {
+        ...(originalAIPlan || {}),
+        ...(editablePlan || {})
+      };
+
       const response = await axios.put(
         `/api/students/${id}/save-iep`,
         {
           original_ai_draft: originalAIPlan,
-          user_edited_version: editablePlan,
+          user_edited_version: mergedUserEdited,
           is_reviewed: isReviewed,
           rag_context: ragContext || undefined
         },
