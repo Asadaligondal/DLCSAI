@@ -20,7 +20,8 @@ export default function IEPPlanEditor({
   updateGoal,
   updateObjective,
   setEditablePlan,
-  ragContext
+  ragContext,
+  ragContextByQuery = []
 }) {
   const [showRagContext, setShowRagContext] = useState(false);
   return (
@@ -99,13 +100,38 @@ export default function IEPPlanEditor({
         </button>
         {showRagContext && (
           <div className="border-t border-amber-200 p-4">
-            {ragContext ? (
-              <textarea
-                readOnly
-                value={ragContext}
-                rows={16}
-                className="w-full px-3 py-2.5 text-[13px] font-mono text-slate-700 bg-white border border-amber-200 rounded-lg resize-y focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
-              />
+            {ragContext || ragContextByQuery?.length > 0 ? (
+              ragContextByQuery.length > 0 ? (
+                <div className="space-y-4">
+                  {ragContextByQuery.map((section, sIdx) => (
+                    <div key={sIdx} className="rounded-lg border border-slate-200 overflow-hidden">
+                      <div className={`px-3 py-2 border-b flex items-center gap-2 ${section.colorClass} font-medium text-sm`}>
+                        <span className="rounded-md px-2 py-0.5 text-xs font-semibold border">
+                          {section.label}
+                        </span>
+                        <span className="text-xs opacity-90 truncate max-w-md" title={section.query}>
+                          {section.query}
+                        </span>
+                      </div>
+                      <div className="p-3 space-y-2 bg-white">
+                        {section.chunks.map((chunk, cIdx) => (
+                          <div key={cIdx} className="text-[13px] font-mono text-slate-700 leading-relaxed py-2 px-3 bg-slate-50 rounded border border-slate-100">
+                            <span className="text-slate-400 text-xs mr-2">{(cIdx + 1)}.</span>
+                            {chunk.content}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  readOnly
+                  value={ragContext}
+                  rows={16}
+                  className="w-full px-3 py-2.5 text-[13px] font-mono text-slate-700 bg-white border border-amber-200 rounded-lg resize-y focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
+                />
+              )
             ) : (
               <p className="text-sm text-amber-800 py-4">No retrieved context from last generation. Regenerate IEP with uploaded documents to see the raw context used for goals and objectives.</p>
             )}

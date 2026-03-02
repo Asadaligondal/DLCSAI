@@ -87,6 +87,7 @@ export default function StudentDetail() {
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [ragContext, setRagContext] = useState(null); // Raw retrieved context from last generation (for analysis)
+  const [ragContextByQuery, setRagContextByQuery] = useState([]); // Structured by query for UI sections
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -201,6 +202,7 @@ export default function StudentDetail() {
         setIsReviewed(studentData.iep_plan_data.is_reviewed || false);
         setGeneratedPlan(sanitizedOriginal);
         setRagContext(studentData.iep_plan_data.rag_context || null);
+        setRagContextByQuery([]); // Not persisted; only available after fresh generation
         setViewMode('edited');
       } else {
         console.log('❌ No existing IEP plan found');
@@ -325,6 +327,7 @@ export default function StudentDetail() {
       setOriginalAIPlan(aiData);
       setEditablePlan(aiData);
       setRagContext(response.data.ragContext || null);
+      setRagContextByQuery(Array.isArray(response.data.ragContextByQuery) ? response.data.ragContextByQuery : []);
       setIsReviewed(false);
       setHasExistingPlan(true);
       setViewMode('edited');
@@ -653,6 +656,7 @@ export default function StudentDetail() {
                   updateObjective={updateObjective}
                   setEditablePlan={setEditablePlan}
                   ragContext={ragContext}
+                  ragContextByQuery={ragContextByQuery}
                 />
               </div>
 

@@ -46,7 +46,9 @@ QUALITY RULES (MANDATORY)
 
 6) Accommodations linkage — Reference provided accommodations in goal conditions (e.g., "Given text-to-speech...") when relevant. Do NOT invent accommodations not in the input. Distribute them logically across goals.
 
-7) Institutional context (MANDATORY when provided) — When "Relevant institutional context" is provided below, you MUST use it as the primary source for ALL goals and objectives. ALIGNMENT RULES: (a) Match Content Strands and Annual Goals from the institutional context to the student's weaknesses, strengths, accommodations, and custom goals. (b) Use the EXACT or near-exact wording of objectives from the institutional context — e.g., "Respond when name is called", "Indicate what type of assistance is needed", "Demonstrate awareness of letter/sound relationships", "Identify sequence of events, main ideas, and details or facts in literary and informational text". Do NOT replace these with generic paraphrases. (c) For custom_goals: When institutional context exists, match each custom goal to similar Content Strands or objectives in the context. Use the exact wording and phrasing from the context — do NOT write generic one-liners. Populate retrieved_objectives with the exact objective strings from the context that align with each custom goal. The recommendation should also reference the retrieved content. If no institutional context is provided, only create goals from the provided weaknesses, strengths, accommodations, or custom goals.
+7) Refine template text — Never output raw templates with blanks, underscores, or placeholders (e.g. "________", "___ out of _____"). Convert such text into clear, complete sentences. Preserve the meaning but remove any "________", "__________", "at _________ level", "as measured by __________", etc. Output only polished, professional sentences.
+
+8) Field-specific institutional context — When "Relevant institutional context" is provided with sections (EXCEPTIONALITIES, WEAKNESSES, ACCOMMODATIONS, CUSTOM GOALS, STRENGTHS, INSTRUCTIONAL SETTING), use each section ONLY for the corresponding IEP output: (a) EXCEPTIONALITIES → annualGoalsByExceptionality, shortTermObjectivesByExceptionality. (b) WEAKNESSES → goals/objectives addressing weaknesses in annual_goals, short_term_objectives. (c) ACCOMMODATIONS → goal conditions (e.g., "Given...", "With..."). (d) CUSTOM GOALS → custom_goals, retrieved_objectives. (e) STRENGTHS → leverage in goals or intervention_recommendations. (f) INSTRUCTIONAL SETTING → setting-appropriate goals. Use EXACT wording from the relevant section. Refine templates into complete sentences — no blanks or underscores. If no institutional context is provided, only create goals from the provided input.
 
 Output: Return ONLY a single JSON object with exactly these top-level keys (no extra keys, no wrapper):
 {
@@ -101,6 +103,7 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
 
     // RAG: retrieve relevant chunks from uploaded documents
     let weaknesses = [];
+    let strengths = [];
     try {
       if (studentId) {
         const connectDB = (await import('@/lib/mongodb')).default;
@@ -108,9 +111,10 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
         await connectDB();
         const stu = await Student.findById(studentId).lean();
         if (stu?.weaknesses) weaknesses = Array.isArray(stu.weaknesses) ? stu.weaknesses : [];
+        if (stu?.strengths) strengths = Array.isArray(stu.strengths) ? stu.strengths : [];
       }
     } catch (e) {
-      console.warn('Could not load student weaknesses for RAG:', e.message || e);
+      console.warn('Could not load student weaknesses/strengths for RAG:', e.message || e);
     }
 
     // Extract accommodation labels for RAG search (classroom + assessment)
@@ -130,16 +134,17 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
       }
     });
 
-    const ragContext = await getRagContext({
-      studentGrade,
-      studentAge,
-      areaOfNeed,
-      disabilityCategory,
+    const ragResult = await getRagContext({
       exceptionalities: exceptionalities || [],
       weaknesses,
+      strengths,
       customGoals: customGoals || [],
-      accommodations: accommodationLabels
+      accommodations: accommodationLabels,
+      instructionalSetting: instructionalSetting || ''
     });
+
+    const ragContext = ragResult?.flat || '';
+    const ragContextByQuery = ragResult?.byQuery || [];
 
     if (ragContext) {
       console.log('[RAG] Sending institutional context to LLM (', ragContext.length, 'chars )');
@@ -184,10 +189,24 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
       `AccommodationsSummary: ${accommodationsSummary}`,
       '',
       ...(ragContext ? [
-        'Relevant institutional context (from uploaded documents — you MUST derive goals and objectives from this content):',
-        ragContext,
+        'Relevant institutional context (organized by field — use each section for the corresponding IEP output):',
         '',
-        'ALIGNMENT MANDATE: Use the EXACT wording of objectives from the institutional context above. For custom_goals: match each custom goal to similar content in the context and use that wording. Do NOT write generic one-liners. Populate retrieved_objectives with exact objective strings from the context. Match Content Strands to the student\'s weaknesses and custom goals.',
+        (ragContextByQuery && ragContextByQuery.length > 0
+          ? ragContextByQuery.map((s) => {
+              const chunksText = s.chunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n');
+              const usage = {
+                Exceptionalities: 'Use for annualGoalsByExceptionality and shortTermObjectivesByExceptionality.',
+                Weaknesses: 'Use when addressing weaknesses in annual_goals and short_term_objectives.',
+                Accommodations: 'Use for goal conditions (Given..., With...).',
+                'Custom Goals': 'Use for custom_goals and retrieved_objectives.',
+                Strengths: 'Use when leveraging strengths in goals or intervention_recommendations.',
+                'Instructional Setting': 'Use for setting-appropriate goals.'
+              }[s.label] || 'Use for relevant goals and objectives.';
+              return `=== ${s.label.toUpperCase()} ===\n${usage}\n\n${chunksText}`;
+            }).join('\n\n')
+          : ragContext),
+        '',
+        'Use each section above for its corresponding IEP output. Do not mix sections — e.g. use EXCEPTIONALITIES only for exceptionality-specific goals, CUSTOM GOALS only for custom_goals. Refine template text into complete sentences.',
         ''
       ] : []),
       'Return valid JSON only with the exact keys specified in the system prompt.',
@@ -263,7 +282,8 @@ Comply with Florida IEP requirements. Return valid JSON only.`;
     return NextResponse.json({
       success: true,
       data: generatedContent,
-      ragContext: ragContext || null
+      ragContext: ragContext || null,
+      ragContextByQuery: ragContextByQuery
     });
 
   } catch (error) {
