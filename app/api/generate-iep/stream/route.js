@@ -123,6 +123,9 @@ export async function POST(req) {
         ragContextByQuery
       });
 
+      console.log('[IEP-Stream] Prompt sizes — system:', SYSTEM_PROMPT.length, 'chars, user:', userPrompt.length, 'chars, total:', SYSTEM_PROMPT.length + userPrompt.length, 'chars');
+      console.log('[IEP-Stream] RAG context:', ragContext ? ragContext.length : 0, 'chars,', ragContextByQuery.length, 'query groups');
+
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -136,6 +139,7 @@ export async function POST(req) {
             { role: 'user', content: userPrompt }
           ],
           temperature: 0.7,
+          max_tokens: 16384,
           stream: true,
           response_format: { type: 'json_object' }
         })
