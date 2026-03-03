@@ -709,11 +709,12 @@ export default function StudentDetail() {
               <div>
                 <RightTOC sections={[
                   { id: 'plaafp-narrative', label: 'PLAAFP Narrative' },
-                  { id: 'goals-objectives-by-exceptionality', label: 'Goals & Objectives by Exceptionality' },
-                  { id: 'annual-goals', label: 'Annual Goals' },
-                  { id: 'short-term-objectives', label: 'Short-Term Objectives' },
+                  { id: 'academic-performance-achievement', label: 'Academic Performance' },
+                  { id: 'goals-objectives-by-exceptionality', label: 'Goals by Exceptionality' },
+                  { id: 'annual-goals', label: 'Annual Goals & Objectives' },
                   { id: 'custom-goals', label: 'Custom Goals' },
-                  { id: 'intervention-recommendations', label: 'Intervention Recommendations' },
+                  { id: 'recommended-accommodations', label: 'Accommodations' },
+                  { id: 'intervention-recommendations', label: 'Interventions' },
                   { id: 'raw-retrieved-context', label: 'Raw Retrieved Context' },
                   { id: 'final-review', label: 'Final Review' }
                 ]} />
