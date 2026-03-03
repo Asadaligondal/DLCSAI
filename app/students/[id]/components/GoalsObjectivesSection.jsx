@@ -176,36 +176,6 @@ export default function GoalsObjectivesSection({
     </div>
   );
 
-  const renderEditableGoal = (goal, index) => (
-    <div key={index} className="flex items-start gap-2">
-      <DomainBadge text={formatAnnualGoal(goal)} />
-      <div className="flex-1">
-        <RowEditor
-          index={index}
-          value={formatAnnualGoal(goal)}
-          onChange={(val) => updateGoal(index, val)}
-          onDelete={() => removeGoal(index)}
-          badgeColor="bg-indigo-500"
-        />
-      </div>
-    </div>
-  );
-
-  const renderEditableObjective = (obj, index) => (
-    <div key={index} className="flex items-start gap-2">
-      <DomainBadge text={formatObjective(obj)} />
-      <div className="flex-1">
-        <RowEditor
-          index={index}
-          value={formatObjective(obj)}
-          onChange={(val) => updateObjective(index, val)}
-          onDelete={() => removeObjective(index)}
-          badgeColor="bg-sky-500"
-        />
-      </div>
-    </div>
-  );
-
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -379,20 +349,17 @@ export default function GoalsObjectivesSection({
             open={openGoals}
             onToggle={() => setOpenGoals(s => !s)}
           >
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {editablePlan.annual_goals?.map((goal, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <div className="mt-4"><DomainBadge text={formatAnnualGoal(goal)} /></div>
-                  <div className="flex-1">
-                    <RowEditor
-                      index={index}
-                      value={formatAnnualGoal(goal)}
-                      onChange={(val) => updateGoal(index, val)}
-                      onDelete={() => removeGoal(index)}
-                      badgeColor="bg-indigo-500"
-                    />
-                  </div>
-                </div>
+                <RowEditor
+                  key={index}
+                  index={index}
+                  value={formatAnnualGoal(goal)}
+                  onChange={(val) => updateGoal(index, val)}
+                  onDelete={() => removeGoal(index)}
+                  badgeColor="bg-indigo-500"
+                  tag={<DomainBadge text={formatAnnualGoal(goal)} />}
+                />
               ))}
             </div>
           </SectionCard>
@@ -406,20 +373,17 @@ export default function GoalsObjectivesSection({
             open={openObjectives}
             onToggle={() => setOpenObjectives(s => !s)}
           >
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {editablePlan.short_term_objectives?.map((objective, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <div className="mt-4"><DomainBadge text={formatObjective(objective)} /></div>
-                  <div className="flex-1">
-                    <RowEditor
-                      index={index}
-                      value={formatObjective(objective)}
-                      onChange={(val) => updateObjective(index, val)}
-                      onDelete={() => removeObjective(index)}
-                      badgeColor="bg-sky-500"
-                    />
-                  </div>
-                </div>
+                <RowEditor
+                  key={index}
+                  index={index}
+                  value={formatObjective(objective)}
+                  onChange={(val) => updateObjective(index, val)}
+                  onDelete={() => removeObjective(index)}
+                  badgeColor="bg-sky-500"
+                  tag={<DomainBadge text={formatObjective(objective)} />}
+                />
               ))}
             </div>
           </SectionCard>
