@@ -83,6 +83,7 @@ export default function StudentDetail() {
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStage, setGenerateStage] = useState('idle'); // 'idle' | 'retrieving_context' | 'generating_iep'
+  const [generateProgress, setGenerateProgress] = useState(''); // e.g. "Goals by Exceptionality done (1/5)"
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [customGoals, setCustomGoals] = useState([]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
@@ -285,6 +286,7 @@ export default function StudentDetail() {
   const handleGenerateIEP = async () => {
     setIsGenerating(true);
     setGenerateStage('idle');
+    setGenerateProgress('');
     try {
       const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
       const studentNotesValue = formData.studentNotes || student.studentNotes || '';
@@ -333,8 +335,10 @@ export default function StudentDetail() {
               const data = JSON.parse(line.slice(6));
               if (data.stage === 'retrieving_context') {
                 setGenerateStage('retrieving_context');
+                setGenerateProgress('');
               } else if (data.stage === 'generating_iep') {
                 setGenerateStage('generating_iep');
+                if (data.progress) setGenerateProgress(data.progress);
               } else if (data.stage === 'done') {
                 const aiData = data.data;
                 setGeneratedPlan(aiData);
@@ -362,6 +366,7 @@ export default function StudentDetail() {
     } finally {
       setIsGenerating(false);
       setGenerateStage('idle');
+      setGenerateProgress('');
     }
   };
 
@@ -624,6 +629,7 @@ export default function StudentDetail() {
             isReviewed={isReviewed}
             isBusy={isGenerating}
             generateStage={generateStage}
+            generateProgress={generateProgress}
           />
 
           <StudentInfoHeader
@@ -668,7 +674,7 @@ export default function StudentDetail() {
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
-                {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context…' : isGenerating && generateStage === 'generating_iep' ? 'Generating IEP…' : 'Generate IEP Plan'}
+                {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context…' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP…') : 'Generate IEP Plan'}
               </button>
             </div>
           )}

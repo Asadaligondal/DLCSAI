@@ -1,5 +1,5 @@
 import { getRagContext } from '@/lib/ragContext';
-import { SYSTEM_PROMPT, buildUserPrompt, postProcessGeneratedContent } from '@/lib/generateIEPShared';
+import { generateIEPParallel } from '@/lib/generateIEPShared';
 
 function sseEvent(data) {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -19,16 +19,9 @@ export async function POST(req) {
     try {
       const body = await req.json();
       const {
-        studentGrade,
-        studentAge,
-        areaOfNeed,
-        currentPerformance,
-        disabilityCategory,
-        instructionalSetting,
-        exceptionalities,
-        customGoals,
-        studentId,
-        student_accommodations
+        studentGrade, studentAge, areaOfNeed, currentPerformance,
+        disabilityCategory, instructionalSetting,
+        exceptionalities, customGoals, studentId, student_accommodations
       } = body;
 
       if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -66,18 +59,7 @@ export async function POST(req) {
       const { normalizeAccommodations } = await import('@/lib/accommodations');
       const accommodations = normalizeAccommodations(accommodationsRaw);
 
-      const categories = ['presentation', 'response', 'scheduling', 'setting', 'assistive_technology_device'];
-      const counts = { classroom: {}, assessment: {} };
-      categories.forEach(cat => {
-        counts.classroom[cat] = (accommodations.classroom[cat] || []).length;
-        counts.assessment[cat] = (accommodations.assessment[cat] || []).length;
-      });
-      const summaryParts = [];
-      summaryParts.push('Classroom: ' + categories.map(c => `${c.charAt(0).toUpperCase() + c.slice(1)}(${counts.classroom[c]})`).join(', '));
-      summaryParts.push('Assessment: ' + categories.map(c => `${c.charAt(0).toUpperCase() + c.slice(1)}(${counts.assessment[c]})`).join(', '));
-      summaryParts.push('ConsentObtained: ' + (accommodations.consent && accommodations.consent.parentConsentObtained ? 'true' : 'false'));
-      const accommodationsSummary = summaryParts.join('. ');
-
+      // Extract accommodation labels for RAG + prompt
       const accommodationLabels = [];
       const catKeys = ['presentation', 'response', 'scheduling', 'setting', 'assistive_technology_device'];
       ['classroom', 'assessment'].forEach(scope => {
@@ -106,86 +88,28 @@ export async function POST(req) {
       const ragContext = ragResult?.flat || '';
       const ragContextByQuery = ragResult?.byQuery || [];
 
-      // Stage 2: Generating IEP
+      // Stage 2: Generating IEP sections in parallel
       streamController.enqueue(encoder.encode(sseEvent({ stage: 'generating_iep' })));
 
-      const userPrompt = buildUserPrompt({
-        studentGrade,
-        studentAge,
-        areaOfNeed,
-        currentPerformance,
-        disabilityCategory,
-        instructionalSetting,
+      let sectionsCompleted = 0;
+      const totalSections = 5;
+
+      const processed = await generateIEPParallel({
+        studentGrade, studentAge, areaOfNeed, currentPerformance,
+        disabilityCategory, instructionalSetting,
         customGoalsList,
-        accommodations,
-        accommodationsSummary,
-        ragContext,
-        ragContextByQuery
-      });
-
-      console.log('[IEP-Stream] Prompt sizes — system:', SYSTEM_PROMPT.length, 'chars, user:', userPrompt.length, 'chars, total:', SYSTEM_PROMPT.length + userPrompt.length, 'chars');
-      console.log('[IEP-Stream] RAG context:', ragContext ? ragContext.length : 0, 'chars,', ragContextByQuery.length, 'query groups');
-
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 16384,
-          stream: true,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (!openaiResponse.ok) {
-        const err = await openaiResponse.json();
-        streamController.enqueue(encoder.encode(sseEvent({ stage: 'error', error: err.error?.message || 'OpenAI API failed' })));
-        streamController.close();
-        return;
-      }
-
-      const reader = openaiResponse.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content;
-              if (delta) fullContent += delta;
-            } catch (_) {}
-          }
+        accommodationsList: accommodationLabels.join(', '),
+        ragContextByQuery,
+        onSectionComplete(key, label, error) {
+          sectionsCompleted++;
+          streamController.enqueue(encoder.encode(sseEvent({
+            stage: 'generating_iep',
+            progress: `${label} ${error ? 'failed' : 'done'} (${sectionsCompleted}/${totalSections})`,
+            sectionsCompleted,
+            totalSections
+          })));
         }
-      }
-
-      let generatedContent;
-      try {
-        generatedContent = JSON.parse(fullContent);
-      } catch (e) {
-        streamController.enqueue(encoder.encode(sseEvent({ stage: 'error', error: 'Failed to parse IEP JSON' })));
-        streamController.close();
-        return;
-      }
-
-      const processed = postProcessGeneratedContent(generatedContent);
+      });
 
       streamController.enqueue(encoder.encode(sseEvent({
         stage: 'done',
