@@ -16,7 +16,7 @@ export async function GET(request) {
 
     const docs = await Document.find()
       .sort({ uploadedAt: -1 })
-      .select('name originalFilename status chunkCount pageCount uploadedAt')
+      .select('name originalFilename status chunkCount pageCount uploadedAt errorMessage')
       .lean();
 
     return NextResponse.json({
@@ -26,9 +26,10 @@ export async function GET(request) {
         name: d.name,
         originalFilename: d.originalFilename,
         status: d.status,
-        chunkCount: d.chunkCount,
+        chunkCount: d.chunkCount ?? 0,
         pageCount: d.pageCount,
-        uploadedAt: d.uploadedAt
+        uploadedAt: d.uploadedAt,
+        errorMessage: d.errorMessage
       }))
     });
   } catch (error) {

@@ -9,7 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import MultiSelect from '@/components/MultiSelect';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Wand2 } from 'lucide-react';
 
 import StudentInfoHeader from './components/StudentInfoHeader';
 import EditorHeader from './components/EditorHeader';
@@ -82,6 +82,7 @@ export default function StudentDetail() {
   const [editablePlan, setEditablePlan] = useState(null);
   const [isReviewed, setIsReviewed] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateStage, setGenerateStage] = useState('idle'); // 'idle' | 'retrieving_context' | 'generating_iep'
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [customGoals, setCustomGoals] = useState([]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
@@ -283,13 +284,11 @@ export default function StudentDetail() {
 
   const handleGenerateIEP = async () => {
     setIsGenerating(true);
+    setGenerateStage('idle');
     try {
-      // Convert custom goals to the format expected by the API
       const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
-      
-      // Use formData.studentNotes as primary source (user may have edited), fallback to student record
       const studentNotesValue = formData.studentNotes || student.studentNotes || '';
-      
+
       const payload = {
         studentGrade: student.gradeLevel,
         studentAge: student.age,
@@ -300,45 +299,69 @@ export default function StudentDetail() {
         exceptionalities: Array.isArray(student.disabilities) ? student.disabilities : [],
         studentId: id,
         student_accommodations: student.student_accommodations || null,
-        customGoals: customGoalsForAPI, // Include custom goals in main generation
-        student: {
-          additionalContext: studentNotesValue
-        }
+        customGoals: customGoalsForAPI,
+        student: { additionalContext: studentNotesValue }
       };
 
-      console.log('➡️ Outgoing LLM payload:', JSON.stringify(payload, null, 2));
-      console.log('➡️ student.additionalContext being sent:', payload.student?.additionalContext ?? '"" (empty)');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/generate-iep/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
 
-      const response = await axios.post('/api/generate-iep', payload);
+      if (!response.ok) {
+        throw new Error(response.statusText || 'Request failed');
+      }
 
-      const aiData = response.data.data;
-      console.log('🤖 AI Response Data:', JSON.stringify(aiData, null, 2));
-      console.log('📝 PLAAFP length:', aiData.plaafp_narrative?.length);
-      console.log('🎯 Annual goals count:', aiData.annual_goals?.length);
-      console.log('🎯 Objectives count:', aiData.short_term_objectives?.length);
-      console.log('💡 Recommendations length:', aiData.intervention_recommendations?.length);
-      
-      // Log new fields for verification
-      console.log('🆕 New LLM fields received:');
-      console.log('📋 recommendedAccommodations:', Array.isArray(aiData.recommendedAccommodations) ? `Array(${aiData.recommendedAccommodations.length})` : 'Not array', aiData.recommendedAccommodations);
-      console.log('🎓 academicPerformanceAchievement:', typeof aiData.academicPerformanceAchievement === 'string' ? `String(${aiData.academicPerformanceAchievement.length} chars)` : 'Not string', aiData.academicPerformanceAchievement);
-      
-      setGeneratedPlan(aiData);
-      setOriginalAIPlan(aiData);
-      setEditablePlan(aiData);
-      setRagContext(response.data.ragContext || null);
-      setRagContextByQuery(Array.isArray(response.data.ragContextByQuery) ? response.data.ragContextByQuery : []);
-      setIsReviewed(false);
-      setHasExistingPlan(true);
-      setViewMode('edited');
-      
-      console.log('✅ State updated with AI data');
-      toast.success('IEP Plan generated successfully');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.stage === 'retrieving_context') {
+                setGenerateStage('retrieving_context');
+              } else if (data.stage === 'generating_iep') {
+                setGenerateStage('generating_iep');
+              } else if (data.stage === 'done') {
+                const aiData = data.data;
+                setGeneratedPlan(aiData);
+                setOriginalAIPlan(aiData);
+                setEditablePlan(aiData);
+                setRagContext(data.ragContext || null);
+                setRagContextByQuery(Array.isArray(data.ragContextByQuery) ? data.ragContextByQuery : []);
+                setIsReviewed(false);
+                setHasExistingPlan(true);
+                setViewMode('edited');
+                toast.success('IEP Plan generated successfully');
+              } else if (data.stage === 'error') {
+                throw new Error(data.error || 'Generation failed');
+              }
+            } catch (e) {
+              if (e instanceof SyntaxError) continue;
+              throw e;
+            }
+          }
+        }
+      }
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to generate IEP plan');
+      toast.error(error.message || 'Failed to generate IEP plan');
       console.error('❌ Generate IEP error:', error);
     } finally {
       setIsGenerating(false);
+      setGenerateStage('idle');
     }
   };
 
@@ -600,6 +623,7 @@ export default function StudentDetail() {
             onReset={handleResetToOriginal}
             isReviewed={isReviewed}
             isBusy={isGenerating}
+            generateStage={generateStage}
           />
 
           <StudentInfoHeader
@@ -610,6 +634,7 @@ export default function StudentDetail() {
             setFormData={setFormData}
             handleUpdate={handleUpdate}
             isGenerating={isGenerating}
+            generateStage={generateStage}
             handleGenerateIEP={handleGenerateIEP}
             hasExistingPlan={hasExistingPlan}
             disabilitiesOptions={DISABILITIES_OPTIONS}
@@ -634,6 +659,20 @@ export default function StudentDetail() {
 
           {/* Custom goals are edited from the Student Context card (Edit custom goals) */}
 
+          {!hasExistingPlan && (
+            <div className="mt-6 flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
+              <button
+                onClick={handleGenerateIEP}
+                disabled={isGenerating}
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
+                {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context…' : isGenerating && generateStage === 'generating_iep' ? 'Generating IEP…' : 'Generate IEP Plan'}
+              </button>
+            </div>
+          )}
+
           {hasExistingPlan && generatedPlan && editablePlan && (
             <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
               <div>
@@ -645,6 +684,7 @@ export default function StudentDetail() {
                   isReviewed={isReviewed}
                   setIsReviewed={setIsReviewed}
                   isGenerating={isGenerating}
+                  generateStage={generateStage}
                   handleGenerateIEP={handleGenerateIEP}
                   handleRegenerateOriginal={handleGenerateIEP}
                   handleResetToOriginal={handleResetToOriginal}
@@ -661,7 +701,7 @@ export default function StudentDetail() {
               </div>
 
               <div>
-                <                RightTOC sections={[
+                <RightTOC sections={[
                   { id: 'plaafp-narrative', label: 'PLAAFP Narrative' },
                   { id: 'goals-objectives-by-exceptionality', label: 'Goals & Objectives by Exceptionality' },
                   { id: 'annual-goals', label: 'Annual Goals' },

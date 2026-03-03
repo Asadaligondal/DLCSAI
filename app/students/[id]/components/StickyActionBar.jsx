@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wand2, Download, ChevronDown, FileText, FileType } from 'lucide-react';
 
-export default function StickyActionBar({ onRegenerate, onSave, onDownload, onReset, isReviewed, isBusy, savedAt }) {
+export default function StickyActionBar({ onRegenerate, onSave, onDownload, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle' }) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
 
-  // savedAt is optional ISO timestamp; if not provided show 'Ready'
-  const statusText = savedAt ? `Saved ${savedAt}` : 'Ready';
+  const progressLabel = generateStage === 'retrieving_context' ? 'Retrieving context…' : generateStage === 'generating_iep' ? 'Generating IEP…' : null;
+  const statusText = isBusy && progressLabel ? progressLabel : savedAt ? `Saved ${savedAt}` : 'Ready';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,8 +53,8 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onRe
                 disabled={secondaryDisabled}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors border ${secondaryDisabled ? 'text-slate-400 border-slate-200 cursor-not-allowed bg-white' : 'text-slate-700 border-slate-300 bg-white hover:bg-slate-50'}`}
               >
-                <Wand2 className="w-4 h-4" />
-                Regenerate IEP
+                <Wand2 className={`w-4 h-4 ${isBusy ? 'animate-pulse' : ''}`} />
+                {isBusy && generateStage === 'retrieving_context' ? 'Retrieving context…' : isBusy && generateStage === 'generating_iep' ? 'Generating IEP…' : 'Regenerate IEP'}
               </button>
 
               <button

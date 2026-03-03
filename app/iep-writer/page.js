@@ -280,8 +280,9 @@ export default function IEPWriterPage() {
                       <div>
                         <p className="text-sm font-medium text-slate-900 truncate">{doc.originalFilename}</p>
                         <p className="text-xs text-slate-500">
-                          {doc.chunkCount} chunks · {doc.status}
+                          {doc.chunkCount ?? 0} chunks · {doc.status}
                           {doc.pageCount ? ` · ${doc.pageCount} pages` : ''}
+                          {doc.status === 'failed' && doc.errorMessage ? ` — ${doc.errorMessage}` : ''}
                         </p>
                       </div>
                     </div>

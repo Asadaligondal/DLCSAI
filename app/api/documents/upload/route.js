@@ -55,18 +55,18 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const uint8Array = new Uint8Array(bytes);
 
-    const { extractText } = await import('unpdf');
-    const result = await extractText(uint8Array);
-    const textArray = result?.text || [];
-    const extractedText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray);
+    const { extractText, getDocumentProxy } = await import('unpdf');
+    const pdf = await getDocumentProxy(uint8Array);
+    const result = await extractText(pdf, { mergePages: true });
+    const extractedText = (result?.text ?? '').trim();
 
-    if (!extractedText || extractedText.trim().length < 10) {
+    if (!extractedText || extractedText.length < 10) {
       await Document.findByIdAndUpdate(documentId, {
         status: 'failed',
-        errorMessage: 'No text could be extracted from PDF'
+        errorMessage: 'No text could be extracted from PDF. The PDF may be image-based (scanned) — try a text-based PDF or use OCR first.'
       });
       return NextResponse.json(
-        { success: false, message: 'No text could be extracted from PDF' },
+        { success: false, message: 'No text could be extracted from PDF. Try a text-based PDF.' },
         { status: 400 }
       );
     }
@@ -88,6 +88,9 @@ export async function POST(request) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
       const texts = batch.map(c => c.content);
       const batchEmbeddings = await generateEmbeddingsBatch(texts);
+      if (!batchEmbeddings || batchEmbeddings.length !== texts.length) {
+        throw new Error('Embedding API returned unexpected number of vectors');
+      }
       embeddings.push(...batchEmbeddings);
     }
 
@@ -95,22 +98,33 @@ export async function POST(request) {
       content: c.content,
       embedding: embeddings[i],
       chunkIndex: c.index
-    }));
+    })).filter(c => c.embedding && Array.isArray(c.embedding) && c.embedding.length > 0);
+
+    if (chunksWithEmbeddings.length === 0) {
+      await Document.findByIdAndUpdate(documentId, {
+        status: 'failed',
+        errorMessage: 'No valid embeddings produced'
+      });
+      return NextResponse.json(
+        { success: false, message: 'Failed to generate embeddings for document' },
+        { status: 500 }
+      );
+    }
 
     await storeDocumentChunks(documentId, chunksWithEmbeddings);
 
     await Document.findByIdAndUpdate(documentId, {
       status: 'ready',
-      chunkCount: chunks.length,
-      pageCount: textArray.length || null
+      chunkCount: chunksWithEmbeddings.length,
+      pageCount: result?.totalPages ?? null
     });
 
     return NextResponse.json({
       success: true,
       documentId: String(documentId),
       status: 'ready',
-      chunkCount: chunks.length,
-      pageCount: textArray.length || null
+      chunkCount: chunksWithEmbeddings.length,
+      pageCount: result?.totalPages ?? null
     });
   } catch (error) {
     console.error('Document upload error:', error);
