@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
+import '@/models/Goal';
 import { protectRoute } from '@/lib/authMiddleware';
 import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 

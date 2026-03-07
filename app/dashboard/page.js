@@ -506,197 +506,182 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 antialiased">
-      {/* Left Sidebar */}
+    <div className="flex h-screen bg-canvas text-slate-800">
       <Sidebar user={user} onLogout={handleLogout} />
 
-      {/* Right Main Content */}
       <div className="flex-1 overflow-auto">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-              <Users className="w-5 h-5 text-slate-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Dashboard</h2>
-              <div className="text-sm text-slate-500">Welcome, {user?.name}</div>
-            </div>
+        {/* Top bar */}
+        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-8 h-16 flex items-center justify-between sticky top-0 z-10">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Dashboard</h2>
           </div>
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0">
-            {user?.profilePicture ? (
-              <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-sm font-medium text-slate-600">{user?.name?.[0] || '?'}</span>
-            )}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-500 hidden sm:inline">Welcome, {user?.name}</span>
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center ring-2 ring-white shrink-0">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-sm font-bold text-primary-700">{user?.name?.[0] || '?'}</span>
+              )}
+            </div>
           </div>
         </header>
 
         <main className="p-8">
           <div className="max-w-7xl mx-auto">
+            {/* Page header */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Students</h1>
-                <p className="text-sm text-slate-500 mt-1">{filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}</p>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Students</h1>
+                <p className="text-sm text-slate-500 mt-0.5">{filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} enrolled</p>
               </div>
               <button
                 onClick={handleOpenModal}
-                className="flex items-center gap-2 h-11 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                aria-label="Add Student"
+                className="flex items-center gap-2 h-10 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500/40"
               >
                 <Plus className="w-4 h-4" />
                 Add Student
               </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by name or ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 h-10 rounded-lg text-sm bg-white border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
-              />
-            </div>
-          </div>
+            {/* Student table card */}
+            <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+              {/* Search bar */}
+              <div className="px-5 py-4 border-b border-slate-100">
+                <div className="relative max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Student ID
-                  </th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Age
-                  </th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Grade
-                  </th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Goals
-                  </th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    IEP Plan
-                  </th>
-                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-16 text-center">
-                      <div className="flex items-center justify-center gap-3 text-slate-500">
-                        <svg className="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="text-sm font-medium">Loading students...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-slate-500">
-                        <Users className="w-12 h-12 text-slate-300" />
-                        <span className="text-sm font-medium">No students found</span>
-                        <span className="text-xs">Add a student or try a different search</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <tr key={student._id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <span className="text-white font-semibold text-sm">
-                              {student.name.charAt(0).toUpperCase()}
-                            </span>
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Student ID</th>
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Age</th>
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Goals</th>
+                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">IEP Plan</th>
+                      <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {loading ? (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-20 text-center">
+                          <div className="flex flex-col items-center gap-3 text-slate-400">
+                            <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span className="text-sm font-medium">Loading students...</span>
                           </div>
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900">{student.name}</div>
-                            <div className="text-xs text-slate-500 mt-0.5">{student.gradeLevel} • {student.age} yrs</div>
-                            <div className="text-xs text-slate-400 mt-0.5">
-                              {(() => {
-                                const acc = student.student_accommodations || {};
-                                const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
-                                const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
-                                return total > 0 ? `${total} accommodations` : 'No accommodations';
-                              })()}
+                        </td>
+                      </tr>
+                    ) : filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-20 text-center">
+                          <div className="flex flex-col items-center gap-3 text-slate-400">
+                            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
+                              <Users className="w-6 h-6 text-slate-300" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-slate-600">No students found</div>
+                              <div className="text-xs text-slate-400 mt-0.5">Add a student or try a different search</div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-slate-600 font-mono">{student.studentId}</td>
-                      <td className="px-5 py-4 text-sm text-slate-600">{student.age}</td>
-                      <td className="px-5 py-4 text-sm text-slate-600">{student.gradeLevel}</td>
-                      <td className="px-5 py-4">
-                        {student?.assignedGoals && student.assignedGoals.length > 0 ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">Created</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Not created</span>
-                        )}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        {(
-                          student?.iep_plan_data && (
-                            student.iep_plan_data.original_ai_draft?.plaafp_narrative ||
-                            (student.iep_plan_data.original_ai_draft?.annual_goals && student.iep_plan_data.original_ai_draft.annual_goals.length > 0) ||
-                            student.iep_plan_data.user_edited_version?.plaafp_narrative ||
-                            (student.iep_plan_data.user_edited_version?.annual_goals && student.iep_plan_data.user_edited_version.annual_goals.length > 0)
-                          )
-                        ) ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">Generated</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">Pending</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => router.push(`/students/${student._id}`)}
-                            className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-100 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                            title="IEP"
-                          >
-                            <FileText className="w-4 h-4" />
-                            IEP
-                          </button>
-                          <button
-                            onClick={() => router.push(`/services/${student._id}`)}
-                            className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                            title="View Recs"
-                          >
-                            <Zap className="w-4 h-4" />
-                            View Recs
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(student)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                            title="Delete"
-                            aria-label="Delete student"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredStudents.map((student) => (
+                        <tr key={student._id} className="hover:bg-slate-50/60 transition-colors group">
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span className="font-bold text-sm">{student.name.charAt(0).toUpperCase()}</span>
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold text-slate-900">{student.name}</div>
+                                <div className="text-[12px] text-slate-500">{student.gradeLevel} · {student.age} yrs</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
+                          <td className="px-5 py-3.5 text-sm text-slate-600">{student.age}</td>
+                          <td className="px-5 py-3.5 text-sm text-slate-600">{student.gradeLevel}</td>
+                          <td className="px-5 py-3.5">
+                            {student?.assignedGoals && student.assignedGoals.length > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Created
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            {(
+                              student?.iep_plan_data && (
+                                student.iep_plan_data.original_ai_draft?.plaafp_narrative ||
+                                (student.iep_plan_data.original_ai_draft?.annual_goals && student.iep_plan_data.original_ai_draft.annual_goals.length > 0) ||
+                                student.iep_plan_data.user_edited_version?.plaafp_narrative ||
+                                (student.iep_plan_data.user_edited_version?.annual_goals && student.iep_plan_data.user_edited_version.annual_goals.length > 0)
+                              )
+                            ) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Generated
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Pending
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => router.push(`/students/${student._id}`)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors"
+                                title="IEP"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                IEP
+                              </button>
+                              <button
+                                onClick={() => router.push(`/services/${student._id}`)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[13px] font-medium transition-colors"
+                                title="View Recs"
+                              >
+                                <Zap className="w-3.5 h-3.5" />
+                                Recs
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(student)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </main>
       </div>
 

@@ -612,7 +612,7 @@ export default function StudentDetail() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-800 antialiased">
+    <div className="flex h-screen bg-canvas text-slate-800">
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
@@ -632,26 +632,6 @@ export default function StudentDetail() {
             generateProgress={generateProgress}
           />
 
-          <StudentInfoHeader
-            student={student}
-            isEditing={isEditing}
-            setIsEditing={setIsEditing}
-            formData={formData}
-            setFormData={setFormData}
-            handleUpdate={handleUpdate}
-            isGenerating={isGenerating}
-            generateStage={generateStage}
-            handleGenerateIEP={handleGenerateIEP}
-            hasExistingPlan={hasExistingPlan}
-            disabilitiesOptions={DISABILITIES_OPTIONS}
-            strengthsOptions={STRENGTHS_OPTIONS}
-            weaknessesOptions={WEAKNESSES_OPTIONS}
-            onCustomizeGoals={() => setShowCustomizeModal(true)}
-            onCustomGoalsSaved={(goals) => setCustomGoals(goals)}
-            onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
-            customGoals={customGoals}
-          />
-
           {showCustomizeModal && (
             <CustomizeGoalModal
               isOpen={showCustomizeModal}
@@ -663,25 +643,44 @@ export default function StudentDetail() {
             />
           )}
 
-          {/* Custom goals are edited from the Student Context card (Edit custom goals) */}
+          {/* Unified grid: Student Context + IEP Plan share the left column, TOC on the right */}
+          <div className="lg:grid lg:grid-cols-[1fr_240px] lg:gap-6">
+            <div>
+              <StudentInfoHeader
+                student={student}
+                isEditing={isEditing}
+                setIsEditing={setIsEditing}
+                formData={formData}
+                setFormData={setFormData}
+                handleUpdate={handleUpdate}
+                isGenerating={isGenerating}
+                generateStage={generateStage}
+                handleGenerateIEP={handleGenerateIEP}
+                hasExistingPlan={hasExistingPlan}
+                disabilitiesOptions={DISABILITIES_OPTIONS}
+                strengthsOptions={STRENGTHS_OPTIONS}
+                weaknessesOptions={WEAKNESSES_OPTIONS}
+                onCustomizeGoals={() => setShowCustomizeModal(true)}
+                onCustomGoalsSaved={(goals) => setCustomGoals(goals)}
+                onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
+                customGoals={customGoals}
+              />
 
-          {!hasExistingPlan && (
-            <div className="mt-6 flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
-              <button
-                onClick={handleGenerateIEP}
-                disabled={isGenerating}
-                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
-                {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context…' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP…') : 'Generate IEP Plan'}
-              </button>
-            </div>
-          )}
+              {!hasExistingPlan && (
+                <div className="mt-6 flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">
+                  <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
+                  <button
+                    onClick={handleGenerateIEP}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  >
+                    <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
+                    {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context...' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : 'Generate IEP Plan'}
+                  </button>
+                </div>
+              )}
 
-          {hasExistingPlan && generatedPlan && editablePlan && (
-            <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6">
-              <div>
+              {hasExistingPlan && generatedPlan && editablePlan && (
                 <IEPPlanEditor
                   originalAIPlan={originalAIPlan}
                   editablePlan={editablePlan}
@@ -704,8 +703,10 @@ export default function StudentDetail() {
                   ragContext={ragContext}
                   ragContextByQuery={ragContextByQuery}
                 />
-              </div>
+              )}
+            </div>
 
+            {hasExistingPlan && generatedPlan && editablePlan && (
               <div>
                 <RightTOC sections={[
                   { id: 'plaafp-narrative', label: 'PLAAFP Narrative' },
@@ -719,8 +720,8 @@ export default function StudentDetail() {
                   { id: 'final-review', label: 'Final Review' }
                 ]} />
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
         </div>
       </div>

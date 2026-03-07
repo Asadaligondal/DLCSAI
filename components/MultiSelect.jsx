@@ -6,7 +6,6 @@ import { X, ChevronDown } from 'lucide-react';
 export default function MultiSelect({ label, options, value = [], onChange, placeholder = 'Select options...', allowMultiplePerGroup = false }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Determine if options is grouped (array of { label, options }) or flat (array of strings)
   const isGrouped = Array.isArray(options) && options.length > 0 && typeof options[0] === 'object' && options[0] !== null && 'label' in options[0] && 'options' in options[0];
 
   const toggleFlatOption = (option) => {
@@ -25,7 +24,6 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
     } else if (allowMultiplePerGroup) {
       onChange([...value, option]);
     } else {
-      // remove any other selected option from the same group, then add this one
       const filtered = value.filter((v) => !groupOptions.includes(v));
       onChange([...filtered, option]);
     }
@@ -38,53 +36,47 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
 
   return (
     <div className="relative">
-      {label && <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>}
+      {label && <label className="block text-xs font-semibold text-slate-600 mb-1.5">{label}</label>}
 
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="min-h-[42px] w-full px-4 py-2 border border-gray-300 rounded-lg bg-white cursor-pointer hover:border-blue-500 transition-colors flex flex-wrap gap-2 items-center"
+        className="min-h-[40px] w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50 cursor-pointer hover:border-primary-400 transition-colors flex flex-wrap gap-1.5 items-center"
       >
         {value.length === 0 ? (
-          <span className="text-gray-400 text-sm">{placeholder}</span>
+          <span className="text-slate-400 text-sm">{placeholder}</span>
         ) : (
           value.map((item) => (
-            <span
-              key={item}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
-            >
-              {item}
-              <button
-                onClick={(e) => removeOption(item, e)}
-                className="hover:bg-blue-200 rounded-full p-0.5"
-              >
+            <span key={item} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 rounded-md text-xs font-medium">
+              <span className="truncate max-w-[180px]">{item}</span>
+              <button onClick={(e) => removeOption(item, e)} className="hover:bg-primary-100 rounded-full p-0.5 transition-colors">
                 <X className="w-3 h-3" />
               </button>
             </span>
           ))
         )}
-        <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 ml-auto flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full mt-1.5 bg-white border border-slate-200/60 rounded-xl shadow-float max-h-60 overflow-auto">
           {isGrouped ? (
             options.map((group) => (
-              <div key={group.label} className="pb-2 border-b last:border-b-0">
-                <div className="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-50">{group.label}</div>
+              <div key={group.label} className="pb-1 border-b border-slate-100 last:border-b-0">
+                <div className="px-3.5 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50/80 sticky top-0">{group.label}</div>
                 {group.options.map((opt) => (
                   <div
                     key={opt}
                     onClick={() => toggleGroupedOption(group, opt)}
-                    className={`px-4 py-2 cursor-pointer hover:bg-gray-50 flex items-center gap-2 ${value.includes(opt) ? 'bg-blue-50' : ''}`}
+                    className={`px-3.5 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2.5 transition-colors ${value.includes(opt) ? 'bg-primary-50/50' : ''}`}
                   >
                     <input
                       type={allowMultiplePerGroup ? 'checkbox' : 'radio'}
                       name={allowMultiplePerGroup ? undefined : group.label}
                       checked={value.includes(opt)}
                       onChange={() => {}}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      className="w-3.5 h-3.5 text-primary-600 rounded border-slate-300"
                     />
-                    <span className="text-sm">{opt}</span>
+                    <span className="text-sm text-slate-700">{opt}</span>
                   </div>
                 ))}
               </div>
@@ -94,17 +86,15 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
               <div
                 key={option}
                 onClick={() => toggleFlatOption(option)}
-                className={`px-4 py-2 cursor-pointer hover:bg-gray-50 flex items-center gap-2 ${
-                  value.includes(option) ? 'bg-blue-50' : ''
-                }`}
+                className={`px-3.5 py-2 cursor-pointer hover:bg-slate-50 flex items-center gap-2.5 transition-colors ${value.includes(option) ? 'bg-primary-50/50' : ''}`}
               >
                 <input
                   type="checkbox"
                   checked={value.includes(option)}
                   onChange={() => {}}
-                  className="w-4 h-4 text-blue-600 rounded"
+                  className="w-3.5 h-3.5 text-primary-600 rounded border-slate-300"
                 />
-                <span className="text-sm">{option}</span>
+                <span className="text-sm text-slate-700">{option}</span>
               </div>
             ))
           )}

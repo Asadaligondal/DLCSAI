@@ -220,19 +220,19 @@ export default function Goals() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-canvas text-slate-800">
       <Navbar />
 
-      <div className="max-w-full px-8 py-6">
+      <div className="max-w-6xl mx-auto px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Goals</h1>
-            <p className="text-sm text-gray-500 mt-1">{filteredGoals.length} total</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Goals</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{filteredGoals.length} goal{filteredGoals.length !== 1 ? 's' : ''}</p>
           </div>
           {user.role === 'admin' && (
             <button
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 h-10 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md"
             >
               <Plus className="w-4 h-4" />
               Create Goal
@@ -240,26 +240,25 @@ export default function Goals() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search goals..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
                 />
               </div>
-
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white appearance-none transition-all"
                 >
                   <option value="all">All Categories</option>
                   <option value="academic">Academic</option>
@@ -274,81 +273,58 @@ export default function Goals() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Grade
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Title</th>
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Priority</th>
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                   {user.role === 'admin' && (
-                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-50">
                 {filteredGoals.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500 text-sm">
+                    <td colSpan="6" className="px-6 py-16 text-center text-slate-500 text-sm">
                       {searchQuery || filterCategory !== 'all' ? 'No goals match your filters' : 'No goals found'}
                     </td>
                   </tr>
                 ) : (
                   filteredGoals.map((goal) => (
-                    <tr key={goal._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{goal.title}</div>
-                          <div className="text-xs text-gray-500 mt-1 line-clamp-1">{goal.description}</div>
-                        </div>
+                    <tr key={goal._id} className="hover:bg-slate-50/60 transition-colors group">
+                      <td className="px-5 py-3.5">
+                        <div className="text-sm font-semibold text-slate-900">{goal.title}</div>
+                        <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">{goal.description}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${getCategoryBadge(goal.category)}`}>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full capitalize ${getCategoryBadge(goal.category)}`}>
                           {goal.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${getPriorityBadge(goal.priority)}`}>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex px-2 py-0.5 text-[11px] font-semibold rounded-full capitalize ${getPriorityBadge(goal.priority)}`}>
                           {goal.priority}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {goal.gradeLevel || '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded ${goal.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      <td className="px-5 py-3.5 text-sm text-slate-600">{goal.gradeLevel || '—'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full ${goal.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${goal.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
                           {goal.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       {user.role === 'admin' && (
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => openEditModal(goal)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-4 h-4" />
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => openEditModal(goal)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-md transition-colors" title="Edit">
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => setDeleteConfirm({ open: true, id: goal._id })}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
+                            <button onClick={() => setDeleteConfirm({ open: true, id: goal._id })} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -371,38 +347,38 @@ export default function Goals() {
           }}
           size="lg"
         >
-          <form onSubmit={handleSubmit} className="space-y-4 p-5">
+          <form onSubmit={handleSubmit} className="space-y-4 p-1">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Title</label>
               <input
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
                 placeholder="Goal title"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Description</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 required
                 rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 resize-none transition-all"
                 placeholder="Describe the goal..."
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Category</label>
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
                 >
                   <option value="academic">Academic</option>
                   <option value="behavioral">Behavioral</option>
@@ -414,11 +390,11 @@ export default function Goals() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Priority</label>
                 <select
                   value={form.priority}
                   onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -429,12 +405,12 @@ export default function Goals() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level (optional)</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Grade Level <span className="text-slate-400 font-normal">(optional)</span></label>
               <input
                 type="text"
                 value={form.gradeLevel}
                 onChange={(e) => setForm({ ...form, gradeLevel: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
                 placeholder="e.g., K-2, 3-5, 6-8"
               />
             </div>
@@ -502,20 +478,17 @@ export default function Goals() {
               </label>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingGoal(null);
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                onClick={() => { setShowModal(false); setEditingGoal(null); }}
+                className="h-9 px-4 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                className="h-9 px-5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm transition-all hover:shadow-md"
               >
                 {editingGoal ? 'Update' : 'Create'} Goal
               </button>

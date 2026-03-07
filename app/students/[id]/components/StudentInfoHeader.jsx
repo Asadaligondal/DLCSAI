@@ -79,19 +79,19 @@ export default function StudentInfoHeader({
     if (onCustomGoalsSaved) onCustomGoalsSaved(goals);
   };
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="mb-6">
       <div>
         {!isEditing ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Collapsible header - always visible */}
+          <div className="bg-white rounded-xl border border-slate-200/60 shadow-card overflow-hidden">
+            {/* Collapsible header */}
             <button
               type="button"
               onClick={() => setIsExpanded((e) => !e)}
-              className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50/50 transition-colors"
+              className="w-full flex items-center justify-between gap-3 px-5 py-3.5 text-left hover:bg-slate-50/50 transition-colors"
             >
-              <h3 className="text-base font-semibold text-slate-900">Student Context</h3>
+              <h3 className="text-sm font-bold text-slate-900">Student Context</h3>
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-sm text-slate-600 truncate">
+                <span className="text-xs text-slate-500 truncate hidden sm:inline">
                   {[
                     formData.name || student?.name || '—',
                     formData.gradeLevel || student?.gradeLevel || '—',
@@ -103,15 +103,19 @@ export default function StudentInfoHeader({
                       return total > 0 ? `${total} accommodations` : null;
                     })(),
                     customGoals.length > 0 ? `${customGoals.length} custom goals` : '0 custom goals'
-                  ].filter(Boolean).join(' • ')}
+                  ].filter(Boolean).join(' · ')}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''}`} />
               </div>
             </button>
 
-            {/* Expandable content */}
-            {isExpanded && (
-            <div className="px-5 pb-5 pt-0 border-t border-slate-100">
+            {/* Animated expandable content */}
+            <div
+              className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+              style={{ gridTemplateRows: isExpanded ? '1fr' : '0fr' }}
+            >
+            <div className="overflow-hidden">
+            <div className={`px-5 pb-5 pt-0 border-t border-slate-100 transition-opacity duration-300 ease-in-out ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
             <div className="grid grid-cols-2 gap-4 pt-4">
               <div className="col-span-2 grid grid-cols-2 gap-3">
                 <div>
@@ -276,7 +280,8 @@ export default function StudentInfoHeader({
               )}
             </div>
             </div>
-            )}
+            </div>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleUpdate}>

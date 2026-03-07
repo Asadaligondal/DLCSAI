@@ -1,21 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Sidebar from '@/components/Sidebar';
-import { Plus, Brain, CheckCircle, Accessibility, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck } from 'lucide-react';
 
 export default function AccommodationsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [formData, setFormData] = useState({ category: '', description: '' });
 
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    const t = localStorage.getItem('token');
+    if (!u || !t) { router.push('/login'); return; }
+    setUser(u);
+  }, [router]);
+
   const fetchList = async () => {
     setLoading(true);
     try {
       const res = await axios.get('/api/accommodations');
-      if (res.data && res.data.success) setList(res.data.accommodations || []);
+      if (res.data?.success) setList(res.data.accommodations || []);
     } catch (err) {
       console.error('Fetch accommodations error', err);
     } finally {
@@ -23,21 +33,32 @@ export default function AccommodationsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchList();
-  }, []);
+  useEffect(() => { fetchList(); }, []);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post('/api/accommodations', formData, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data && res.data.success) {
+      if (res.data?.success) {
         setList((s) => [res.data.accommodation, ...s]);
         setFormData({ category: '', description: '' });
       }
     } catch (err) {
       console.error('Add accommodation error', err);
+    }
+  };
+
+  const handleRemove = async (id) => {
+    try {
+      setDeletingId(id);
+      const token = localStorage.getItem('token');
+      const res = await axios.delete(`/api/accommodations/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data?.success) setList((s) => s.filter((it) => it._id !== id));
+    } catch (err) {
+      console.error('Remove accommodation error', err);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -48,102 +69,98 @@ export default function AccommodationsPage() {
     return acc;
   }, {});
 
-  const handleRemove = async (id) => {
-    try {
-      setDeletingId(id);
-      const token = localStorage.getItem('token');
-      const res = await axios.delete(`/api/accommodations/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data && res.data.success) {
-        setList((s) => s.filter((it) => it._id !== id));
-      }
-    } catch (err) {
-      console.error('Remove accommodation error', err);
-    } finally {
-      setDeletingId(null);
-    }
-  };
+  const handleLogout = () => { localStorage.clear(); router.push('/login'); };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <main className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-semibold">Accommodations Bank</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage the master list of supports used for AI generation.</p>
+    <div className="flex h-screen bg-canvas text-slate-800">
+      <Sidebar user={user} onLogout={handleLogout} />
 
-          <form onSubmit={handleAdd} className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700">Category / Need</label>
-              <input
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                placeholder="e.g., ADHD"
-                required
-              />
+      <div className="flex-1 overflow-auto">
+        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-8 h-16 flex items-center sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <ShieldCheck className="w-[18px] h-[18px] text-emerald-600" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Accommodation Text</label>
-              <input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                placeholder="e.g., Extended time on tests"
-                required
-              />
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Accommodations Bank</h2>
+              <p className="text-xs text-slate-500">Manage the master list of supports for AI generation</p>
             </div>
-            <div className="md:col-span-3">
-              <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg">Add to Bank</button>
-            </div>
-          </form>
-
-          <div className="mt-8 grid grid-cols-1 gap-4">
-            {Object.keys(grouped).length === 0 && !loading && (
-              <p className="text-sm text-gray-500">No accommodations yet.</p>
-            )}
-
-            {Object.entries(grouped).map(([category, items]) => (
-              <div key={category} className="bg-white dark:bg-slate-800 shadow-sm rounded-lg p-4 border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{category}</h3>
-                  <span className="text-sm text-gray-500">{items.length}</span>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {items.map((it) => {
-                    const isDeleting = deletingId === it._id;
-                    return (
-                      <li
-                        key={it._id}
-                        className={`flex items-start justify-between p-3 bg-white dark:bg-slate-800 rounded-md border border-gray-100 dark:border-slate-700 ${
-                          isDeleting ? 'opacity-70' : ''
-                        }`}
-                      >
-                        <div className="text-sm text-gray-800 dark:text-gray-200">{it.description}</div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemove(it._id)}
-                          className={`ml-4 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors ${isDeleting ? 'cursor-not-allowed' : ''}`}
-                          title="Remove accommodation"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? (
-                            <svg className="w-4 h-4 animate-spin text-red-600" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                            </svg>
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
           </div>
-        </div>
-      </main>
+        </header>
+
+        <main className="p-8">
+          <div className="max-w-4xl mx-auto">
+            {/* Add form */}
+            <form onSubmit={handleAdd} className="bg-white rounded-xl shadow-card border border-slate-200/60 p-5">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Category / Need</label>
+                  <input
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
+                    placeholder="e.g., ADHD"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Accommodation Text</label>
+                  <input
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
+                    placeholder="e.g., Extended time on tests"
+                    required
+                  />
+                </div>
+                <button className="h-9 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </button>
+              </div>
+            </form>
+
+            {/* Grouped list */}
+            <div className="mt-6 space-y-4">
+              {Object.keys(grouped).length === 0 && !loading && (
+                <div className="text-center py-16 text-slate-400">
+                  <ShieldCheck className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <p className="text-sm font-medium text-slate-500">No accommodations yet</p>
+                  <p className="text-xs">Add your first accommodation above</p>
+                </div>
+              )}
+
+              {Object.entries(grouped).map(([category, items]) => (
+                <div key={category} className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+                    <h3 className="text-sm font-semibold text-slate-900">{category}</h3>
+                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-full">{items.length}</span>
+                  </div>
+                  <ul className="divide-y divide-slate-50">
+                    {items.map((it) => {
+                      const isDeleting = deletingId === it._id;
+                      return (
+                        <li key={it._id} className={`flex items-start justify-between px-5 py-3 hover:bg-slate-50/50 transition-colors group ${isDeleting ? 'opacity-50' : ''}`}>
+                          <span className="text-sm text-slate-700 leading-relaxed">{it.description}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemove(it._id)}
+                            className="ml-4 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                            title="Remove"
+                            disabled={isDeleting}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
