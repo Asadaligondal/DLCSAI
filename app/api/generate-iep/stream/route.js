@@ -8,10 +8,24 @@ function sseEvent(data) {
 export async function POST(req) {
   const encoder = new TextEncoder();
   let streamController;
+  let streamClosed = false;
+
+  function send(data) {
+    if (streamClosed) return;
+    try { streamController.enqueue(encoder.encode(sseEvent(data))); } catch { streamClosed = true; }
+  }
+  function closeStream() {
+    if (streamClosed) return;
+    streamClosed = true;
+    try { streamController.close(); } catch { /* already closed */ }
+  }
 
   const stream = new ReadableStream({
     start(controller) {
       streamController = controller;
+    },
+    cancel() {
+      streamClosed = true;
     }
   });
 
@@ -25,13 +39,12 @@ export async function POST(req) {
       } = body;
 
       if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
-        streamController.enqueue(encoder.encode(sseEvent({ stage: 'error', error: 'Missing required fields' })));
-        streamController.close();
+        send({ stage: 'error', error: 'Missing required fields' });
+        closeStream();
         return;
       }
 
-      // Stage 1: Retrieving context
-      streamController.enqueue(encoder.encode(sseEvent({ stage: 'retrieving_context' })));
+      send({ stage: 'retrieving_context' });
 
       const customGoalsList = Array.isArray(customGoals) && customGoals.length > 0
         ? customGoals.map((g, i) => `${i + 1}. ${g.title || g}`).join('\n')
@@ -88,8 +101,7 @@ export async function POST(req) {
       const ragContext = ragResult?.flat || '';
       const ragContextByQuery = ragResult?.byQuery || [];
 
-      // Stage 2: Generating IEP sections in parallel
-      streamController.enqueue(encoder.encode(sseEvent({ stage: 'generating_iep' })));
+      send({ stage: 'generating_iep' });
 
       let sectionsCompleted = 0;
       const totalSections = 5;
@@ -102,26 +114,26 @@ export async function POST(req) {
         ragContextByQuery,
         onSectionComplete(key, label, error) {
           sectionsCompleted++;
-          streamController.enqueue(encoder.encode(sseEvent({
+          send({
             stage: 'generating_iep',
             progress: `${label} ${error ? 'failed' : 'done'} (${sectionsCompleted}/${totalSections})`,
             sectionsCompleted,
             totalSections
-          })));
+          });
         }
       });
 
-      streamController.enqueue(encoder.encode(sseEvent({
+      send({
         stage: 'done',
         data: processed,
         ragContext: ragContext || null,
         ragContextByQuery: ragContextByQuery || []
-      })));
+      });
     } catch (error) {
       console.error('Generate IEP Stream Error:', error);
-      streamController.enqueue(encoder.encode(sseEvent({ stage: 'error', error: error.message || 'Internal server error' })));
+      send({ stage: 'error', error: error.message || 'Internal server error' });
     } finally {
-      streamController.close();
+      closeStream();
     }
   })();
 

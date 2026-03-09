@@ -493,26 +493,47 @@ export default function StudentDetail() {
               heading: HeadingLevel.HEADING_2,
               spacing: { before: 400, after: 200 }
             }),
-            ...editablePlan.annual_goals.map((goal, index) => 
-              new Paragraph({
-                text: `${index + 1}. ${goal}`,
-                spacing: { after: 200 },
-                bullet: { level: 0 }
-              })
-            ),
-            
-            new Paragraph({
-              text: 'Short-Term Objectives',
-              heading: HeadingLevel.HEADING_2,
-              spacing: { before: 400, after: 200 }
+            ...(editablePlan.annual_goals || []).flatMap((goal, index) => {
+              const isObj = goal && typeof goal === 'object';
+              const goalText = isObj ? (goal.goal || [goal.condition, goal.observable_behavior, goal.mastery_criteria].filter(Boolean).join(' ')) : String(goal || '');
+              const paragraphs = [
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: `Goal ${index + 1}`, bold: true }),
+                    ...(isObj && goal.domain ? [new TextRun({ text: ` [${goal.domain}]`, italics: true })] : [])
+                  ],
+                  spacing: { before: 200, after: 80 }
+                }),
+                new Paragraph({ text: goalText, spacing: { after: 60 }, bullet: { level: 0 } })
+              ];
+              if (isObj && goal.progress_measurement) {
+                paragraphs.push(new Paragraph({ children: [new TextRun({ text: `Measured by: ${goal.progress_measurement}`, italics: true, size: 20 })], spacing: { after: 40 } }));
+              }
+              if (isObj && goal.progress_reporting) {
+                paragraphs.push(new Paragraph({ children: [new TextRun({ text: `Reported: ${goal.progress_reporting}`, italics: true, size: 20 })], spacing: { after: 40 } }));
+              }
+              const aligned = (editablePlan.short_term_objectives || []).filter(o => o && typeof o === 'object' && o.aligned_goal_index === index);
+              if (aligned.length > 0) {
+                paragraphs.push(new Paragraph({ children: [new TextRun({ text: 'Short-Term Objectives:', bold: true, size: 20 })], spacing: { before: 60, after: 40 } }));
+                aligned.forEach((obj, oi) => {
+                  const objText = typeof obj === 'string' ? obj : (obj.objective || [obj.condition, obj.observable_behavior, obj.mastery_criteria].filter(Boolean).join(' '));
+                  paragraphs.push(new Paragraph({ text: `${oi + 1}. ${objText}`, spacing: { after: 60 }, bullet: { level: 1 } }));
+                });
+              }
+              return paragraphs;
             }),
-            ...editablePlan.short_term_objectives.map((obj, index) => 
-              new Paragraph({
-                text: `${index + 1}. ${obj}`,
-                spacing: { after: 200 },
-                bullet: { level: 0 }
-              })
-            ),
+            // Unlinked short-term objectives
+            ...(() => {
+              const unlinked = (editablePlan.short_term_objectives || []).filter(o => !(o && typeof o === 'object' && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
+              if (unlinked.length === 0) return [];
+              return [
+                new Paragraph({ text: 'Additional Short-Term Objectives', heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 200 } }),
+                ...unlinked.map((obj, index) => {
+                  const text = typeof obj === 'string' ? obj : (obj?.objective || obj?.text || '');
+                  return new Paragraph({ text: `${index + 1}. ${text}`, spacing: { after: 200 }, bullet: { level: 0 } });
+                })
+              ];
+            })(),
             
             new Paragraph({
               text: 'Intervention Recommendations',
@@ -565,38 +586,24 @@ export default function StudentDetail() {
     setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
   };
 
-  // Update a specific annual goal text (keeps same behavior)
   const updateGoal = (index, text) => {
     const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
     const existing = newGoals[index];
-    if (existing == null || typeof existing === 'string') {
-      newGoals[index] = text;
-    } else if (typeof existing === 'object') {
-      const g = { ...existing };
-      if ('title' in g) g.title = text;
-      else if ('goal' in g) g.goal = text;
-      else g.title = text;
-      newGoals[index] = g;
+    if (existing && typeof existing === 'object') {
+      newGoals[index] = { ...existing, goal: text };
     } else {
       newGoals[index] = text;
     }
     setEditablePlan({ ...editablePlan, annual_goals: newGoals });
   };
 
-  // Update a specific short-term objective text
   const updateObjective = (index, text) => {
     const newObjectives = Array.isArray(editablePlan?.short_term_objectives)
       ? [...editablePlan.short_term_objectives]
       : [];
     const existing = newObjectives[index];
-    if (existing == null || typeof existing === 'string') {
-      newObjectives[index] = text;
-    } else if (typeof existing === 'object') {
-      const o = { ...existing };
-      if ('text' in o) o.text = text;
-      else if ('objective' in o) o.objective = text;
-      else o.text = text;
-      newObjectives[index] = o;
+    if (existing && typeof existing === 'object') {
+      newObjectives[index] = { ...existing, objective: text };
     } else {
       newObjectives[index] = text;
     }
