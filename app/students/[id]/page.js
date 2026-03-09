@@ -18,6 +18,8 @@ import IEPPlanEditor from './components/IEPPlanEditor';
 import RightTOC from './components/RightTOC';
 import GoalsObjectivesSection from './components/GoalsObjectivesSection';
 import CustomizeGoalModal from './components/CustomizeGoalModal';
+import PipelineSelector from './components/PipelineSelector';
+import PipelineMetricsPanel from './components/PipelineMetricsPanel';
 // GoalsCard removed from main layout; custom goals are managed via StudentInfoHeader modal
 
 const DISABILITIES_OPTIONS = [
@@ -88,8 +90,10 @@ export default function StudentDetail() {
   const [customGoals, setCustomGoals] = useState([]);
   const [viewMode, setViewMode] = useState('edited'); // 'original' or 'edited'
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
-  const [ragContext, setRagContext] = useState(null); // Raw retrieved context from last generation (for analysis)
-  const [ragContextByQuery, setRagContextByQuery] = useState([]); // Structured by query for UI sections
+  const [ragContext, setRagContext] = useState(null);
+  const [ragContextByQuery, setRagContextByQuery] = useState([]);
+  const [ragStrategy, setRagStrategy] = useState('baseline');
+  const [pipelineMetrics, setPipelineMetrics] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -112,6 +116,12 @@ export default function StudentDetail() {
     fetchStudent(token);
     const u = JSON.parse(localStorage.getItem('user') || 'null');
     setUserLocal(u);
+
+    // Load persisted pipeline metrics for this student
+    try {
+      const stored = localStorage.getItem(`pipeline_metrics_${id}`);
+      if (stored) setPipelineMetrics(JSON.parse(stored));
+    } catch { /* ignore corrupt data */ }
   }, [id, router]);
 
   const fetchStudent = async (token) => {
@@ -302,7 +312,8 @@ export default function StudentDetail() {
         studentId: id,
         student_accommodations: student.student_accommodations || null,
         customGoals: customGoalsForAPI,
-        student: { additionalContext: studentNotesValue }
+        student: { additionalContext: studentNotesValue },
+        ragStrategy
       };
 
       const token = localStorage.getItem('token');
@@ -349,6 +360,19 @@ export default function StudentDetail() {
                 setIsReviewed(false);
                 setHasExistingPlan(true);
                 setViewMode('edited');
+
+                // Persist pipeline metrics for this strategy
+                if (data.ragMetrics) {
+                  setPipelineMetrics(prev => {
+                    const next = {
+                      ...prev,
+                      [ragStrategy]: { metrics: data.ragMetrics, generatedAt: Date.now() }
+                    };
+                    try { localStorage.setItem(`pipeline_metrics_${id}`, JSON.stringify(next)); } catch { /* quota */ }
+                    return next;
+                  });
+                }
+
                 toast.success('IEP Plan generated successfully');
               } else if (data.stage === 'error') {
                 throw new Error(data.error || 'Generation failed');
@@ -672,6 +696,15 @@ export default function StudentDetail() {
                 onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
                 customGoals={customGoals}
               />
+
+              <div className="mt-4 space-y-3">
+                <PipelineSelector
+                  value={ragStrategy}
+                  onChange={setRagStrategy}
+                  disabled={isGenerating}
+                />
+                <PipelineMetricsPanel pipelineMetrics={pipelineMetrics} />
+              </div>
 
               {!hasExistingPlan && (
                 <div className="mt-6 flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">

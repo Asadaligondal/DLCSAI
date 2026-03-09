@@ -35,7 +35,8 @@ export async function POST(req) {
       const {
         studentGrade, studentAge, areaOfNeed, currentPerformance,
         disabilityCategory, instructionalSetting,
-        exceptionalities, customGoals, studentId, student_accommodations
+        exceptionalities, customGoals, studentId, student_accommodations,
+        ragStrategy = 'baseline'
       } = body;
 
       if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -89,6 +90,9 @@ export async function POST(req) {
         }
       });
 
+      const validStrategies = ['baseline', 'grouped', 'section_aligned'];
+      const strategy = validStrategies.includes(ragStrategy) ? ragStrategy : 'baseline';
+
       const ragResult = await getRagContext({
         exceptionalities: exceptionalities || [],
         weaknesses,
@@ -96,10 +100,11 @@ export async function POST(req) {
         customGoals: customGoals || [],
         accommodations: accommodationLabels,
         instructionalSetting: instructionalSetting || ''
-      });
+      }, strategy);
 
       const ragContext = ragResult?.flat || '';
       const ragContextByQuery = ragResult?.byQuery || [];
+      const ragMetrics = ragResult?.metrics || {};
 
       send({ stage: 'generating_iep' });
 
@@ -112,6 +117,8 @@ export async function POST(req) {
         customGoalsList,
         accommodationsList: accommodationLabels.join(', '),
         ragContextByQuery,
+        strategy,
+        ragMetrics,
         onSectionComplete(key, label, error) {
           sectionsCompleted++;
           send({
@@ -127,7 +134,8 @@ export async function POST(req) {
         stage: 'done',
         data: processed,
         ragContext: ragContext || null,
-        ragContextByQuery: ragContextByQuery || []
+        ragContextByQuery: ragContextByQuery || [],
+        ragMetrics
       });
     } catch (error) {
       console.error('Generate IEP Stream Error:', error);

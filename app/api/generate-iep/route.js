@@ -8,7 +8,8 @@ export async function POST(req) {
     const {
       studentGrade, studentAge, areaOfNeed, currentPerformance,
       disabilityCategory, instructionalSetting,
-      exceptionalities, customGoals, studentId, student_accommodations
+      exceptionalities, customGoals, studentId, student_accommodations,
+      ragStrategy = 'baseline'
     } = body;
 
     if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -57,6 +58,9 @@ export async function POST(req) {
       }
     });
 
+    const validStrategies = ['baseline', 'grouped', 'section_aligned'];
+    const strategy = validStrategies.includes(ragStrategy) ? ragStrategy : 'baseline';
+
     const ragResult = await getRagContext({
       exceptionalities: exceptionalities || [],
       weaknesses,
@@ -64,30 +68,28 @@ export async function POST(req) {
       customGoals: customGoals || [],
       accommodations: accommodationLabels,
       instructionalSetting: instructionalSetting || ''
-    });
+    }, strategy);
 
     const ragContext = ragResult?.flat || '';
     const ragContextByQuery = ragResult?.byQuery || [];
-
-    if (ragContext) {
-      console.log('[RAG] Context:', ragContext.length, 'chars,', ragContextByQuery.length, 'groups');
-    } else {
-      console.log('[RAG] No institutional context — proceeding without RAG.');
-    }
+    const ragMetrics = ragResult?.metrics || {};
 
     const generatedContent = await generateIEPParallel({
       studentGrade, studentAge, areaOfNeed, currentPerformance,
       disabilityCategory, instructionalSetting,
       customGoalsList,
       accommodationsList: accommodationLabels.join(', '),
-      ragContextByQuery
+      ragContextByQuery,
+      strategy,
+      ragMetrics
     });
 
     return NextResponse.json({
       success: true,
       data: generatedContent,
       ragContext: ragContext || null,
-      ragContextByQuery
+      ragContextByQuery,
+      ragMetrics
     });
 
   } catch (error) {
