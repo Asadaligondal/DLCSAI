@@ -242,6 +242,7 @@ export default function Dashboard() {
     name: '',
     studentId: '',
     age: '',
+    dateOfBirth: '',
     gradeLevel: '',
     disabilities: [],
     strengths: [],
@@ -253,9 +254,20 @@ export default function Dashboard() {
     instructionalSetting: '',
     performanceQuantitative: '',
     performanceNarrative: '',
-    areaOfNeed: ''
-    ,studentNotes: ''
+    areaOfNeed: '',
+    studentNotes: ''
   });
+
+  const calcAgeFromDob = (dob) => {
+    if (!dob) return { years: '', months: '', numeric: '' };
+    const birth = new Date(dob);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    if (months < 0) { years--; months += 12; }
+    if (now.getDate() < birth.getDate()) { months--; if (months < 0) { years--; months += 12; } }
+    return { years, months, numeric: years };
+  };
   const [showAccommodations, setShowAccommodations] = useState(false);
   const [accommodations, setAccommodations] = useState(null);
 
@@ -305,6 +317,7 @@ export default function Dashboard() {
       name: '',
       studentId: '',
       age: '',
+      dateOfBirth: '',
       gradeLevel: '',
       disabilities: [],
       strengths: [],
@@ -324,10 +337,13 @@ export default function Dashboard() {
 
   const handleEditStudent = (student) => {
     setEditingStudent(student);
+    const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '';
+    const ageFromDob = dob ? calcAgeFromDob(dob) : null;
     setFormData({
       name: student.name || '',
       studentId: student.studentId || '',
-      age: student.age != null ? String(student.age) : '',
+      age: ageFromDob ? String(ageFromDob.numeric) : (student.age != null ? String(student.age) : ''),
+      dateOfBirth: dob,
       gradeLevel: student.gradeLevel || '',
       disabilities: Array.isArray(student.disabilities) ? student.disabilities : [],
       strengths: Array.isArray(student.strengths) ? student.strengths : [],
@@ -357,6 +373,7 @@ export default function Dashboard() {
       name: '',
       studentId: '',
       age: '',
+      dateOfBirth: '',
       gradeLevel: '',
       disabilities: [],
       strengths: [],
@@ -841,14 +858,27 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Date of Birth</label>
                     <input
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => {
+                        const dob = e.target.value;
+                        const { numeric } = calcAgeFromDob(dob);
+                        setFormData({ ...formData, dateOfBirth: dob, age: numeric !== '' ? String(numeric) : '' });
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
                       className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                       required
                     />
+                    {formData.dateOfBirth && (() => {
+                      const { years, months } = calcAgeFromDob(formData.dateOfBirth);
+                      return (
+                        <p className="mt-1.5 text-xs text-slate-500">
+                          Age: <span className="font-semibold text-slate-700">{years} yr{years !== 1 ? 's' : ''}{months > 0 ? `, ${months} mo` : ''}</span>
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   <div>
@@ -1028,6 +1058,7 @@ export default function Dashboard() {
                     <MultiSelect
                       label="Area(s) of Need"
                       options={AREAS_OF_NEED}
+                      allowMultiplePerGroup
                       value={
                         Array.isArray(formData.areaOfNeed)
                           ? formData.areaOfNeed

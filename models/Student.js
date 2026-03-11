@@ -20,6 +20,10 @@ const StudentSchema = new mongoose.Schema({
     required: [true, 'Age is required'],
     min: [0, 'Age must be a positive number']
   },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
   disabilities: {
     type: [String],
     default: []

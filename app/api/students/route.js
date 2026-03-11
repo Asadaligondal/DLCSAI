@@ -74,7 +74,7 @@ export async function POST(request) {
 
     const user = authResult.user;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, student_accommodations, studentNotes } = body;
+    const { name, studentId, gradeLevel, age, dateOfBirth, disabilities, strengths, weaknesses, student_accommodations, studentNotes, state, instructionalSetting, performanceQuantitative, performanceNarrative, areaOfNeed } = body;
 
     // Validate required fields
     if (!name || !studentId || !gradeLevel || !age) {
@@ -109,11 +109,17 @@ export async function POST(request) {
       studentId,
       gradeLevel,
       age,
+      dateOfBirth: dateOfBirth || null,
       disabilities: disabilities || [],
       strengths: strengths || [],
       weaknesses: weaknesses || [],
       student_accommodations: normalized,
       studentNotes: studentNotes || '',
+      state: state || 'Florida',
+      instructionalSetting: instructionalSetting || '',
+      performanceQuantitative: performanceQuantitative || '',
+      performanceNarrative: performanceNarrative || '',
+      areaOfNeed: areaOfNeed || '',
       createdBy: user._id
     });
 

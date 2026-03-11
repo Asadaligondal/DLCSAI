@@ -228,13 +228,14 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                   <div className="text-lg font-semibold">No accommodations found</div>
                   <div className="mt-2 text-sm text-gray-500">Try a different keyword or clear filters.</div>
                   <div className="mt-4">
-                    <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
+                    <button type="button" onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
                   </div>
                 </div>
               ) : (
                 categories.map(({ key, label, items }) => (
                   <div key={key} className="border rounded-md">
                     <button
+                      type="button"
                       onClick={() => setOpenCats({ ...openCats, [key]: !openCats[key] })}
                       className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 min-w-0"
                     >
@@ -323,7 +324,7 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
             <div className="hidden md:flex flex-col w-[200px] flex-shrink-0 border-r border-gray-200 pr-3 min-w-0 sticky top-0 self-start bg-white">
               <div className="space-y-1">
                 {categories.map(({ key, label, shortLabel }) => (
-                  <button key={key} onClick={() => setSelectedCategory(key)} className={`w-full text-left px-3 py-2 rounded-md flex items-center justify-between gap-2 min-w-0 ${selectedCategory === key ? 'bg-blue-50 border-l-2 border-blue-600 text-blue-700 font-medium' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}>
+                  <button type="button" key={key} onClick={() => setSelectedCategory(key)} className={`w-full text-left px-3 py-2 rounded-md flex items-center justify-between gap-2 min-w-0 ${selectedCategory === key ? 'bg-blue-50 border-l-2 border-blue-600 text-blue-700 font-medium' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}>
                     <span className="text-sm truncate" title={label}>{shortLabel || label}</span>
                     <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded text-gray-600 flex-shrink-0">{savedCount(key)}</span>
                   </button>
@@ -476,7 +477,7 @@ export default function AccommodationsModal({ initial = null, onClose, onSave, i
                             <div className="text-lg font-semibold">No accommodations found</div>
                             <div className="mt-2 text-sm text-gray-500">Try a different keyword or clear filters.</div>
                             <div className="mt-4">
-                              <button onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
+                              <button type="button" onClick={() => { setQuery(''); setFilterHasSubOptions(false); setFilterNeedsConsent(false); setSelectedOnly(false); }} className="px-4 py-2 bg-blue-600 text-white rounded-md">Clear search</button>
                             </div>
                           </div>
                         );
