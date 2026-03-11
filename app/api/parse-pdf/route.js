@@ -6,60 +6,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-export async function POST(request) {
-  try {
-    console.log('=== PDF Parse API Called ===');
-    
-    const authResult = await protectRoute(request);
-    if (authResult.error) {
-      console.log('Auth failed');
-      return authResult.response;
-    }
+const IMAGE_TYPES = new Set([
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'
+]);
 
-    console.log('Auth passed');
-
-    // Parse the multipart form data
-    const formData = await request.formData();
-    const file = formData.get('file');
-
-    console.log('File received:', file?.name, 'Size:', file?.size);
-
-    if (!file) {
-      console.log('No file in request');
-      return NextResponse.json({ success: false, message: 'No file uploaded' }, { status: 400 });
-    }
-
-    // Convert file to Uint8Array
-    const bytes = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(bytes);
-    console.log('Converted to Uint8Array, length:', uint8Array.length);
-
-    // Extract text from PDF using unpdf
-    let extractedText = '';
-    try {
-      console.log('Starting PDF extraction...');
-      const { extractText } = await import('unpdf');
-      const result = await extractText(uint8Array);
-      console.log('Extraction result type:', typeof result, 'Keys:', Object.keys(result || {}));
-      
-      // unpdf returns text as an array (one per page), join them
-      const textArray = result?.text || [];
-      extractedText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray);
-      console.log('Extracted text length:', extractedText?.length);
-      
-      if (!extractedText || extractedText.trim().length < 10) {
-        console.log('Not enough text extracted. Full result:', JSON.stringify(result));
-        return NextResponse.json({ success: false, message: 'No text could be extracted from PDF' }, { status: 400 });
-      }
-      
-      console.log('Text extraction successful');
-    } catch (pdfError) {
-      console.error('PDF parsing error:', pdfError);
-      return NextResponse.json({ success: false, message: 'Failed to parse PDF file' }, { status: 400 });
-    }
-
-    // Call OpenAI to extract structured data
-    const systemPrompt = `You are a Data Extraction Assistant. Extract the following fields from the student document text:
+const EXTRACTION_PROMPT = `You are a Data Extraction Assistant. Extract the following fields from the student document:
 - name
 - studentId
 - gradeLevel
@@ -86,41 +37,105 @@ Rules:
 - For performanceQuantitative and performanceNarrative, prefer concise normalized values as described above.
 - Do not include any markdown formatting or explanations, just the JSON object.`;
 
+export async function POST(request) {
+  try {
+    const authResult = await protectRoute(request);
+    if (authResult.error) {
+      return authResult.response;
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file) {
+      return NextResponse.json({ success: false, message: 'No file uploaded' }, { status: 400 });
+    }
+
+    const mimeType = file.type || '';
+    const isImage = IMAGE_TYPES.has(mimeType);
+    const isPdf = mimeType === 'application/pdf';
+
+    if (!isImage && !isPdf) {
+      return NextResponse.json(
+        { success: false, message: `Unsupported file type: ${mimeType}. Use PDF, JPG, PNG, GIF, or WebP.` },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[parse] File: ${file.name} (${mimeType}, ${file.size} bytes, ${isImage ? 'image' : 'pdf'})`);
+
+    let messages;
+
+    if (isImage) {
+      const bytes = await file.arrayBuffer();
+      const base64 = Buffer.from(bytes).toString('base64');
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+
+      messages = [
+        { role: 'system', content: EXTRACTION_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Extract student information from this document image.' },
+            { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } }
+          ]
+        }
+      ];
+    } else {
+      // PDF: extract text first
+      const bytes = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(bytes);
+
+      let extractedText = '';
+      try {
+        const { extractText } = await import('unpdf');
+        const result = await extractText(uint8Array);
+        const textArray = result?.text || [];
+        extractedText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray);
+
+        if (!extractedText || extractedText.trim().length < 10) {
+          return NextResponse.json({ success: false, message: 'No text could be extracted from PDF' }, { status: 400 });
+        }
+      } catch (pdfError) {
+        console.error('PDF parsing error:', pdfError);
+        return NextResponse.json({ success: false, message: 'Failed to parse PDF file' }, { status: 400 });
+      }
+
+      messages = [
+        { role: 'system', content: EXTRACTION_PROMPT },
+        { role: 'user', content: `Extract student information from this text:\n\n${extractedText}` }
+      ];
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Extract student information from this text:\n\n${extractedText}` }
-      ],
+      messages,
       temperature: 0.1,
       max_tokens: 1500
     });
 
     const responseText = completion.choices[0]?.message?.content || '{}';
-    
-    // Parse the JSON response
+
     let extractedData;
     try {
-      // Remove any markdown code block formatting if present
       const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       extractedData = JSON.parse(cleanedResponse);
     } catch (jsonError) {
       console.error('JSON parsing error:', jsonError);
-      console.error('Response was:', responseText);
       return NextResponse.json({ success: false, message: 'Failed to parse AI response' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       data: extractedData,
-      message: 'PDF parsed successfully'
+      message: `${isImage ? 'Image' : 'PDF'} parsed successfully`
     });
 
   } catch (error) {
-    console.error('Parse PDF Error:', error);
+    console.error('Parse File Error:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to process PDF',
+      message: 'Failed to process file',
       error: error.message
     }, { status: 500 });
   }

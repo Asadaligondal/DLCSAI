@@ -88,7 +88,7 @@ export async function PUT(request, { params }) {
     const user = authResult.user;
     const { id } = await params;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations, studentNotes } = body;
+    const { name, studentId, gradeLevel, age, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations, studentNotes, state, instructionalSetting, performanceQuantitative, performanceNarrative, areaOfNeed } = body;
 
     // Connect to database
     await connectDB();
@@ -115,6 +115,11 @@ export async function PUT(request, { params }) {
     if (strengths !== undefined) student.strengths = strengths;
     if (weaknesses !== undefined) student.weaknesses = weaknesses;
     if (studentNotes !== undefined) student.studentNotes = studentNotes;
+    if (state !== undefined) student.state = state;
+    if (instructionalSetting !== undefined) student.instructionalSetting = instructionalSetting;
+    if (performanceQuantitative !== undefined) student.performanceQuantitative = performanceQuantitative;
+    if (performanceNarrative !== undefined) student.performanceNarrative = performanceNarrative;
+    if (areaOfNeed !== undefined) student.areaOfNeed = areaOfNeed;
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
     if (annualGoals !== undefined) student.annualGoals = annualGoals;
     if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;

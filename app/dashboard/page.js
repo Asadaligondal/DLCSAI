@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -9,7 +9,7 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
-import { Plus, Search, Trash2, Zap, Upload, FileText, Users } from 'lucide-react';
+import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil } from 'lucide-react';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -224,6 +224,20 @@ export default function Dashboard() {
   const [wizardStep, setWizardStep] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
+  const uploadDropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!uploadDropdownOpen) return;
+    const handleClick = (e) => {
+      if (uploadDropdownRef.current && !uploadDropdownRef.current.contains(e.target)) {
+        setUploadDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [uploadDropdownOpen]);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -308,8 +322,37 @@ export default function Dashboard() {
     setShowModal(true);
   };
 
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setFormData({
+      name: student.name || '',
+      studentId: student.studentId || '',
+      age: student.age != null ? String(student.age) : '',
+      gradeLevel: student.gradeLevel || '',
+      disabilities: Array.isArray(student.disabilities) ? student.disabilities : [],
+      strengths: Array.isArray(student.strengths) ? student.strengths : [],
+      strengthsOther: '',
+      weaknesses: Array.isArray(student.weaknesses) ? student.weaknesses : [],
+      weaknessesOther: '',
+      areaOfNeedOther: '',
+      state: student.state || 'Florida',
+      instructionalSetting: student.instructionalSetting || '',
+      performanceQuantitative: student.performanceQuantitative || '',
+      performanceNarrative: student.performanceNarrative || '',
+      areaOfNeed: student.areaOfNeed || '',
+      studentNotes: student.studentNotes || ''
+    });
+    if (student.student_accommodations) {
+      setAccommodations(student.student_accommodations);
+    }
+    setWizardStep(1);
+    setShowModal(true);
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
+    setUploadDropdownOpen(false);
+    setEditingStudent(null);
     setFormData({
       name: '',
       studentId: '',
@@ -331,13 +374,16 @@ export default function Dashboard() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      toast.error('Please upload a PDF file');
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a PDF or image file (JPG, PNG, GIF, WebP)');
       return;
     }
 
     setUploading(true);
-    const toastId = toast.loading('Analyzing document...');
+    setUploadDropdownOpen(false);
+    const isImage = file.type.startsWith('image/');
+    const toastId = toast.loading(`Analyzing ${isImage ? 'image' : 'document'}...`);
 
     try {
       const formData = new FormData();
@@ -449,16 +495,16 @@ export default function Dashboard() {
         }
 
         toast.update(toastId, {
-          render: 'Form auto-filled from PDF!',
+          render: 'Form auto-filled from document!',
           type: 'success',
           isLoading: false,
           autoClose: 3000
         });
       }
     } catch (error) {
-      console.error('PDF upload error:', error);
+      console.error('File upload error:', error);
       toast.update(toastId, {
-        render: error.response?.data?.message || 'Failed to parse PDF',
+        render: error.response?.data?.message || 'Failed to parse file',
         type: 'error',
         isLoading: false,
         autoClose: 3000
@@ -475,12 +521,18 @@ export default function Dashboard() {
     try {
       const payload = { ...formData, age: parseInt(formData.age) };
       if (accommodations) payload.student_accommodations = accommodations;
-      await axios.post('/api/students', payload, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success('Student added successfully');
+
+      if (editingStudent) {
+        await axios.put(`/api/students/${editingStudent._id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success('Student updated successfully');
+      } else {
+        await axios.post('/api/students', payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success('Student added successfully');
+      }
       fetchStudents();
       handleCloseModal();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add student');
+      toast.error(error.response?.data?.message || (editingStudent ? 'Failed to update student' : 'Failed to add student'));
     }
   };
 
@@ -650,6 +702,14 @@ export default function Dashboard() {
                           <td className="px-5 py-3.5">
                             <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
+                                onClick={() => handleEditStudent(student)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors"
+                                title="Edit"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
+                              <button
                                 onClick={() => router.push(`/students/${student._id}`)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors"
                                 title="IEP"
@@ -686,45 +746,73 @@ export default function Dashboard() {
       </div>
 
       {showModal && (
-        <Modal title="Add Student" onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'} noScroll>
+        <Modal title={editingStudent ? 'Edit Student' : 'Add Student'} onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'} noScroll>
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
             {wizardStep === 1 ? (
               <>
-                {/* PDF Upload Feature Card */}
+                {/* Document Upload Feature Card */}
                 <div className="flex items-center justify-between p-5 bg-blue-50/80 rounded-xl border border-blue-100">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                       <Upload className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">Auto-fill from PDF</p>
-                      <p className="text-xs text-slate-600 mt-0.5">Upload a report or intake form to extract student information</p>
+                      <p className="text-sm font-semibold text-slate-900">Auto-fill from Document</p>
+                      <p className="text-xs text-slate-600 mt-0.5">Upload a PDF or image to extract student information</p>
                     </div>
                   </div>
-                  <div>
-                    <input
-                      type="file"
-                      id="pdf-upload"
-                      accept="application/pdf"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                    <label
-                      htmlFor="pdf-upload"
-                      className={`inline-flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors ${uploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      {uploading ? (
+                  <div className="relative" ref={uploadDropdownRef}>
+                    <input type="file" id="pdf-upload" accept="application/pdf" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+                    <input type="file" id="image-upload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/tiff" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+
+                    {uploading ? (
+                      <div className="inline-flex items-center gap-2 h-10 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium opacity-70">
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                         </svg>
-                      ) : (
-                        <Upload className="w-4 h-4" />
-                      )}
-                      {uploading ? 'Analyzing...' : 'Upload PDF'}
-                    </label>
+                        Analyzing...
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setUploadDropdownOpen(o => !o)}
+                          className="inline-flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Upload
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${uploadDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {uploadDropdownOpen && (
+                          <div className="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl border border-slate-200 shadow-float z-50 py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                            <button
+                              type="button"
+                              onClick={() => { document.getElementById('pdf-upload').click(); setUploadDropdownOpen(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+                            >
+                              <FileText className="w-4 h-4 text-red-500" />
+                              <div className="text-left">
+                                <div className="font-medium">PDF Document</div>
+                                <div className="text-[10px] text-slate-400">.pdf</div>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { document.getElementById('image-upload').click(); setUploadDropdownOpen(false); }}
+                              className="flex items-center gap-2.5 px-3 py-2 w-full text-sm text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors"
+                            >
+                              <ImageIcon className="w-4 h-4 text-emerald-500" />
+                              <div className="text-left">
+                                <div className="font-medium">Image</div>
+                                <div className="text-[10px] text-slate-400">.jpg, .png, .gif, .webp</div>
+                              </div>
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1001,7 +1089,7 @@ export default function Dashboard() {
                       type="submit"
                       className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
                     >
-                      Add Student
+                      {editingStudent ? 'Save Changes' : 'Add Student'}
                     </button>
                   </div>
                 )}
