@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import MultiSelect from '@/components/MultiSelect';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { jsPDF } from 'jspdf';
 import { ArrowLeft, Save, Wand2 } from 'lucide-react';
 
 import StudentInfoHeader from './components/StudentInfoHeader';
@@ -594,6 +595,170 @@ export default function StudentDetail() {
     }
   };
 
+  const handleExportToPDF = () => {
+    if (!editablePlan || !isReviewed) return;
+
+    try {
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const marginL = 18;
+      const marginR = 18;
+      const contentW = pageW - marginL - marginR;
+      let y = 20;
+
+      const checkPage = (need = 12) => {
+        if (y + need > pdf.internal.pageSize.getHeight() - 15) {
+          pdf.addPage();
+          y = 18;
+        }
+      };
+
+      const addTitle = (text) => {
+        checkPage(14);
+        pdf.setFont('helvetica', 'bold').setFontSize(16);
+        pdf.text(text, pageW / 2, y, { align: 'center' });
+        y += 10;
+      };
+
+      const addHeading = (text) => {
+        checkPage(12);
+        y += 4;
+        pdf.setFont('helvetica', 'bold').setFontSize(12).setTextColor(30, 64, 120);
+        pdf.text(text, marginL, y);
+        y += 2;
+        pdf.setDrawColor(30, 64, 120).setLineWidth(0.3);
+        pdf.line(marginL, y, marginL + contentW, y);
+        y += 6;
+        pdf.setTextColor(0, 0, 0);
+      };
+
+      const addSubheading = (text) => {
+        checkPage(10);
+        y += 2;
+        pdf.setFont('helvetica', 'bold').setFontSize(10).setTextColor(60, 60, 60);
+        pdf.text(text, marginL, y);
+        y += 5;
+        pdf.setTextColor(0, 0, 0);
+      };
+
+      const addParagraph = (text, indent = 0) => {
+        if (!text) return;
+        pdf.setFont('helvetica', 'normal').setFontSize(10);
+        const lines = pdf.splitTextToSize(String(text), contentW - indent);
+        lines.forEach((line) => {
+          checkPage(5);
+          pdf.text(line, marginL + indent, y);
+          y += 4.5;
+        });
+        y += 2;
+      };
+
+      const addBullet = (text, indent = 4) => {
+        if (!text) return;
+        pdf.setFont('helvetica', 'normal').setFontSize(10);
+        const lines = pdf.splitTextToSize(String(text), contentW - indent - 4);
+        checkPage(5);
+        pdf.text('•', marginL + indent, y);
+        lines.forEach((line, i) => {
+          if (i > 0) checkPage(5);
+          pdf.text(line, marginL + indent + 4, y);
+          y += 4.5;
+        });
+        y += 1;
+      };
+
+      // Title
+      addTitle('Individualized Education Program (IEP)');
+      pdf.setFont('helvetica', 'normal').setFontSize(10);
+      pdf.text(`Student: ${student.name}    |    ID: ${student.studentId}    |    Grade: ${student.gradeLevel}    |    Age: ${student.age}`, pageW / 2, y, { align: 'center' });
+      y += 5;
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, pageW / 2, y, { align: 'center' });
+      y += 10;
+
+      // PLAAFP
+      addHeading('Present Level of Academic Achievement and Functional Performance (PLAAFP)');
+      addParagraph(editablePlan.plaafp_narrative);
+
+      // Goals by Exceptionality
+      if (editablePlan.annualGoalsByExceptionality?.length) {
+        addHeading('Goals & Objectives by Exceptionality');
+        editablePlan.annualGoalsByExceptionality.forEach((group) => {
+          addSubheading(group.exceptionality);
+          (group.goals || []).forEach((g, i) => {
+            addBullet(`${i + 1}. ${g.goal || g}`);
+          });
+          const objGroup = (editablePlan.shortTermObjectivesByExceptionality || []).find(sg => sg.exceptionality === group.exceptionality);
+          if (objGroup?.objectives?.length) {
+            pdf.setFont('helvetica', 'bolditalic').setFontSize(9);
+            checkPage(6);
+            pdf.text('Short-Term Objectives:', marginL + 6, y);
+            y += 5;
+            objGroup.objectives.forEach((o, i) => addBullet(`${i + 1}. ${o.objective || o}`, 8));
+          }
+        });
+      }
+
+      // Structured Annual Goals
+      if (editablePlan.annual_goals?.length) {
+        addHeading('Annual Goals');
+        editablePlan.annual_goals.forEach((goal, index) => {
+          const isObj = goal && typeof goal === 'object';
+          const goalText = isObj ? (goal.goal || [goal.condition, goal.observable_behavior, goal.mastery_criteria].filter(Boolean).join(' ')) : String(goal || '');
+          const domain = isObj && goal.domain ? ` [${goal.domain}]` : '';
+
+          checkPage(10);
+          pdf.setFont('helvetica', 'bold').setFontSize(10);
+          pdf.text(`Goal ${index + 1}${domain}`, marginL, y);
+          y += 5;
+          addParagraph(goalText, 4);
+
+          if (isObj && goal.progress_measurement) {
+            pdf.setFont('helvetica', 'italic').setFontSize(8.5).setTextColor(100, 100, 100);
+            checkPage(5);
+            pdf.text(`Measured by: ${goal.progress_measurement}    |    Reported: ${goal.progress_reporting || 'N/A'}`, marginL + 4, y);
+            y += 5;
+            pdf.setTextColor(0, 0, 0);
+          }
+
+          const aligned = (editablePlan.short_term_objectives || []).filter(o => o && typeof o === 'object' && o.aligned_goal_index === index);
+          if (aligned.length) {
+            pdf.setFont('helvetica', 'bolditalic').setFontSize(9);
+            checkPage(6);
+            pdf.text('Short-Term Objectives:', marginL + 4, y);
+            y += 5;
+            aligned.forEach((obj, oi) => {
+              const objText = typeof obj === 'string' ? obj : (obj.objective || [obj.condition, obj.observable_behavior, obj.mastery_criteria].filter(Boolean).join(' '));
+              addBullet(`${oi + 1}. ${objText}`, 8);
+            });
+          }
+          y += 2;
+        });
+      }
+
+      // Unlinked objectives
+      const unlinked = (editablePlan.short_term_objectives || []).filter(o => !(o && typeof o === 'object' && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
+      if (unlinked.length) {
+        addHeading('Additional Short-Term Objectives');
+        unlinked.forEach((obj, i) => {
+          const text = typeof obj === 'string' ? obj : (obj?.objective || obj?.text || '');
+          addBullet(`${i + 1}. ${text}`);
+        });
+      }
+
+      // Intervention Recommendations
+      if (editablePlan.intervention_recommendations) {
+        addHeading('Intervention Recommendations');
+        addParagraph(editablePlan.intervention_recommendations);
+      }
+
+      pdf.save(`IEP_${student.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      toast.error('Failed to export PDF');
+      console.error('PDF export error:', error);
+    }
+  };
+
   // Remove a goal from the editable plan
   const removeGoal = (index) => {
     const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
@@ -656,6 +821,7 @@ export default function StudentDetail() {
             onRegenerate={handleGenerateIEP}
             onSave={handleSaveChanges}
             onDownload={handleExportToWord}
+            onDownloadPDF={handleExportToPDF}
             onReset={handleResetToOriginal}
             isReviewed={isReviewed}
             isBusy={isGenerating}

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wand2, Download, ChevronDown, FileText, FileType } from 'lucide-react';
 
-export default function StickyActionBar({ onRegenerate, onSave, onDownload, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = '' }) {
+export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDownloadPDF, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = '' }) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
 
@@ -74,10 +74,12 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onRe
                   <FileType className="w-4 h-4 text-slate-400" />
                   Word (.docx)
                 </button>
-                <button disabled className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-400 cursor-not-allowed text-left">
-                  <FileText className="w-4 h-4" />
-                  PDF
-                  <span className="ml-auto text-[10px]">Soon</span>
+                <button
+                  onClick={() => { onDownloadPDF(); setExportOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-red-400" />
+                  PDF (.pdf)
                 </button>
               </div>
             )}
