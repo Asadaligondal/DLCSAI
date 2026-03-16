@@ -3,41 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import {
-  Upload,
-  FileSearch,
-  FileText,
-  User,
-  Search,
-  Layers,
-  Zap,
-  ChevronRight,
-  FileCode,
-  Trash2,
-  FileUp
-} from 'lucide-react';
-
-const STEPS = [
-  { id: 'upload', title: 'Upload Document', desc: 'PDF or Word document with student records', icon: Upload, color: 'primary' },
-  { id: 'rag', title: 'RAG Pipeline', desc: 'Chunk, Embed, Index', icon: FileSearch, color: 'violet', subSteps: ['Parse & Chunk', 'Generate Embeddings', 'Store in Vector DB'] },
-  { id: 'output', title: 'Document Output', desc: 'Extracted chunks & metadata', icon: FileText, color: 'blue' },
-  { id: 'student', title: 'Student Form Context', desc: 'Name, grade, disabilities, strengths, weaknesses', icon: User, color: 'emerald' },
-  { id: 'embed', title: 'Vector Embedding', desc: 'Student context to embedding vectors', icon: Layers, color: 'amber' },
-  { id: 'similarity', title: 'Similarity Search', desc: 'Retrieve relevant chunks', icon: Search, color: 'rose' },
-  { id: 'context', title: 'Final Context', desc: 'Combined document + student context', icon: FileCode, color: 'cyan' },
-  { id: 'llm', title: 'LLM API Call', desc: 'Generate IEP', icon: Zap, color: 'green' }
-];
-
-const colorMap = {
-  primary: 'border-primary-200 bg-primary-50/60',
-  violet: 'border-violet-200 bg-violet-50/60',
-  blue: 'border-blue-200 bg-blue-50/60',
-  emerald: 'border-emerald-200 bg-emerald-50/60',
-  amber: 'border-amber-200 bg-amber-50/60',
-  rose: 'border-rose-200 bg-rose-50/60',
-  cyan: 'border-cyan-200 bg-cyan-50/60',
-  green: 'border-green-200 bg-green-50/60'
-};
+import { FileText, Trash2, FileUp } from 'lucide-react';
 
 export default function IEPWriterPage() {
   const router = useRouter();
@@ -125,46 +91,7 @@ export default function IEPWriterPage() {
 
         <main className="p-8">
           <div className="max-w-2xl">
-            {/* Pipeline visualization */}
-            <div className="relative pl-8">
-              <div className="absolute left-[11px] top-2 bottom-2 w-px bg-slate-200" />
-
-              <div className="space-y-3">
-                {STEPS.map((step, i) => {
-                  const Icon = step.icon;
-                  return (
-                    <div key={step.id} className="relative flex items-start gap-3">
-                      <div className="absolute -left-[21px] w-5 h-5 rounded-full bg-white border-2 border-slate-300 flex items-center justify-center z-10">
-                        <span className="text-[9px] font-bold text-slate-500">{i + 1}</span>
-                      </div>
-
-                      <div className={`flex-1 flex items-start gap-3 p-3.5 rounded-xl border ${colorMap[step.color]} ml-1`}>
-                        <div className="w-8 h-8 rounded-lg bg-white/80 border border-slate-200/60 flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-slate-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-semibold text-slate-900">{step.title}</h3>
-                          <p className="text-xs text-slate-500 mt-0.5">{step.desc}</p>
-                          {step.subSteps && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {step.subSteps.map((s, j) => (
-                                <span key={j} className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-md bg-white/80 border border-slate-200/60 text-slate-600">
-                                  <ChevronRight className="w-2.5 h-2.5" />
-                                  {s}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Documents section */}
-            <section className="mt-10 pt-8 border-t border-slate-200">
+            <section>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-base font-bold text-slate-900">Institutional Documents</h2>
@@ -198,7 +125,7 @@ export default function IEPWriterPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-slate-900 truncate">{doc.originalFilename}</p>
                           <p className="text-[11px] text-slate-500">
-                            {doc.chunkCount ?? 0} chunks · {doc.status}
+                            {doc.status}
                             {doc.pageCount ? ` · ${doc.pageCount} pages` : ''}
                             {doc.status === 'failed' && doc.errorMessage ? ` — ${doc.errorMessage}` : ''}
                           </p>
