@@ -58,7 +58,7 @@ export async function POST(req) {
       }
     });
 
-    const validStrategies = ['baseline', 'grouped', 'section_aligned'];
+    const validStrategies = ['baseline', 'grouped'];
     const strategy = validStrategies.includes(ragStrategy) ? ragStrategy : 'baseline';
 
     const ragResult = await getRagContext({

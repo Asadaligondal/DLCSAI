@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Zap, Layers, Target } from 'lucide-react';
+import { Zap, Layers } from 'lucide-react';
 
 const STRATEGIES = [
   {
@@ -19,14 +19,6 @@ const STRATEGIES = [
     description: 'Merges related axes: Needs (except. + weaknesses), Support (accomm. + setting), Custom Goals, Strengths. Score threshold > 0.4 filters noise.',
     icon: Layers,
     color: 'text-amber-600 bg-amber-50 border-amber-200 ring-amber-100'
-  },
-  {
-    key: 'section_aligned',
-    label: 'C: Section-Aligned',
-    shortLabel: '5 queries',
-    description: '5 purpose-built queries, one per IEP section. Direct 1:1 routing — each section gets its own dedicated chunk pool. No cross-section dedup.',
-    icon: Target,
-    color: 'text-emerald-600 bg-emerald-50 border-emerald-200 ring-emerald-100'
   }
 ];
 

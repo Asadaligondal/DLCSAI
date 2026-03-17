@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { ChevronDown, Zap, Layers, Target, Clock, Hash, BarChart3, Database } from 'lucide-react';
+import { ChevronDown, Zap, Layers, Clock, Hash, BarChart3, Database } from 'lucide-react';
 
 const PIPELINE_META = {
   baseline: { label: 'A: Baseline', icon: Zap, accent: 'border-blue-200 bg-blue-50/30', headerBg: 'bg-blue-50', headerText: 'text-blue-700' },
-  grouped: { label: 'B: Grouped', icon: Layers, accent: 'border-amber-200 bg-amber-50/30', headerBg: 'bg-amber-50', headerText: 'text-amber-700' },
-  section_aligned: { label: 'C: Section-Aligned', icon: Target, accent: 'border-emerald-200 bg-emerald-50/30', headerBg: 'bg-emerald-50', headerText: 'text-emerald-700' }
+  grouped: { label: 'B: Grouped', icon: Layers, accent: 'border-amber-200 bg-amber-50/30', headerBg: 'bg-amber-50', headerText: 'text-amber-700' }
 };
 
 const SECTION_SHORT = {
@@ -128,7 +127,7 @@ export default function PipelineMetricsPanel({ pipelineMetrics }) {
           <span className="text-[12px] font-bold text-slate-700">Pipeline Metrics Comparison</span>
           {hasAny && (
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">
-              {Object.values(pipelineMetrics || {}).filter(d => d?.metrics?.queryCount > 0).length}/3 run
+              {Object.values(pipelineMetrics || {}).filter(d => d?.metrics?.queryCount > 0).length}/2 run
             </span>
           )}
         </div>
@@ -144,7 +143,6 @@ export default function PipelineMetricsPanel({ pipelineMetrics }) {
             <div className="flex gap-3 mt-2">
               <PipelineColumn strategyKey="baseline" data={pipelineMetrics?.baseline} />
               <PipelineColumn strategyKey="grouped" data={pipelineMetrics?.grouped} />
-              <PipelineColumn strategyKey="section_aligned" data={pipelineMetrics?.section_aligned} />
             </div>
           </div>
         </div>
