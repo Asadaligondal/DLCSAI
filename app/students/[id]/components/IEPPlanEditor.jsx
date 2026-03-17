@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, FileSearch } from 'lucide-react';
+import { ChevronDown, FileSearch } from 'lucide-react';
 import GoalsObjectivesSection from './GoalsObjectivesSection';
 
 export default function IEPPlanEditor({
@@ -89,7 +89,7 @@ export default function IEPPlanEditor({
           onClick={() => setShowRagContext(s => !s)}
           className="w-full flex items-center gap-2 px-4 py-3 text-left text-sm font-medium text-amber-900 hover:bg-amber-100/80 transition-colors"
         >
-          {showRagContext ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <ChevronDown className={`w-4 h-4 transition-transform duration-300 ease-in-out ${showRagContext ? 'rotate-0' : '-rotate-90'}`} />
           <FileSearch className="w-4 h-4" />
           Raw Retrieved Context (for analysis)
           {ragContext ? (
@@ -98,45 +98,50 @@ export default function IEPPlanEditor({
             <span className="text-xs font-normal text-amber-600 ml-1">— not available (regenerate IEP with uploaded documents)</span>
           )}
         </button>
-        {showRagContext && (
-          <div className="border-t border-amber-200 p-4">
-            {ragContext || ragContextByQuery?.length > 0 ? (
-              ragContextByQuery.length > 0 ? (
-                <div className="space-y-4">
-                  {ragContextByQuery.map((section, sIdx) => (
-                    <div key={sIdx} className="rounded-lg border border-slate-200 overflow-hidden">
-                      <div className={`px-3 py-2 border-b flex items-center gap-2 ${section.colorClass} font-medium text-sm`}>
-                        <span className="rounded-md px-2 py-0.5 text-xs font-semibold border">
-                          {section.label}
-                        </span>
-                        <span className="text-xs opacity-90 truncate max-w-md" title={section.query}>
-                          {section.query}
-                        </span>
+        <div
+          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+          style={{ gridTemplateRows: showRagContext ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden">
+            <div className={`border-t border-amber-200 p-4 transition-opacity duration-300 ease-in-out ${showRagContext ? 'opacity-100 delay-100' : 'opacity-0'}`}>
+              {ragContext || ragContextByQuery?.length > 0 ? (
+                ragContextByQuery.length > 0 ? (
+                  <div className="space-y-4">
+                    {ragContextByQuery.map((section, sIdx) => (
+                      <div key={sIdx} className="rounded-lg border border-slate-200 overflow-hidden">
+                        <div className={`px-3 py-2 border-b flex items-center gap-2 ${section.colorClass} font-medium text-sm`}>
+                          <span className="rounded-md px-2 py-0.5 text-xs font-semibold border">
+                            {section.label}
+                          </span>
+                          <span className="text-xs opacity-90 truncate max-w-md" title={section.query}>
+                            {section.query}
+                          </span>
+                        </div>
+                        <div className="p-3 space-y-2 bg-white">
+                          {section.chunks.map((chunk, cIdx) => (
+                            <div key={cIdx} className="text-[13px] font-mono text-slate-700 leading-relaxed py-2 px-3 bg-slate-50 rounded border border-slate-100">
+                              <span className="text-slate-400 text-xs mr-2">{(cIdx + 1)}.</span>
+                              {chunk.content}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="p-3 space-y-2 bg-white">
-                        {section.chunks.map((chunk, cIdx) => (
-                          <div key={cIdx} className="text-[13px] font-mono text-slate-700 leading-relaxed py-2 px-3 bg-slate-50 rounded border border-slate-100">
-                            <span className="text-slate-400 text-xs mr-2">{(cIdx + 1)}.</span>
-                            {chunk.content}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <textarea
+                    readOnly
+                    value={ragContext}
+                    rows={16}
+                    className="w-full px-3 py-2.5 text-[13px] font-mono text-slate-700 bg-white border border-amber-200 rounded-lg resize-y focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
+                  />
+                )
               ) : (
-                <textarea
-                  readOnly
-                  value={ragContext}
-                  rows={16}
-                  className="w-full px-3 py-2.5 text-[13px] font-mono text-slate-700 bg-white border border-amber-200 rounded-lg resize-y focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400"
-                />
-              )
-            ) : (
-              <p className="text-sm text-amber-800 py-4">No retrieved context from last generation. Regenerate IEP with uploaded documents to see the raw context used for goals and objectives.</p>
-            )}
+                <p className="text-sm text-amber-800 py-4">No retrieved context from last generation. Regenerate IEP with uploaded documents to see the raw context used for goals and objectives.</p>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
       </div>
 

@@ -34,7 +34,7 @@ function extractDomainFromText(text) {
 }
 
 function isStructuredGoal(goal) {
-  return goal && typeof goal === 'object' && (goal.domain || goal.condition || goal.observable_behavior);
+  return goal && typeof goal === 'object' && (goal.domain || goal.condition || goal.observable_behavior || goal.progress_measurement || goal.progress_reporting || goal.goal);
 }
 
 function isStructuredObjective(obj) {
@@ -165,21 +165,21 @@ export default function GoalsObjectivesSection({
     const text = formatAnnualGoal(goal);
     return (
       <div key={`goal-${index}`}>
-        <div className="flex gap-3 items-start py-1.5">
-          <div className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 rounded-md flex items-center justify-center text-[11px] font-bold mt-0.5">G</div>
+        <div className="flex gap-2 items-start py-1">
+          <div className="flex-shrink-0 w-5 h-5 bg-indigo-100 text-indigo-700 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">G</div>
           <div className="flex-1 min-w-0">
-            <p className="text-slate-700 text-[14px] leading-relaxed">{text}</p>
+            <p className="text-slate-700 text-[13px] leading-snug">{text}</p>
             {structured && (goal.domain || goal.progress_measurement || goal.progress_reporting) && (
-              <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                {goal.domain && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
+              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                {goal.domain && <span className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
                 {goal.progress_measurement && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    <BarChart3 className="w-3 h-3" />{goal.progress_measurement}
+                  <span className="inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    <BarChart3 className="w-2.5 h-2.5" />{goal.progress_measurement}
                   </span>
                 )}
                 {goal.progress_reporting && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    <CalendarClock className="w-3 h-3" />{goal.progress_reporting}
+                  <span className="inline-flex items-center gap-1 text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    <CalendarClock className="w-2.5 h-2.5" />{goal.progress_reporting}
                   </span>
                 )}
               </div>
@@ -187,12 +187,12 @@ export default function GoalsObjectivesSection({
           </div>
         </div>
         {goal.alignedObjectives && goal.alignedObjectives.length > 0 && (
-          <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-indigo-100 space-y-1">
-            <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Objectives</div>
+          <div className="ml-4 mt-0.5 mb-1.5 pl-3 border-l-2 border-indigo-100 space-y-0.5">
+            <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Objectives</div>
             {goal.alignedObjectives.map((obj, oi) => (
-              <div key={`obj-${oi}`} className="flex gap-3 items-start py-1">
-                <div className="flex-shrink-0 w-5 h-5 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
-                <p className="text-slate-600 text-[13px] leading-relaxed">{formatObjective(obj)}</p>
+              <div key={`obj-${oi}`} className="flex gap-2 items-start py-0.5">
+                <div className="flex-shrink-0 w-4 h-4 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
+                <p className="text-slate-600 text-[13px] leading-snug">{formatObjective(obj)}</p>
               </div>
             ))}
           </div>
@@ -307,7 +307,7 @@ export default function GoalsObjectivesSection({
                     </div>
                   }
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {group.goals?.map((g, gi) => {
                       const text = formatAnnualGoal(g);
                       return isEditable ? (
@@ -320,19 +320,16 @@ export default function GoalsObjectivesSection({
                           badgeColor="bg-purple-500"
                         />
                       ) : (
-                        <div key={`eg-${gIdx}-${gi}`} className="flex gap-3 items-start py-1.5">
-                          <div className="flex-shrink-0 w-6 h-6 bg-purple-100 text-purple-700 rounded-md flex items-center justify-center text-[11px] font-bold mt-0.5">G</div>
-                          <div className="flex-1">
-                            <DomainBadge text={text} />
-                            <p className="text-slate-700 text-[14px] leading-relaxed mt-0.5">{text}</p>
-                          </div>
+                        <div key={`eg-${gIdx}-${gi}`} className="flex gap-2 items-start py-1">
+                          <div className="flex-shrink-0 w-5 h-5 bg-purple-100 text-purple-700 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">G</div>
+                          <p className="text-slate-700 text-[13px] leading-snug">{text}</p>
                         </div>
                       );
                     })}
 
                     {matchingObjs.length > 0 && (
-                      <div className="ml-4 mt-2 pl-3 border-l-2 border-purple-100 space-y-1">
-                        <div className="text-[11px] font-bold text-purple-600 uppercase tracking-wider mb-1">Objectives</div>
+                      <div className="ml-4 mt-0.5 mb-1 pl-3 border-l-2 border-purple-100 space-y-0.5">
+                        <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Objectives</div>
                         {matchingObjs.map((o, oi) => {
                           const text = formatObjective(o);
                           const objGroupIndex = (plan.shortTermObjectivesByExceptionality || []).findIndex(sg => sg.exceptionality === group.exceptionality);
@@ -346,9 +343,9 @@ export default function GoalsObjectivesSection({
                               badgeColor="bg-purple-400"
                             />
                           ) : (
-                            <div key={`eo-${gIdx}-${oi}`} className="flex gap-3 items-start py-1">
-                              <div className="flex-shrink-0 w-5 h-5 bg-purple-50 text-purple-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
-                              <p className="text-slate-600 text-[13px] leading-relaxed">{text}</p>
+                            <div key={`eo-${gIdx}-${oi}`} className="flex gap-2 items-start py-0.5">
+                              <div className="flex-shrink-0 w-4 h-4 bg-purple-50 text-purple-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
+                              <p className="text-slate-600 text-[13px] leading-snug">{text}</p>
                             </div>
                           );
                         })}
@@ -389,17 +386,17 @@ export default function GoalsObjectivesSection({
                     onDelete={() => removeGoal(index)}
                     badgeColor="bg-indigo-500"
                   />
-                  {structured && (
-                    <div className="px-3 pb-2 pt-1 flex items-center gap-2 flex-wrap">
-                      {goal.domain && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
-                      {goal.progress_measurement && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><BarChart3 className="w-3 h-3" />{goal.progress_measurement}</span>}
-                      {goal.progress_reporting && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><CalendarClock className="w-3 h-3" />{goal.progress_reporting}</span>}
+                  {structured && (goal.domain || goal.progress_measurement || goal.progress_reporting) && (
+                    <div className="px-2 pb-1 flex items-center gap-1.5 flex-wrap ml-7">
+                      {goal.domain && <span className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
+                      {goal.progress_measurement && <span className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><BarChart3 className="w-2.5 h-2.5" />{goal.progress_measurement}</span>}
+                      {goal.progress_reporting && <span className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><CalendarClock className="w-2.5 h-2.5" />{goal.progress_reporting}</span>}
                     </div>
                   )}
 
                   {alignedObjs.length > 0 && (
-                    <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-indigo-100 space-y-1">
-                      <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Objectives</div>
+                    <div className="ml-4 mt-0.5 mb-1 pl-3 border-l-2 border-indigo-100 space-y-0.5">
+                      <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Objectives</div>
                       {alignedObjs.map(({ original: obj, idx: objIdx }) => (
                         <RowEditor
                           key={`obj-${objIdx}`}
@@ -423,8 +420,8 @@ export default function GoalsObjectivesSection({
                 .filter(({ original: o }) => !(isStructuredObjective(o) && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
               if (unlinked.length === 0) return null;
               return (
-                <div className="ml-4 mt-2 pl-3 border-l-2 border-sky-100 space-y-1">
-                  <div className="text-[11px] font-bold text-sky-600 uppercase tracking-wider mb-1">Additional Objectives</div>
+                <div className="ml-4 mt-0.5 pl-3 border-l-2 border-sky-100 space-y-0.5">
+                  <div className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-0.5">Additional Objectives</div>
                   {unlinked.map(({ original: obj, idx: objIdx }) => (
                     <RowEditor
                       key={`uo-${objIdx}`}
@@ -465,12 +462,12 @@ export default function GoalsObjectivesSection({
                   .filter(o => !(isStructuredObjective(o) && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
                 if (unlinked.length === 0) return null;
                 return (
-                  <div className="ml-4 mt-2 pl-3 border-l-2 border-indigo-100 space-y-1">
-                    <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Additional Objectives</div>
+                  <div className="ml-4 mt-0.5 pl-3 border-l-2 border-indigo-100 space-y-0.5">
+                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Additional Objectives</div>
                     {unlinked.map((o, oi) => (
-                      <div key={`uo-${oi}`} className="flex gap-3 items-start py-1">
-                        <div className="flex-shrink-0 w-5 h-5 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
-                        <p className="text-slate-600 text-[13px] leading-relaxed">{formatObjective(o)}</p>
+                      <div key={`uo-${oi}`} className="flex gap-2 items-start py-0.5">
+                        <div className="flex-shrink-0 w-4 h-4 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
+                        <p className="text-slate-600 text-[13px] leading-snug">{formatObjective(o)}</p>
                       </div>
                     ))}
                   </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 const ACCENTS = {
   slate:   { left: 'border-l-slate-300',   bg: 'bg-slate-50/40',   badge: 'bg-slate-100 text-slate-600' },
@@ -30,7 +30,7 @@ export default function SectionCard({ id, title, subtitle, count, rightUtilities
         tabIndex={isControlled ? 0 : undefined}
         onClick={isControlled ? onToggle : undefined}
         onKeyDown={isControlled ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } } : undefined}
-        className={`flex items-center justify-between px-5 ${nested ? 'py-3' : 'py-3.5'} ${open ? 'border-b border-slate-100' : ''} ${a.bg} ${isControlled ? 'cursor-pointer select-none hover:brightness-[0.97] transition-all' : ''}`}
+        className={`flex items-center justify-between px-5 ${nested ? 'py-3' : 'py-3.5'} ${a.bg} ${isControlled ? 'cursor-pointer select-none hover:brightness-[0.97] transition-all' : ''}`}
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -45,18 +45,23 @@ export default function SectionCard({ id, title, subtitle, count, rightUtilities
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           {rightUtilities}
           {isControlled && (
-            <div className="p-1 text-slate-400">
-              {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <div className={`p-1 text-slate-400 transition-transform duration-300 ease-in-out ${open ? 'rotate-0' : '-rotate-90'}`}>
+              <ChevronDown className="w-4 h-4" />
             </div>
           )}
         </div>
       </div>
 
-      {open && (
-        <div className={`${nested ? 'px-4 py-3' : 'px-5 py-4'}`}>
-          {children}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <div className={`${nested ? 'px-4 py-3' : 'px-5 py-4'} border-t border-slate-100 transition-opacity duration-300 ease-in-out ${open ? 'opacity-100 delay-100' : 'opacity-0'}`}>
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
