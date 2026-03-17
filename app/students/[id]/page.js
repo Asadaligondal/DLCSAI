@@ -814,7 +814,7 @@ export default function StudentDetail() {
       <div className="flex-1 overflow-auto">
         <Navbar />
 
-        <div className="max-w-full px-8 py-6 lg:px-10">
+        <div className="max-w-full px-6 py-5 lg:px-8">
           <EditorHeader student={student} />
 
           <StickyActionBar
@@ -841,7 +841,7 @@ export default function StudentDetail() {
           )}
 
           {/* Unified grid: Student Context + IEP Plan share the left column, TOC on the right */}
-          <div className="lg:grid lg:grid-cols-[1fr_240px] lg:gap-6">
+          <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-4">
             <div>
               <StudentInfoHeader
                 student={student}
@@ -863,7 +863,7 @@ export default function StudentDetail() {
                 customGoals={customGoals}
               />
 
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2">
                 <PipelineSelector
                   value={ragStrategy}
                   onChange={setRagStrategy}
@@ -873,7 +873,7 @@ export default function StudentDetail() {
               </div>
 
               {!hasExistingPlan && (
-                <div className="mt-6 flex flex-col items-center justify-center py-16 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">
+                <div className="mt-4 flex flex-col items-center justify-center py-12 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">
                   <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
                   <button
                     onClick={handleGenerateIEP}

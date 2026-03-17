@@ -25,13 +25,13 @@ export default function IEPPlanEditor({
 }) {
   const [showRagContext, setShowRagContext] = useState(false);
   return (
-    <div className="mt-6 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div className="px-6 pt-6 pb-4">
-        <h2 className="text-xl font-semibold text-slate-900 tracking-tight">IEP Plan - Review & Edit</h2>
+    <div className="mt-4 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+      <div className="px-5 pt-5 pb-3">
+        <h2 className="text-lg font-semibold text-slate-900 tracking-tight">IEP Plan - Review & Edit</h2>
       </div>
 
       {/* Toggle Between Original and Edited - segmented tabs, sticky inside card */}
-      <div className="sticky top-0 bg-white z-10 px-6 pb-5 border-b border-slate-100">
+      <div className="sticky top-0 bg-white z-10 px-5 pb-4 border-b border-slate-100">
         <div className="inline-flex rounded-lg bg-slate-100 p-1 gap-0.5">
           <button
             onClick={() => setViewMode('original')}
@@ -49,10 +49,10 @@ export default function IEPPlanEditor({
       </div>
 
       {/* Display Content Based on View Mode */}
-      <div className="p-6">
+      <div className="p-5">
       {viewMode === 'original' ? (
         // Original AI Draft - Read Only
-        <div className="space-y-6 lg:pr-80">{/* add right padding to avoid overlap with TOC */}
+        <div className="space-y-5">
           <GoalsObjectivesSection
             originalAIPlan={originalAIPlan}
             editablePlan={editablePlan}
@@ -66,7 +66,7 @@ export default function IEPPlanEditor({
         </div>
       ) : (
         // Current Edited Version - Editable
-        <div className="space-y-6 lg:pr-80">{/* add right padding to avoid overlap with TOC */}
+        <div className="space-y-5">
           <GoalsObjectivesSection
             originalAIPlan={originalAIPlan}
             editablePlan={editablePlan}
