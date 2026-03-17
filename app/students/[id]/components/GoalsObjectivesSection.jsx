@@ -77,47 +77,6 @@ function joinInterventions(arr) {
 }
 
 // Group goals by IEP domain; nest objectives under their parent goal
-function groupByDomain(goals, objectives) {
-  const groups = new Map();
-
-  (goals || []).forEach((g, i) => {
-    const text = formatAnnualGoal(g);
-    let key;
-    if (isStructuredGoal(g) && g.domain) {
-      key = g.domain;
-    } else {
-      const d = extractDomainFromText(text);
-      key = d?.label || 'General';
-    }
-    const domainMeta = IEP_DOMAINS[key] || null;
-    if (!groups.has(key)) groups.set(key, { domainMeta, goals: [], objectives: [] });
-    const alignedObjs = (objectives || [])
-      .map((o, oi) => ({ ...o, _idx: oi }))
-      .filter(o => isStructuredObjective(o) && o.aligned_goal_index === i);
-    groups.get(key).goals.push({ text, index: i, original: g, alignedObjectives: alignedObjs });
-  });
-
-  // Objectives not linked to any goal
-  const linkedIndices = new Set();
-  (objectives || []).forEach((o) => {
-    if (isStructuredObjective(o) && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0) {
-      linkedIndices.add(o);
-    }
-  });
-  (objectives || []).forEach((o, i) => {
-    if (!linkedIndices.has(o)) {
-      const text = formatObjective(o);
-      let key;
-      if (isStructuredObjective(o) && o.domain) key = o.domain;
-      else { const d = extractDomainFromText(text); key = d?.label || 'General'; }
-      const domainMeta = IEP_DOMAINS[key] || null;
-      if (!groups.has(key)) groups.set(key, { domainMeta, goals: [], objectives: [] });
-      groups.get(key).objectives.push({ text, index: i, original: o });
-    }
-  });
-
-  return Array.from(groups.entries()).map(([label, data]) => ({ label, ...data }));
-}
 
 // ---------------------------------------------------------------------------
 // Main Component
@@ -182,12 +141,6 @@ export default function GoalsObjectivesSection({
   const plan = viewMode === 'edited' ? editablePlan : originalAIPlan;
   const isEditable = viewMode === 'edited';
 
-  // Domain-grouped goals for the combined original view
-  const domainGroups = useMemo(
-    () => groupByDomain(plan?.annual_goals, plan?.short_term_objectives),
-    [plan?.annual_goals, plan?.short_term_objectives]
-  );
-
   // Counts for summary strip
   const excGoalCount = (plan?.annualGoalsByExceptionality || []).reduce((sum, g) => sum + (g.goals?.length || 0), 0);
   const excObjCount = (plan?.shortTermObjectivesByExceptionality || []).reduce((sum, g) => sum + (g.objectives?.length || 0), 0);
@@ -211,73 +164,37 @@ export default function GoalsObjectivesSection({
     const structured = isStructuredGoal(goal);
     const text = formatAnnualGoal(goal);
     return (
-      <div key={`goal-${index}`} className="rounded-lg border border-indigo-100 bg-white overflow-hidden">
-        <div className="px-4 py-3">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-7 h-7 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center text-xs font-bold mt-0.5">{index + 1}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <DomainBadge goal={goal} />
-                {structured && goal.progress_measurement && (
+      <div key={`goal-${index}`}>
+        <div className="flex gap-3 items-start py-1.5">
+          <div className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 rounded-md flex items-center justify-center text-[11px] font-bold mt-0.5">G</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-slate-700 text-[14px] leading-relaxed">{text}</p>
+            {structured && (goal.domain || goal.progress_measurement || goal.progress_reporting) && (
+              <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                {goal.domain && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
+                {goal.progress_measurement && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
                     <BarChart3 className="w-3 h-3" />{goal.progress_measurement}
                   </span>
                 )}
-                {structured && goal.progress_reporting && (
+                {goal.progress_reporting && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
                     <CalendarClock className="w-3 h-3" />{goal.progress_reporting}
                   </span>
                 )}
               </div>
-              <p className="text-slate-800 text-[14px] leading-relaxed font-medium">{text}</p>
-              {structured && (goal.condition || goal.observable_behavior || goal.mastery_criteria) && (
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[12px]">
-                  {goal.condition && (
-                    <div className="px-2.5 py-1.5 rounded-md bg-blue-50/60 border border-blue-100">
-                      <div className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-0.5">Condition</div>
-                      <div className="text-slate-700">{goal.condition}</div>
-                    </div>
-                  )}
-                  {goal.observable_behavior && (
-                    <div className="px-2.5 py-1.5 rounded-md bg-indigo-50/60 border border-indigo-100">
-                      <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Observable Behavior</div>
-                      <div className="text-slate-700">{goal.observable_behavior}</div>
-                    </div>
-                  )}
-                  {goal.mastery_criteria && (
-                    <div className="px-2.5 py-1.5 rounded-md bg-violet-50/60 border border-violet-100">
-                      <div className="text-[10px] font-bold text-violet-500 uppercase tracking-wider mb-0.5">Mastery Criteria</div>
-                      <div className="text-slate-700">{goal.mastery_criteria}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
-        {/* Aligned objectives nested inside goal card */}
         {goal.alignedObjectives && goal.alignedObjectives.length > 0 && (
-          <div className="border-t border-indigo-50 bg-slate-50/50 px-4 py-2.5">
-            <div className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-1.5 ml-10">Short-Term Objectives</div>
-            <div className="space-y-1.5 ml-10">
-              {goal.alignedObjectives.map((obj, oi) => {
-                const objStructured = isStructuredObjective(obj);
-                return (
-                  <div key={`obj-${oi}`} className="flex gap-2.5 items-start">
-                    <div className="flex-shrink-0 w-5 h-5 bg-sky-100 text-sky-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-slate-600 text-[13px] leading-relaxed">{formatObjective(obj)}</p>
-                      {objStructured && (obj.condition || obj.mastery_criteria) && (
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {obj.condition && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100">{obj.condition}</span>}
-                          {obj.mastery_criteria && <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-100">{obj.mastery_criteria}</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-indigo-100 space-y-1">
+            <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Objectives</div>
+            {goal.alignedObjectives.map((obj, oi) => (
+              <div key={`obj-${oi}`} className="flex gap-3 items-start py-1">
+                <div className="flex-shrink-0 w-5 h-5 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
+                <p className="text-slate-600 text-[13px] leading-relaxed">{formatObjective(obj)}</p>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -447,76 +364,82 @@ export default function GoalsObjectivesSection({
 
       {/* ── Annual Goals & Objectives (Domain-grouped in read-only, flat with badges in edit) ── */}
       {isEditable ? (
-        <>
-          <SectionCard
-            id="annual-goals"
-            title="Annual Goals"
-            subtitle="Edit goals — structured Florida IEP format"
-            accent="indigo"
-            count={goalCount}
-            open={openGoals}
-            onToggle={() => setOpenGoals(s => !s)}
-          >
-            <div className="space-y-2">
-              {editablePlan.annual_goals?.map((goal, index) => {
-                const structured = isStructuredGoal(goal);
-                return (
-                  <div key={index} className="rounded-lg border border-slate-200/80 bg-white overflow-hidden">
-                    <RowEditor
-                      index={index}
-                      value={formatAnnualGoal(goal)}
-                      onChange={(val) => updateGoal(index, val)}
-                      onDelete={() => removeGoal(index)}
-                      badgeColor="bg-indigo-500"
-                      tag={<DomainBadge goal={goal} />}
-                    />
-                    {structured && (
-                      <div className="px-3 pb-2.5 pt-1 flex items-center gap-2 flex-wrap border-t border-slate-100">
-                        {goal.domain && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
-                        {goal.progress_measurement && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><BarChart3 className="w-3 h-3" />{goal.progress_measurement}</span>}
-                        {goal.progress_reporting && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><CalendarClock className="w-3 h-3" />{goal.progress_reporting}</span>}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </SectionCard>
+        <SectionCard
+          id="annual-goals"
+          title="Annual Goals & Objectives"
+          subtitle="Edit goals & objectives — structured Florida IEP format"
+          accent="indigo"
+          count={goalCount + objCount}
+          open={openGoals}
+          onToggle={() => setOpenGoals(s => !s)}
+        >
+          <div className="space-y-1">
+            {editablePlan.annual_goals?.map((goal, index) => {
+              const structured = isStructuredGoal(goal);
+              const alignedObjs = (editablePlan.short_term_objectives || [])
+                .map((o, oi) => ({ original: o, idx: oi }))
+                .filter(({ original: o }) => isStructuredObjective(o) && o.aligned_goal_index === index);
 
-          <SectionCard
-            id="short-term-objectives"
-            title="Short-Term Objectives / Benchmarks"
-            subtitle="Edit objectives — linked to annual goals"
-            accent="sky"
-            count={objCount}
-            open={openObjectives}
-            onToggle={() => setOpenObjectives(s => !s)}
-          >
-            <div className="space-y-1">
-              {editablePlan.short_term_objectives?.map((objective, index) => {
-                const structured = isStructuredObjective(objective);
-                const linkedGoalIdx = structured ? objective.aligned_goal_index : -1;
-                const linkedGoal = linkedGoalIdx >= 0 && editablePlan.annual_goals?.[linkedGoalIdx];
-                return (
-                  <div key={index}>
+              return (
+                <div key={index}>
+                  <RowEditor
+                    index={index}
+                    value={formatAnnualGoal(goal)}
+                    onChange={(val) => updateGoal(index, val)}
+                    onDelete={() => removeGoal(index)}
+                    badgeColor="bg-indigo-500"
+                  />
+                  {structured && (
+                    <div className="px-3 pb-2 pt-1 flex items-center gap-2 flex-wrap">
+                      {goal.domain && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200">{goal.domain}</span>}
+                      {goal.progress_measurement && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><BarChart3 className="w-3 h-3" />{goal.progress_measurement}</span>}
+                      {goal.progress_reporting && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1"><CalendarClock className="w-3 h-3" />{goal.progress_reporting}</span>}
+                    </div>
+                  )}
+
+                  {alignedObjs.length > 0 && (
+                    <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-indigo-100 space-y-1">
+                      <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Objectives</div>
+                      {alignedObjs.map(({ original: obj, idx: objIdx }) => (
+                        <RowEditor
+                          key={`obj-${objIdx}`}
+                          index={objIdx}
+                          value={formatObjective(obj)}
+                          onChange={(val) => updateObjective(objIdx, val)}
+                          onDelete={() => removeObjective(objIdx)}
+                          badgeColor="bg-indigo-400"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Unlinked objectives */}
+            {(() => {
+              const unlinked = (editablePlan.short_term_objectives || [])
+                .map((o, i) => ({ original: o, idx: i }))
+                .filter(({ original: o }) => !(isStructuredObjective(o) && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
+              if (unlinked.length === 0) return null;
+              return (
+                <div className="ml-4 mt-2 pl-3 border-l-2 border-sky-100 space-y-1">
+                  <div className="text-[11px] font-bold text-sky-600 uppercase tracking-wider mb-1">Additional Objectives</div>
+                  {unlinked.map(({ original: obj, idx: objIdx }) => (
                     <RowEditor
-                      index={index}
-                      value={formatObjective(objective)}
-                      onChange={(val) => updateObjective(index, val)}
-                      onDelete={() => removeObjective(index)}
+                      key={`uo-${objIdx}`}
+                      index={objIdx}
+                      value={formatObjective(obj)}
+                      onChange={(val) => updateObjective(objIdx, val)}
+                      onDelete={() => removeObjective(objIdx)}
                       badgeColor="bg-sky-500"
-                      tag={linkedGoal ? (
-                        <span className="text-[9px] font-medium px-1 py-0.5 rounded bg-indigo-50 text-indigo-500 ring-1 ring-indigo-200 whitespace-nowrap">
-                          Goal {linkedGoalIdx + 1}
-                        </span>
-                      ) : <DomainBadge goal={objective} />}
                     />
-                  </div>
-                );
-              })}
-            </div>
-          </SectionCard>
-        </>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </SectionCard>
       ) : (
         <SectionCard
           id="annual-goals"
@@ -527,38 +450,32 @@ export default function GoalsObjectivesSection({
           open={openGoalsObjectives}
           onToggle={() => setOpenGoalsObjectives(s => !s)}
         >
-          {domainGroups.length > 0 ? (
-            <div className="space-y-5">
-              {domainGroups.map(({ label, domainMeta, goals, objectives }) => {
-                const totalObjs = goals.reduce((s, g) => s + (g.alignedObjectives?.length || 0), 0) + objectives.length;
+          {plan.annual_goals && plan.annual_goals.length > 0 ? (
+            <div className="space-y-1">
+              {plan.annual_goals.map((goal, index) => {
+                const alignedObjs = (plan.short_term_objectives || [])
+                  .filter(o => isStructuredObjective(o) && o.aligned_goal_index === index);
+                const goalObj = typeof goal === 'string' ? { goal, alignedObjectives: alignedObjs } : { ...goal, alignedObjectives: alignedObjs };
+                return renderGoalCard(goalObj, index);
+              })}
+
+              {/* Unlinked objectives */}
+              {(() => {
+                const unlinked = (plan.short_term_objectives || [])
+                  .filter(o => !(isStructuredObjective(o) && typeof o.aligned_goal_index === 'number' && o.aligned_goal_index >= 0));
+                if (unlinked.length === 0) return null;
                 return (
-                  <div key={label}>
-                    <div className="flex items-center gap-2 mb-2.5">
-                      {domainMeta ? (
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ring-1 ${domainMeta.badge}`}>{domainMeta.short || label}</span>
-                      ) : (
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200">{label}</span>
-                      )}
-                      <span className="text-[11px] text-slate-400">{goals.length} goal{goals.length !== 1 ? 's' : ''} · {totalObjs} objective{totalObjs !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="space-y-3">
-                      {goals.map((g) => renderGoalCard({ ...g.original, alignedObjectives: g.alignedObjectives }, g.index))}
-                      {/* Unlinked objectives in this domain */}
-                      {objectives.length > 0 && (
-                        <div className="ml-4 pl-3 border-l-2 border-sky-100 space-y-1 mt-1">
-                          <div className="text-[10px] font-bold text-sky-600 uppercase tracking-wider mb-1">Additional Objectives</div>
-                          {objectives.map((o, oi) => (
-                            <div key={`uo-${oi}`} className="flex gap-2.5 items-start py-1">
-                              <div className="flex-shrink-0 w-5 h-5 bg-sky-50 text-sky-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
-                              <p className="text-slate-600 text-[13px] leading-relaxed">{o.text}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div className="ml-4 mt-2 pl-3 border-l-2 border-indigo-100 space-y-1">
+                    <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Additional Objectives</div>
+                    {unlinked.map((o, oi) => (
+                      <div key={`uo-${oi}`} className="flex gap-3 items-start py-1">
+                        <div className="flex-shrink-0 w-5 h-5 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">{oi + 1}</div>
+                        <p className="text-slate-600 text-[13px] leading-relaxed">{formatObjective(o)}</p>
+                      </div>
+                    ))}
                   </div>
                 );
-              })}
+              })()}
             </div>
           ) : (
             <p className="text-sm text-slate-400 italic py-2">No goals generated yet.</p>
