@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Wand2, Download, ChevronDown, FileText, FileType } from 'lucide-react';
+import { Save, Wand2, Download, ChevronDown, FileText, FileType, GraduationCap } from 'lucide-react';
 
-export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDownloadPDF, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = '' }) {
+export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = '' }) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
 
@@ -66,7 +66,7 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDo
             </button>
 
             {exportOpen && (
-              <div className="absolute right-0 mt-1.5 w-48 py-1 bg-white border border-slate-200/60 rounded-xl shadow-float z-50">
+              <div className="absolute right-0 mt-1.5 w-52 py-1 bg-white border border-slate-200/60 rounded-xl shadow-float z-50">
                 <button
                   onClick={() => { onDownload(); setExportOpen(false); }}
                   className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
@@ -80,6 +80,14 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDo
                 >
                   <FileText className="w-4 h-4 text-red-400" />
                   PDF (.pdf)
+                </button>
+                <div className="mx-2 border-t border-slate-100" />
+                <button
+                  onClick={() => { onDownloadFloridaIEP(); setExportOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
+                >
+                  <GraduationCap className="w-4 h-4 text-indigo-400" />
+                  Florida IEP Format
                 </button>
               </div>
             )}
