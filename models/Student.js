@@ -84,14 +84,14 @@ const StudentSchema = new mongoose.Schema({
   iep_plan_data: {
     original_ai_draft: {
       plaafp_narrative: String,
-      annual_goals: [String],
+      annual_goals: [mongoose.Schema.Types.Mixed],
       annualGoalsByExceptionality: [
         {
           exceptionality: String,
           goals: [{ referenceId: String, goal: String }]
         }
       ],
-      short_term_objectives: [String],
+      short_term_objectives: [mongoose.Schema.Types.Mixed],
       shortTermObjectivesByExceptionality: [
         {
           exceptionality: String,
@@ -105,14 +105,14 @@ const StudentSchema = new mongoose.Schema({
     },
     user_edited_version: {
       plaafp_narrative: String,
-      annual_goals: [String],
+      annual_goals: [mongoose.Schema.Types.Mixed],
       annualGoalsByExceptionality: [
         {
           exceptionality: String,
           goals: [{ referenceId: String, goal: String }]
         }
       ],
-      short_term_objectives: [String],
+      short_term_objectives: [mongoose.Schema.Types.Mixed],
       shortTermObjectivesByExceptionality: [
         {
           exceptionality: String,

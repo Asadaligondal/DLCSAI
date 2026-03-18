@@ -66,8 +66,20 @@ export async function PUT(req, { params }) {
       if (!content || typeof content !== 'object') return content;
       const copy = { ...content };
 
-      if (Array.isArray(copy.annual_goals)) copy.annual_goals = copy.annual_goals.map(pickStringFromItem);
-      if (Array.isArray(copy.short_term_objectives)) copy.short_term_objectives = copy.short_term_objectives.map(pickStringFromItem);
+      // Preserve structured goal/objective objects (domain, progress_measurement, etc.)
+      // Only flatten to string if the item is not a structured object
+      if (Array.isArray(copy.annual_goals)) {
+        copy.annual_goals = copy.annual_goals.map(item => {
+          if (item && typeof item === 'object' && (item.domain || item.condition || item.observable_behavior || item.progress_measurement || item.goal)) return item;
+          return pickStringFromItem(item);
+        });
+      }
+      if (Array.isArray(copy.short_term_objectives)) {
+        copy.short_term_objectives = copy.short_term_objectives.map(item => {
+          if (item && typeof item === 'object' && (typeof item.aligned_goal_index === 'number' || item.condition || item.observable_behavior || item.objective)) return item;
+          return pickStringFromItem(item);
+        });
+      }
 
       if (Array.isArray(copy.annualGoalsByExceptionality)) {
         copy.annualGoalsByExceptionality = copy.annualGoalsByExceptionality.map((grp) => ({
@@ -110,7 +122,7 @@ export async function PUT(req, { params }) {
       ...(rag_context != null && rag_context !== '' ? { rag_context } : {})
     };
 
-    console.log('📦 New IEP data to save:', student.iep_plan_data);
+    student.markModified('iep_plan_data');
 
     await student.save();
     
