@@ -1062,9 +1062,15 @@ export default function StudentDetail() {
 
           (group.goals || []).forEach((g, gi) => {
             const goalObj = { goal: g.goal || g, domain: group.exceptionality, progress_measurement: '—', progress_reporting: '—' };
-            const gObjs = matchingObjs.slice(gi * Math.ceil(matchingObjs.length / Math.max((group.goals || []).length, 1)), (gi + 1) * Math.ceil(matchingObjs.length / Math.max((group.goals || []).length, 1)));
-            drawGoalBox(goalObj, gi, gi === 0 ? matchingObjs : []);
+            const aligned = matchingObjs.filter(o => o.alignedAnnualGoalReferenceId && o.alignedAnnualGoalReferenceId === g.referenceId);
+            drawGoalBox(goalObj, gi, aligned);
           });
+
+          const linkedRefs = new Set((group.goals || []).map(g => g.referenceId).filter(Boolean));
+          const unlinkedExc = matchingObjs.filter(o => !o.alignedAnnualGoalReferenceId || !linkedRefs.has(o.alignedAnnualGoalReferenceId));
+          if (unlinkedExc.length) {
+            drawGoalBox({ goal: 'Additional Objectives', domain: group.exceptionality, progress_measurement: '—', progress_reporting: '—' }, 0, unlinkedExc);
+          }
         });
       }
 

@@ -310,47 +310,86 @@ export default function GoalsObjectivesSection({
                   <div className="space-y-0.5">
                     {group.goals?.map((g, gi) => {
                       const text = formatAnnualGoal(g);
-                      return isEditable ? (
-                        <RowEditor
-                          key={`eg-${gIdx}-${gi}`}
-                          index={parseInt(g.referenceId, 10) || gi}
-                          value={text}
-                          onChange={(val) => updateGroupedGoal(gIdx, gi, val)}
-                          onDelete={null}
-                          badgeColor="bg-purple-500"
-                        />
-                      ) : (
-                        <div key={`eg-${gIdx}-${gi}`} className="flex gap-2 items-start py-1">
-                          <div className="flex-shrink-0 w-5 h-5 bg-purple-100 text-purple-700 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">G</div>
-                          <p className="text-slate-700 text-[13px] leading-snug">{text}</p>
+                      const goalRef = g.referenceId;
+                      const alignedObjs = matchingObjs.filter(o => o.alignedAnnualGoalReferenceId && o.alignedAnnualGoalReferenceId === goalRef);
+                      const objGroupIndex = (plan.shortTermObjectivesByExceptionality || []).findIndex(sg => sg.exceptionality === group.exceptionality);
+
+                      return (
+                        <div key={`eg-${gIdx}-${gi}`}>
+                          {isEditable ? (
+                            <RowEditor
+                              index={parseInt(g.referenceId, 10) || gi}
+                              value={text}
+                              onChange={(val) => updateGroupedGoal(gIdx, gi, val)}
+                              onDelete={null}
+                              badgeColor="bg-purple-500"
+                            />
+                          ) : (
+                            <div className="flex gap-2 items-start py-1">
+                              <div className="flex-shrink-0 w-5 h-5 bg-purple-100 text-purple-700 rounded flex items-center justify-center text-[10px] font-bold mt-0.5">G</div>
+                              <p className="text-slate-700 text-[13px] leading-snug">{text}</p>
+                            </div>
+                          )}
+
+                          {alignedObjs.length > 0 && (
+                            <div className="ml-4 mt-0.5 mb-1.5 pl-3 border-l-2 border-purple-100 space-y-0.5">
+                              <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Objectives</div>
+                              {alignedObjs.map((o, oi) => {
+                                const oText = formatObjective(o);
+                                const oIdx = matchingObjs.indexOf(o);
+                                return isEditable ? (
+                                  <RowEditor
+                                    key={`eo-${gIdx}-${gi}-${oi}`}
+                                    index={parseInt(o.referenceId, 10) || oi}
+                                    value={oText}
+                                    onChange={(val) => updateGroupedObjective(objGroupIndex, oIdx, val)}
+                                    onDelete={null}
+                                    badgeColor="bg-purple-400"
+                                  />
+                                ) : (
+                                  <div key={`eo-${gIdx}-${gi}-${oi}`} className="flex gap-2 items-start py-0.5">
+                                    <div className="flex-shrink-0 w-4 h-4 bg-purple-50 text-purple-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
+                                    <p className="text-slate-600 text-[13px] leading-snug">{oText}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
 
-                    {matchingObjs.length > 0 && (
-                      <div className="ml-4 mt-0.5 mb-1 pl-3 border-l-2 border-purple-100 space-y-0.5">
-                        <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Objectives</div>
-                        {matchingObjs.map((o, oi) => {
-                          const text = formatObjective(o);
-                          const objGroupIndex = (plan.shortTermObjectivesByExceptionality || []).findIndex(sg => sg.exceptionality === group.exceptionality);
-                          return isEditable ? (
-                            <RowEditor
-                              key={`eo-${gIdx}-${oi}`}
-                              index={parseInt(o.referenceId, 10) || oi}
-                              value={text}
-                              onChange={(val) => updateGroupedObjective(objGroupIndex, oi, val)}
-                              onDelete={null}
-                              badgeColor="bg-purple-400"
-                            />
-                          ) : (
-                            <div key={`eo-${gIdx}-${oi}`} className="flex gap-2 items-start py-0.5">
-                              <div className="flex-shrink-0 w-4 h-4 bg-purple-50 text-purple-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
-                              <p className="text-slate-600 text-[13px] leading-snug">{text}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                    {/* Unlinked objectives */}
+                    {(() => {
+                      const linkedRefs = new Set((group.goals || []).map(g => g.referenceId).filter(Boolean));
+                      const unlinked = matchingObjs.filter(o => !o.alignedAnnualGoalReferenceId || !linkedRefs.has(o.alignedAnnualGoalReferenceId));
+                      if (unlinked.length === 0) return null;
+                      const objGroupIndex = (plan.shortTermObjectivesByExceptionality || []).findIndex(sg => sg.exceptionality === group.exceptionality);
+                      return (
+                        <div className="ml-4 mt-0.5 mb-1 pl-3 border-l-2 border-purple-100 space-y-0.5">
+                          <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Additional Objectives</div>
+                          {unlinked.map((o, oi) => {
+                            const oText = formatObjective(o);
+                            const oIdx = matchingObjs.indexOf(o);
+                            return isEditable ? (
+                              <RowEditor
+                                key={`euo-${gIdx}-${oi}`}
+                                index={parseInt(o.referenceId, 10) || oi}
+                                value={oText}
+                                onChange={(val) => updateGroupedObjective(objGroupIndex, oIdx, val)}
+                                onDelete={null}
+                                badgeColor="bg-purple-400"
+                              />
+                            ) : (
+                              <div key={`euo-${gIdx}-${oi}`} className="flex gap-2 items-start py-0.5">
+                                <div className="flex-shrink-0 w-4 h-4 bg-purple-50 text-purple-600 rounded flex items-center justify-center text-[9px] font-bold mt-0.5">{oi + 1}</div>
+                                <p className="text-slate-600 text-[13px] leading-snug">{oText}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </SectionCard>
               );
