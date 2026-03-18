@@ -794,21 +794,39 @@ export default function StudentDetail() {
       };
 
       const drawRow = (cells, rowY, rowH, opts = {}) => {
-        const { bold = false, fontSize = 8, bg = null } = opts;
+        const { fontSize = 8, bg = null } = opts;
         let x = mL;
-        cells.forEach(({ text, w, b }) => {
-          if (bg) {
-            pdf.setFillColor(...bg);
-            pdf.rect(x, rowY, w, rowH, 'F');
-          }
+        cells.forEach(({ text, w }) => {
+          if (bg) { pdf.setFillColor(...bg); pdf.rect(x, rowY, w, rowH, 'F'); }
           pdf.setDrawColor(0, 0, 0).setLineWidth(0.25);
           pdf.rect(x, rowY, w, rowH, 'S');
-          pdf.setFont('helvetica', b || bold ? 'bold' : 'normal').setFontSize(fontSize).setTextColor(0, 0, 0);
-          const lines = pdf.splitTextToSize(String(text || '—'), w - 3);
-          lines.forEach((line, li) => {
-            if (li < Math.floor((rowH - 1) / 3.5))
-              pdf.text(line, x + 1.5, rowY + 3.5 + li * 3.2);
-          });
+          const str = String(text || '—');
+          const colonIdx = str.indexOf(':');
+          if (colonIdx > 0) {
+            const label = str.slice(0, colonIdx + 1);
+            const value = str.slice(colonIdx + 1);
+            pdf.setFont('helvetica', 'bold').setFontSize(fontSize).setTextColor(0, 0, 0);
+            const lw = pdf.getTextWidth(label);
+            pdf.text(label, x + 1.5, rowY + 3.5);
+            pdf.setFont('helvetica', 'normal');
+            const valLines = pdf.splitTextToSize(value.trim(), w - 3 - lw - 1);
+            if (valLines.length <= 1) {
+              pdf.text(` ${value.trimStart()}`, x + 1.5 + lw, rowY + 3.5);
+            } else {
+              pdf.text(` ${valLines[0]}`, x + 1.5 + lw, rowY + 3.5);
+              valLines.slice(1).forEach((line, li) => {
+                if (li < Math.floor((rowH - 5) / 3.2))
+                  pdf.text(line, x + 1.5, rowY + 6.7 + li * 3.2);
+              });
+            }
+          } else {
+            pdf.setFont('helvetica', 'normal').setFontSize(fontSize).setTextColor(0, 0, 0);
+            const lines = pdf.splitTextToSize(str, w - 3);
+            lines.forEach((line, li) => {
+              if (li < Math.floor((rowH - 1) / 3.5))
+                pdf.text(line, x + 1.5, rowY + 3.5 + li * 3.2);
+            });
+          }
           x += w;
         });
       };
@@ -947,48 +965,56 @@ export default function StudentDetail() {
         const measurement = (isObj && goal.progress_measurement) ? goal.progress_measurement : '—';
         const reporting = (isObj && goal.progress_reporting) ? goal.progress_reporting : '—';
 
-        const goalLines = pdf.splitTextToSize(`Goal: ${student.name || 'Student'} — ${goalText}`, cW - 6);
+        pdf.setFontSize(8);
+        const goalFullText = `${student.name || 'Student'} — ${goalText}`;
+        const goalLines = pdf.splitTextToSize(goalFullText, cW - 8);
+        const assessLines = pdf.splitTextToSize(`Assessment Procedures: ${measurement}`, cW - 8);
         const objTexts = alignedObjs.map(o => {
           const t = typeof o === 'string' ? o : (o.objective || [o.condition, o.observable_behavior, o.mastery_criteria].filter(Boolean).join(' '));
-          return pdf.splitTextToSize(`• ${t}`, cW - 10);
+          return pdf.splitTextToSize(`• ${t}`, cW - 12);
         });
         const objTotalLines = objTexts.reduce((s, lines) => s + lines.length, 0);
 
-        const boxH = 6 + goalLines.length * 3.5 + 4 + 4 + 4 + (alignedObjs.length > 0 ? 5 + objTotalLines * 3.5 + 2 : 0) + 4;
+        const estH = 4 + 5 + 4 + goalLines.length * 3.5 + 2 + assessLines.length * 3.5 + 1 + 4 + (alignedObjs.length > 0 ? 5 + objTotalLines * 3.5 : 0) + 3;
 
-        needPage(boxH + 4);
+        needPage(Math.min(estH + 6, pageH - 30));
 
         const boxY = y;
-        pdf.setDrawColor(0).setLineWidth(0.35);
-        pdf.rect(mL, boxY, cW, boxH, 'S');
-
         let cy = boxY + 4;
 
-        pdf.setFont('helvetica', 'bold').setFontSize(8);
-        pdf.text(`Domain(s)/TSAA(s): ${domain}`, mL + 3, cy);
+        pdf.setFont('helvetica', 'bold').setFontSize(8).setTextColor(0, 0, 0);
+        pdf.text(`Domain(s)/TSAA(s): `, mL + 3, cy);
+        const dLabelW = pdf.getTextWidth('Domain(s)/TSAA(s): ');
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(domain, mL + 3 + dLabelW, cy);
         cy += 5;
 
         pdf.setFont('helvetica', 'bold').setFontSize(8);
-        goalLines.forEach((line, li) => {
-          if (li === 0) {
-            pdf.setFont('helvetica', 'bold').setFontSize(8);
-            pdf.text(line, mL + 3, cy);
-          } else {
-            pdf.setFont('helvetica', 'normal').setFontSize(8);
-            pdf.text(line, mL + 3, cy);
-          }
+        pdf.text('Goal: ', mL + 3, cy);
+        const gLabelW = pdf.getTextWidth('Goal: ');
+        pdf.setFont('helvetica', 'normal');
+        const firstGoalLine = goalLines[0] || '';
+        pdf.text(firstGoalLine, mL + 3 + gLabelW, cy);
+        cy += 3.5;
+        goalLines.slice(1).forEach(line => {
+          pdf.text(line, mL + 3, cy);
           cy += 3.5;
         });
         cy += 1;
 
-        pdf.setFont('helvetica', 'normal').setFontSize(7.5);
-        pdf.text(`Assessment Procedures: ${measurement}`, mL + 3, cy);
+        pdf.setFont('helvetica', 'bold').setFontSize(7.5);
+        pdf.text('Assessment Procedures: ', mL + 3, cy);
+        const aLabelW = pdf.getTextWidth('Assessment Procedures: ');
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(measurement, mL + 3 + aLabelW, cy);
         cy += 4;
 
-        pdf.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(0, 0, 0);
-        pdf.text(`Progress Reported: ${reporting}`, mL + 3, cy);
-        cy += 4;
+        pdf.setFont('helvetica', 'bold').setFontSize(7.5);
+        pdf.text('Progress Reported: ', mL + 3, cy);
+        const pLabelW = pdf.getTextWidth('Progress Reported: ');
         pdf.setFont('helvetica', 'normal');
+        pdf.text(reporting, mL + 3 + pLabelW, cy);
+        cy += 4;
 
         if (alignedObjs.length > 0) {
           pdf.setFont('helvetica', 'bold').setFontSize(8);
@@ -1003,6 +1029,11 @@ export default function StudentDetail() {
             });
           });
         }
+
+        cy += 2;
+        const boxH = cy - boxY;
+        pdf.setDrawColor(0).setLineWidth(0.35);
+        pdf.rect(mL, boxY, cW, boxH, 'S');
 
         y = boxY + boxH + 4;
       };
