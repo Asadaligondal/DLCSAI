@@ -831,7 +831,13 @@ export default function StudentDetail() {
         });
       };
 
-      const dobStr = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : '—';
+      const dobStr = (() => {
+        if (!student.dateOfBirth) return '—';
+        const raw = String(student.dateOfBirth);
+        const m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+        return new Date(student.dateOfBirth).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+      })();
       const ageStr = student.dateOfBirth
         ? (() => { const bd = new Date(student.dateOfBirth); const now = new Date(); let yrs = now.getFullYear() - bd.getFullYear(); let mos = now.getMonth() - bd.getMonth(); if (mos < 0) { yrs--; mos += 12; } return `${yrs} Year(s) & ${mos} Month(s)`; })()
         : (student.age ? `${student.age} Year(s)` : '—');
@@ -901,7 +907,7 @@ export default function StudentDetail() {
       const introLines = pdf.splitTextToSize(plaafpIntro, cW);
       introLines.forEach(line => {
         needPage(4);
-        pdf.text(line, mL, y);
+        pdf.text(line, mL, y, { maxWidth: cW, align: 'justify' });
         y += 3.5;
       });
       y += 3;
@@ -926,7 +932,7 @@ export default function StudentDetail() {
         pdf.setFont('helvetica', 'normal').setFontSize(8);
         const strText = student.strengths.join(', ');
         const strLines = pdf.splitTextToSize(strText, cW - 4);
-        strLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y); y += 3.8; });
+        strLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y, { maxWidth: cW - 4, align: 'justify' }); y += 3.8; });
         y += 4;
       }
 
@@ -941,7 +947,7 @@ export default function StudentDetail() {
 
         pdf.setFont('helvetica', 'normal').setFontSize(8);
         const narLines = pdf.splitTextToSize(editablePlan.plaafp_narrative, cW - 4);
-        narLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y); y += 3.8; });
+        narLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y, { maxWidth: cW - 4, align: 'justify' }); y += 3.8; });
         y += 4;
       }
 
@@ -953,7 +959,7 @@ export default function StudentDetail() {
         y += 5;
         pdf.setFont('helvetica', 'normal').setFontSize(8);
         const acadLines = pdf.splitTextToSize(editablePlan.academicPerformanceAchievement, cW - 4);
-        acadLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y); y += 3.8; });
+        acadLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y, { maxWidth: cW - 4, align: 'justify' }); y += 3.8; });
         y += 4;
       }
 
@@ -964,69 +970,63 @@ export default function StudentDetail() {
         const domain = (isObj && goal.domain) ? goal.domain : '—';
         const measurement = (isObj && goal.progress_measurement) ? goal.progress_measurement : '—';
         const reporting = (isObj && goal.progress_reporting) ? goal.progress_reporting : '—';
+        const pad = 3;
+        const innerW = cW - pad * 2;
 
         pdf.setFontSize(8);
         const goalFullText = `${student.name || 'Student'} — ${goalText}`;
-        const goalLines = pdf.splitTextToSize(goalFullText, cW - 8);
-        const assessLines = pdf.splitTextToSize(`Assessment Procedures: ${measurement}`, cW - 8);
+        pdf.setFont('helvetica', 'normal').setFontSize(8);
+        const glWPre = pdf.getTextWidth('Goal: ');
+        const goalFirstLines = pdf.splitTextToSize(goalFullText, innerW - glWPre);
+        const goalRestText = goalFullText.slice(goalFirstLines[0]?.length || 0).trim();
+        const goalRestLines = goalRestText ? pdf.splitTextToSize(goalRestText, innerW) : [];
+        const totalGoalLines = 1 + goalRestLines.length;
         const objTexts = alignedObjs.map(o => {
           const t = typeof o === 'string' ? o : (o.objective || [o.condition, o.observable_behavior, o.mastery_criteria].filter(Boolean).join(' '));
-          return pdf.splitTextToSize(`• ${t}`, cW - 12);
+          return pdf.splitTextToSize(`• ${t}`, innerW - 4);
         });
         const objTotalLines = objTexts.reduce((s, lines) => s + lines.length, 0);
-
-        const estH = 4 + 5 + 4 + goalLines.length * 3.5 + 2 + assessLines.length * 3.5 + 1 + 4 + (alignedObjs.length > 0 ? 5 + objTotalLines * 3.5 : 0) + 3;
-
+        const estH = 4 + 5 + totalGoalLines * 3.5 + 2 + 4 + 4 + (alignedObjs.length > 0 ? 5 + objTotalLines * 3.5 : 0) + 4;
         needPage(Math.min(estH + 6, pageH - 30));
 
         const boxY = y;
         let cy = boxY + 4;
 
         pdf.setFont('helvetica', 'bold').setFontSize(8).setTextColor(0, 0, 0);
-        pdf.text(`Domain(s)/TSAA(s): `, mL + 3, cy);
-        const dLabelW = pdf.getTextWidth('Domain(s)/TSAA(s): ');
+        pdf.text('Domain(s)/TSAA(s):', mL + pad, cy);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(domain, mL + 3 + dLabelW, cy);
+        pdf.text(` ${domain}`, mL + pad + pdf.getTextWidth('Domain(s)/TSAA(s):'), cy);
         cy += 5;
 
         pdf.setFont('helvetica', 'bold').setFontSize(8);
-        pdf.text('Goal: ', mL + 3, cy);
-        const gLabelW = pdf.getTextWidth('Goal: ');
+        pdf.text('Goal:', mL + pad, cy);
         pdf.setFont('helvetica', 'normal');
-        const firstGoalLine = goalLines[0] || '';
-        pdf.text(firstGoalLine, mL + 3 + gLabelW, cy);
+        pdf.text(goalFirstLines[0] || '', mL + pad + glWPre, cy, { maxWidth: innerW - glWPre, align: 'justify' });
         cy += 3.5;
-        goalLines.slice(1).forEach(line => {
-          pdf.text(line, mL + 3, cy);
-          cy += 3.5;
-        });
+        if (goalRestLines.length) {
+          goalRestLines.forEach(line => { pdf.text(line, mL + pad, cy, { maxWidth: innerW, align: 'justify' }); cy += 3.5; });
+        }
         cy += 1;
 
         pdf.setFont('helvetica', 'bold').setFontSize(7.5);
-        pdf.text('Assessment Procedures: ', mL + 3, cy);
-        const aLabelW = pdf.getTextWidth('Assessment Procedures: ');
+        pdf.text('Assessment Procedures:', mL + pad, cy);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(measurement, mL + 3 + aLabelW, cy);
+        pdf.text(` ${measurement}`, mL + pad + pdf.getTextWidth('Assessment Procedures:'), cy);
         cy += 4;
 
         pdf.setFont('helvetica', 'bold').setFontSize(7.5);
-        pdf.text('Progress Reported: ', mL + 3, cy);
-        const pLabelW = pdf.getTextWidth('Progress Reported: ');
+        pdf.text('Progress Reported:', mL + pad, cy);
         pdf.setFont('helvetica', 'normal');
-        pdf.text(reporting, mL + 3 + pLabelW, cy);
+        pdf.text(` ${reporting}`, mL + pad + pdf.getTextWidth('Progress Reported:'), cy);
         cy += 4;
 
         if (alignedObjs.length > 0) {
           pdf.setFont('helvetica', 'bold').setFontSize(8);
-          pdf.text('Short-term Objectives or Benchmarks:', mL + 3, cy);
+          pdf.text('Short-term Objectives or Benchmarks:', mL + pad, cy);
           cy += 4;
-
           pdf.setFont('helvetica', 'normal').setFontSize(7.5);
           objTexts.forEach(lines => {
-            lines.forEach(line => {
-              pdf.text(line, mL + 6, cy);
-              cy += 3.5;
-            });
+            lines.forEach(line => { pdf.text(line, mL + pad + 3, cy, { maxWidth: innerW - 3, align: 'justify' }); cy += 3.5; });
           });
         }
 
@@ -1085,7 +1085,7 @@ export default function StudentDetail() {
         unlinkedObjs.forEach((obj) => {
           const text = typeof obj === 'string' ? obj : (obj?.objective || obj?.text || '');
           const lines = pdf.splitTextToSize(`• ${text}`, cW - 6);
-          lines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y); y += 3.8; });
+          lines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y, { maxWidth: cW - 6, align: 'justify' }); y += 3.8; });
           y += 1;
         });
       }
@@ -1098,7 +1098,7 @@ export default function StudentDetail() {
         y += 5;
         pdf.setFont('helvetica', 'normal').setFontSize(8);
         const intLines = pdf.splitTextToSize(editablePlan.intervention_recommendations, cW - 4);
-        intLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y); y += 3.8; });
+        intLines.forEach(line => { needPage(4); pdf.text(line, mL + 4, y, { maxWidth: cW - 4, align: 'justify' }); y += 3.8; });
         y += 4;
       }
 
@@ -1132,41 +1132,13 @@ export default function StudentDetail() {
               const label = cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
               const itemText = items.map(i => typeof i === 'string' ? i : (i.label || i.name || JSON.stringify(i))).join('; ');
               const aLines = pdf.splitTextToSize(`${label}: ${itemText}`, cW - 8);
-              aLines.forEach(line => { needPage(4); pdf.text(line, mL + 6, y); y += 3.5; });
+              aLines.forEach(line => { needPage(4); pdf.text(line, mL + 6, y, { maxWidth: cW - 8, align: 'justify' }); y += 3.5; });
               y += 1;
             });
             y += 2;
           });
         }
       }
-
-      // ── Signature Block ──
-      needPage(50);
-      y += 6;
-      pdf.setDrawColor(0).setLineWidth(0.3);
-      pdf.setFont('helvetica', 'normal').setFontSize(8).setTextColor(80, 80, 80);
-
-      const sigText = 'I have reviewed and agree to this Individualized Education Program.';
-      pdf.text(sigText, mL, y);
-      y += 8;
-
-      const sigLines = [
-        'Parent/Guardian Signature',
-        'LEA Representative',
-        'Special Education Teacher',
-        'General Education Teacher',
-        'Student (if applicable)'
-      ];
-      sigLines.forEach(label => {
-        needPage(12);
-        pdf.setDrawColor(0).setLineWidth(0.2);
-        pdf.line(mL, y, mL + cW * 0.55, y);
-        pdf.line(mL + cW * 0.62, y, mL + cW, y);
-        pdf.setFont('helvetica', 'normal').setFontSize(7).setTextColor(100, 100, 100);
-        pdf.text(label, mL, y + 3.5);
-        pdf.text('Date', mL + cW * 0.62, y + 3.5);
-        y += 10;
-      });
 
       pdf.setTextColor(0, 0, 0);
 
