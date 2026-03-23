@@ -9,7 +9,9 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
-import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil } from 'lucide-react';
+import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import QuickActions from './components/QuickActions';
+import ActivityFeed from './components/ActivityFeed';
 
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
@@ -227,6 +229,16 @@ export default function Dashboard() {
   const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const uploadDropdownRef = useRef(null);
+
+  // Table enhancements
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'card'
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+  const [filterGrade, setFilterGrade] = useState('');
+  const [filterIEP, setFilterIEP] = useState('');
+  const [filterExceptionality, setFilterExceptionality] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     if (!uploadDropdownOpen) return;
@@ -566,11 +578,50 @@ export default function Dashboard() {
     }
   };
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.studentId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Derive filter options from data
+  const uniqueGrades = [...new Set(students.map(s => s.gradeLevel).filter(Boolean))].sort();
+  const uniqueExceptionalities = [...new Set(students.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
+
+  const getIEPStatus = (s) => {
+    const iep = s?.iep_plan_data;
+    if (!iep) return 'pending';
+    if (iep.is_reviewed) return 'reviewed';
+    const has = iep.original_ai_draft?.plaafp_narrative || iep.original_ai_draft?.annual_goals?.length > 0 || iep.user_edited_version?.plaafp_narrative || iep.user_edited_version?.annual_goals?.length > 0;
+    return has ? 'generated' : 'pending';
+  };
+
+  const filteredStudents = students
+    .filter((s) => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q || s.name.toLowerCase().includes(q) || s.studentId.toLowerCase().includes(q);
+      const matchGrade = !filterGrade || s.gradeLevel === filterGrade;
+      const matchIEP = !filterIEP || getIEPStatus(s) === filterIEP;
+      const matchExc = !filterExceptionality || (s.disabilities || []).includes(filterExceptionality);
+      return matchSearch && matchGrade && matchIEP && matchExc;
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'name': cmp = (a.name || '').localeCompare(b.name || ''); break;
+        case 'age': cmp = (a.age || 0) - (b.age || 0); break;
+        case 'grade': cmp = (a.gradeLevel || '').localeCompare(b.gradeLevel || ''); break;
+        case 'iep': cmp = getIEPStatus(a).localeCompare(getIEPStatus(b)); break;
+        default: cmp = 0;
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedStudents = filteredStudents.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const activeFilters = [filterGrade, filterIEP, filterExceptionality].filter(Boolean).length;
+  const clearFilters = () => { setFilterGrade(''); setFilterIEP(''); setFilterExceptionality(''); setCurrentPage(1); };
+
+  const handleSort = (key) => {
+    if (sortKey === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
+    else { setSortKey(key); setSortDir('asc'); }
+  };
 
   if (!user) return null;
 
@@ -596,13 +647,13 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <main className="p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="p-6 lg:p-8">
+          <div className="max-w-[1400px] mx-auto space-y-5">
             {/* Page header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Students</h1>
-                <p className="text-sm text-slate-500 mt-0.5">{filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''} enrolled</p>
+                <p className="text-sm text-slate-500 mt-0.5">{students.length} student{students.length !== 1 ? 's' : ''} enrolled</p>
               </div>
               <button
                 onClick={handleOpenModal}
@@ -613,150 +664,380 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Student table card */}
-            <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
-              {/* Search bar */}
-              <div className="px-5 py-4 border-b border-slate-100">
-                <div className="relative max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
-                  />
+            {/* Quick Actions */}
+            <QuickActions onAddStudent={handleOpenModal} />
+
+            {/* Main content: table + activity feed */}
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5">
+              {/* Student table card */}
+              <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+                {/* Toolbar: search + filters + view toggle */}
+                <div className="px-5 py-3.5 border-b border-slate-100 space-y-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Search */}
+                    <div className="relative flex-1 min-w-[200px] max-w-sm">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search by name or ID..."
+                        value={searchQuery}
+                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                        className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
+                      />
+                    </div>
+
+                    {/* Filter chips */}
+                    <select
+                      value={filterGrade}
+                      onChange={(e) => { setFilterGrade(e.target.value); setCurrentPage(1); }}
+                      className="h-9 pl-3 pr-7 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all appearance-none cursor-pointer"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                    >
+                      <option value="">All Grades</option>
+                      {uniqueGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+
+                    <select
+                      value={filterIEP}
+                      onChange={(e) => { setFilterIEP(e.target.value); setCurrentPage(1); }}
+                      className="h-9 pl-3 pr-7 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all appearance-none cursor-pointer"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                    >
+                      <option value="">All IEP Status</option>
+                      <option value="generated">Generated</option>
+                      <option value="reviewed">Reviewed</option>
+                      <option value="pending">Pending</option>
+                    </select>
+
+                    <select
+                      value={filterExceptionality}
+                      onChange={(e) => { setFilterExceptionality(e.target.value); setCurrentPage(1); }}
+                      className="h-9 pl-3 pr-7 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all appearance-none cursor-pointer max-w-[200px]"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                    >
+                      <option value="">All Exceptionalities</option>
+                      {uniqueExceptionalities.map(e => <option key={e} value={e}>{e.length > 30 ? e.slice(0, 30) + '...' : e}</option>)}
+                    </select>
+
+                    {activeFilters > 0 && (
+                      <button onClick={clearFilters} className="flex items-center gap-1 h-9 px-3 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                        Clear ({activeFilters})
+                      </button>
+                    )}
+
+                    {/* Spacer */}
+                    <div className="flex-1" />
+
+                    {/* View toggle */}
+                    <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('table')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
+                        title="Table view"
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('card')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white shadow-sm text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
+                        title="Card view"
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Results count */}
+                  {(searchQuery || activeFilters > 0) && (
+                    <p className="text-xs text-slate-400">{filteredStudents.length} result{filteredStudents.length !== 1 ? 's' : ''} found</p>
+                  )}
                 </div>
+
+                {/* TABLE VIEW */}
+                {viewMode === 'table' ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          {[
+                            { key: 'name',  label: 'Name' },
+                            { key: null,    label: 'Student ID' },
+                            { key: 'age',   label: 'Age' },
+                            { key: 'grade', label: 'Grade' },
+                            { key: null,    label: 'Goals' },
+                            { key: 'iep',   label: 'IEP Plan' },
+                          ].map(({ key, label }) => (
+                            <th
+                              key={label}
+                              className={`text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider ${key ? 'cursor-pointer select-none hover:text-slate-700 transition-colors' : ''}`}
+                              onClick={() => key && handleSort(key)}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                {label}
+                                {key && sortKey === key && (
+                                  <ArrowUpDown className={`w-3 h-3 text-primary-500 ${sortDir === 'desc' ? 'rotate-180' : ''} transition-transform`} />
+                                )}
+                              </span>
+                            </th>
+                          ))}
+                          <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {loading ? (
+                          <tr>
+                            <td colSpan="7" className="px-6 py-20 text-center">
+                              <div className="flex flex-col items-center gap-3 text-slate-400">
+                                <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span className="text-sm font-medium">Loading students...</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : paginatedStudents.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" className="px-6 py-20 text-center">
+                              <div className="flex flex-col items-center gap-3 text-slate-400">
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
+                                  <Users className="w-6 h-6 text-slate-300" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-semibold text-slate-600">No students found</div>
+                                  <div className="text-xs text-slate-400 mt-0.5">{activeFilters > 0 ? 'Try adjusting your filters' : 'Add a student to get started'}</div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedStudents.map((student) => {
+                            const status = getIEPStatus(student);
+                            return (
+                              <tr key={student._id} className="hover:bg-slate-50/60 transition-colors group">
+                                <td className="px-5 py-3.5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <span className="font-bold text-sm">{student.name.charAt(0).toUpperCase()}</span>
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-semibold text-slate-900">{student.name}</div>
+                                      <div className="text-[12px] text-slate-500">{student.gradeLevel} · {student.age} yrs</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
+                                <td className="px-5 py-3.5 text-sm text-slate-600">{student.age}</td>
+                                <td className="px-5 py-3.5 text-sm text-slate-600">{student.gradeLevel}</td>
+                                <td className="px-5 py-3.5">
+                                  {student?.assignedGoals && student.assignedGoals.length > 0 ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Created
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-5 py-3.5">
+                                  {status === 'reviewed' ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Reviewed
+                                    </span>
+                                  ) : status === 'generated' ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Generated
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Pending
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-5 py-3.5">
+                                  <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleEditStudent(student)} className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors" title="Edit">
+                                      <Pencil className="w-3.5 h-3.5" />Edit
+                                    </button>
+                                    <button onClick={() => router.push(`/students/${student._id}`)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title="IEP">
+                                      <FileText className="w-3.5 h-3.5" />IEP
+                                    </button>
+                                    <button onClick={() => router.push(`/services/${student._id}`)} className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[13px] font-medium transition-colors" title="View Recs">
+                                      <Zap className="w-3.5 h-3.5" />Recs
+                                    </button>
+                                    <button onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  /* CARD VIEW */
+                  <div className="p-5">
+                    {loading ? (
+                      <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+                        <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-sm font-medium">Loading students...</span>
+                      </div>
+                    ) : paginatedStudents.length === 0 ? (
+                      <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center"><Users className="w-6 h-6 text-slate-300" /></div>
+                        <div className="text-sm font-semibold text-slate-600">No students found</div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {paginatedStudents.map((student) => {
+                          const status = getIEPStatus(student);
+                          const hasGoals = student?.assignedGoals?.length > 0;
+                          return (
+                            <div key={student._id} className="border border-slate-200/60 rounded-xl p-4 hover:shadow-md hover:border-slate-300/60 transition-all group">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="w-10 h-10 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <span className="font-bold text-base">{student.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
+                                  <p className="text-[12px] text-slate-500">ID: {student.studentId}</p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-[12px] text-slate-500 mb-3">
+                                <span>{student.gradeLevel}</span>
+                                <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                <span>{student.age} yrs</span>
+                                {student.disabilities?.[0] && (
+                                  <>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <span className="truncate max-w-[120px]">{student.disabilities[0]}</span>
+                                  </>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 mb-4">
+                                {hasGoals ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Goals
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />No Goals
+                                  </span>
+                                )}
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  status === 'reviewed' ? 'bg-blue-50 text-blue-700' : status === 'generated' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${status === 'reviewed' ? 'bg-blue-500' : status === 'generated' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                  {status === 'reviewed' ? 'Reviewed' : status === 'generated' ? 'IEP Ready' : 'No IEP'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                                <button onClick={() => handleEditStudent(student)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[12px] font-medium transition-colors">
+                                  <Pencil className="w-3 h-3" />Edit
+                                </button>
+                                <button onClick={() => router.push(`/students/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[12px] font-medium transition-colors">
+                                  <FileText className="w-3 h-3" />IEP
+                                </button>
+                                <button onClick={() => router.push(`/services/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[12px] font-medium transition-colors">
+                                  <Zap className="w-3 h-3" />Recs
+                                </button>
+                                <button onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {!loading && filteredStudents.length > 0 && (
+                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <span>Show</span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                        className="h-8 pl-2 pr-6 rounded-md text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all appearance-none cursor-pointer"
+                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center' }}
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                      </select>
+                      <span>of {filteredStudents.length}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={safePage <= 1}
+                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                        .reduce((acc, p, i, arr) => {
+                          if (i > 0 && p - arr[i - 1] > 1) acc.push('...');
+                          acc.push(p);
+                          return acc;
+                        }, [])
+                        .map((item, i) =>
+                          item === '...' ? (
+                            <span key={`dots-${i}`} className="px-1 text-slate-400 text-sm">...</span>
+                          ) : (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() => setCurrentPage(item)}
+                              className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
+                                item === safePage ? 'bg-primary-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              {item}
+                            </button>
+                          )
+                        )}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={safePage >= totalPages}
+                        className="p-1.5 rounded-md text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Student ID</th>
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Age</th>
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Goals</th>
-                      <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">IEP Plan</th>
-                      <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {loading ? (
-                      <tr>
-                        <td colSpan="7" className="px-6 py-20 text-center">
-                          <div className="flex flex-col items-center gap-3 text-slate-400">
-                            <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span className="text-sm font-medium">Loading students...</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredStudents.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="px-6 py-20 text-center">
-                          <div className="flex flex-col items-center gap-3 text-slate-400">
-                            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-                              <Users className="w-6 h-6 text-slate-300" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold text-slate-600">No students found</div>
-                              <div className="text-xs text-slate-400 mt-0.5">Add a student or try a different search</div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredStudents.map((student) => (
-                        <tr key={student._id} className="hover:bg-slate-50/60 transition-colors group">
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="font-bold text-sm">{student.name.charAt(0).toUpperCase()}</span>
-                              </div>
-                              <div>
-                                <div className="text-sm font-semibold text-slate-900">{student.name}</div>
-                                <div className="text-[12px] text-slate-500">{student.gradeLevel} · {student.age} yrs</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
-                          <td className="px-5 py-3.5 text-sm text-slate-600">{student.age}</td>
-                          <td className="px-5 py-3.5 text-sm text-slate-600">{student.gradeLevel}</td>
-                          <td className="px-5 py-3.5">
-                            {student?.assignedGoals && student.assignedGoals.length > 0 ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Created
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-5 py-3.5">
-                            {(
-                              student?.iep_plan_data && (
-                                student.iep_plan_data.original_ai_draft?.plaafp_narrative ||
-                                (student.iep_plan_data.original_ai_draft?.annual_goals && student.iep_plan_data.original_ai_draft.annual_goals.length > 0) ||
-                                student.iep_plan_data.user_edited_version?.plaafp_narrative ||
-                                (student.iep_plan_data.user_edited_version?.annual_goals && student.iep_plan_data.user_edited_version.annual_goals.length > 0)
-                              )
-                            ) ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Generated
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Pending
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-5 py-3.5">
-                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => handleEditStudent(student)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors"
-                                title="Edit"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => router.push(`/students/${student._id}`)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors"
-                                title="IEP"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                                IEP
-                              </button>
-                              <button
-                                onClick={() => router.push(`/services/${student._id}`)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[13px] font-medium transition-colors"
-                                title="View Recs"
-                              >
-                                <Zap className="w-3.5 h-3.5" />
-                                Recs
-                              </button>
-                              <button
-                                onClick={() => setDeleteConfirm(student)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+              {/* Activity Feed (right sidebar) */}
+              <div className="hidden xl:block">
+                <ActivityFeed students={students} />
               </div>
+            </div>
+
+            {/* Activity Feed (mobile - below table) */}
+            <div className="xl:hidden">
+              <ActivityFeed students={students} />
             </div>
           </div>
         </main>
