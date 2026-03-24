@@ -34,6 +34,19 @@ const DocumentSchema = new mongoose.Schema({
   errorMessage: {
     type: String,
     default: null
+  },
+  contextCategory: {
+    type: String,
+    enum: ['institutional', 'student_evaluation', 'state_regulation'],
+    default: 'institutional'
+  },
+  active: {
+    type: Boolean,
+    default: true
+  },
+  description: {
+    type: String,
+    default: ''
   }
 }, { timestamps: true });
 

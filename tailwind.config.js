@@ -14,6 +14,15 @@ module.exports = {
         surface: '#ffffff',
         border: '#e8eaed',
         'border-light': '#f1f3f5',
+        brand: {
+          hero: '#5B9BD5',
+          cta: '#00A86B',
+          'cta-hover': '#00915d',
+          emerald: '#007A4D',
+          features: '#E8F5E9',
+          body: '#333333',
+          secondary: '#4A4A4A',
+        },
         primary: {
           50: '#eef2ff',
           100: '#e0e7ff',

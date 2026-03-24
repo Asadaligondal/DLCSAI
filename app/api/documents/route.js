@@ -16,7 +16,9 @@ export async function GET(request) {
 
     const docs = await Document.find()
       .sort({ uploadedAt: -1 })
-      .select('name originalFilename status chunkCount pageCount uploadedAt errorMessage')
+      .select(
+        'name originalFilename status chunkCount pageCount uploadedAt errorMessage contextCategory active description'
+      )
       .lean();
 
     return NextResponse.json({
@@ -29,7 +31,10 @@ export async function GET(request) {
         chunkCount: d.chunkCount ?? 0,
         pageCount: d.pageCount,
         uploadedAt: d.uploadedAt,
-        errorMessage: d.errorMessage
+        errorMessage: d.errorMessage,
+        contextCategory: d.contextCategory || 'institutional',
+        active: d.active !== false,
+        description: d.description || ''
       }))
     });
   } catch (error) {

@@ -232,8 +232,8 @@ export default function Dashboard() {
 
   // Table enhancements
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'card'
-  const [sortKey, setSortKey] = useState('name');
-  const [sortDir, setSortDir] = useState('asc');
+  const [sortKey, setSortKey] = useState('createdAt');
+  const [sortDir, setSortDir] = useState('desc');
   const [filterGrade, setFilterGrade] = useState('');
   const [filterIEP, setFilterIEP] = useState('');
   const [filterExceptionality, setFilterExceptionality] = useState('');
@@ -606,6 +606,12 @@ export default function Dashboard() {
         case 'age': cmp = (a.age || 0) - (b.age || 0); break;
         case 'grade': cmp = (a.gradeLevel || '').localeCompare(b.gradeLevel || ''); break;
         case 'iep': cmp = getIEPStatus(a).localeCompare(getIEPStatus(b)); break;
+        case 'createdAt': {
+          const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          cmp = ta - tb;
+          break;
+        }
         default: cmp = 0;
       }
       return sortDir === 'desc' ? -cmp : cmp;

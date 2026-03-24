@@ -7,7 +7,31 @@ import { generateEmbeddingsBatch } from '@/lib/embeddings';
 import { storeDocumentChunks } from '@/lib/vectorStore';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const BATCH_SIZE = 50; // Embeddings per batch to respect rate limits
+const BATCH_SIZE = 50;
+
+const CONTEXT_CATEGORIES = new Set(['institutional', 'student_evaluation', 'state_regulation']);
+
+async function extractTextFromUpload(file, filenameLower) {
+  const bytes = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(bytes);
+
+  if (filenameLower.endsWith('.pdf')) {
+    const { extractText, getDocumentProxy } = await import('unpdf');
+    const pdf = await getDocumentProxy(uint8Array);
+    const result = await extractText(pdf, { mergePages: true });
+    const text = (result?.text ?? '').trim();
+    return { text, pageCount: result?.totalPages ?? null };
+  }
+
+  if (filenameLower.endsWith('.docx')) {
+    const mammoth = await import('mammoth');
+    const { value } = await mammoth.extractRawText({ arrayBuffer: bytes });
+    const text = (value ?? '').trim();
+    return { text, pageCount: null };
+  }
+
+  return { text: '', pageCount: null };
+}
 
 export async function POST(request) {
   let documentId = null;
@@ -19,12 +43,17 @@ export async function POST(request) {
 
     const formData = await request.formData();
     const file = formData.get('file');
+    const categoryRaw = formData.get('contextCategory');
+    const contextCategory =
+      categoryRaw && CONTEXT_CATEGORIES.has(String(categoryRaw))
+        ? String(categoryRaw)
+        : 'institutional';
+    const descriptionRaw = formData.get('description');
+    const description =
+      typeof descriptionRaw === 'string' ? descriptionRaw.trim().slice(0, 2000) : '';
 
     if (!file || !(file instanceof Blob)) {
-      return NextResponse.json(
-        { success: false, message: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'No file provided' }, { status: 400 });
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -35,38 +64,40 @@ export async function POST(request) {
     }
 
     const filename = file.name || 'document.pdf';
-    if (!filename.toLowerCase().endsWith('.pdf')) {
+    const filenameLower = filename.toLowerCase();
+    if (!filenameLower.endsWith('.pdf') && !filenameLower.endsWith('.docx')) {
       return NextResponse.json(
-        { success: false, message: 'Only PDF files are supported' },
+        { success: false, message: 'Only PDF and DOCX files are supported' },
         { status: 400 }
       );
     }
 
     await connectDB();
 
+    const baseName = filename.replace(/\.(pdf|docx)$/i, '');
     const doc = await Document.create({
-      name: filename.replace(/\.pdf$/i, ''),
+      name: baseName,
       originalFilename: filename,
       createdBy: user._id,
-      status: 'processing'
+      status: 'processing',
+      contextCategory,
+      description,
     });
     documentId = doc._id;
 
-    const bytes = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(bytes);
-
-    const { extractText, getDocumentProxy } = await import('unpdf');
-    const pdf = await getDocumentProxy(uint8Array);
-    const result = await extractText(pdf, { mergePages: true });
-    const extractedText = (result?.text ?? '').trim();
+    const { text: extractedText, pageCount } = await extractTextFromUpload(file, filenameLower);
 
     if (!extractedText || extractedText.length < 10) {
       await Document.findByIdAndUpdate(documentId, {
         status: 'failed',
-        errorMessage: 'No text could be extracted from PDF. The PDF may be image-based (scanned) — try a text-based PDF or use OCR first.'
+        errorMessage:
+          'No text could be extracted. For PDFs, the file may be image-based (scanned). For DOCX, ensure it is not empty.',
       });
       return NextResponse.json(
-        { success: false, message: 'No text could be extracted from PDF. Try a text-based PDF.' },
+        {
+          success: false,
+          message: 'No text could be extracted. Try a text-based PDF or a DOCX with body text.',
+        },
         { status: 400 }
       );
     }
@@ -75,7 +106,7 @@ export async function POST(request) {
     if (chunks.length === 0) {
       await Document.findByIdAndUpdate(documentId, {
         status: 'failed',
-        errorMessage: 'No chunks produced from text'
+        errorMessage: 'No chunks produced from text',
       });
       return NextResponse.json(
         { success: false, message: 'No chunks produced from extracted text' },
@@ -94,16 +125,18 @@ export async function POST(request) {
       embeddings.push(...batchEmbeddings);
     }
 
-    const chunksWithEmbeddings = chunks.map((c, i) => ({
-      content: c.content,
-      embedding: embeddings[i],
-      chunkIndex: c.index
-    })).filter(c => c.embedding && Array.isArray(c.embedding) && c.embedding.length > 0);
+    const chunksWithEmbeddings = chunks
+      .map((c, i) => ({
+        content: c.content,
+        embedding: embeddings[i],
+        chunkIndex: c.index,
+      }))
+      .filter(c => c.embedding && Array.isArray(c.embedding) && c.embedding.length > 0);
 
     if (chunksWithEmbeddings.length === 0) {
       await Document.findByIdAndUpdate(documentId, {
         status: 'failed',
-        errorMessage: 'No valid embeddings produced'
+        errorMessage: 'No valid embeddings produced',
       });
       return NextResponse.json(
         { success: false, message: 'Failed to generate embeddings for document' },
@@ -116,7 +149,7 @@ export async function POST(request) {
     await Document.findByIdAndUpdate(documentId, {
       status: 'ready',
       chunkCount: chunksWithEmbeddings.length,
-      pageCount: result?.totalPages ?? null
+      pageCount: pageCount ?? 0,
     });
 
     return NextResponse.json({
@@ -124,7 +157,8 @@ export async function POST(request) {
       documentId: String(documentId),
       status: 'ready',
       chunkCount: chunksWithEmbeddings.length,
-      pageCount: result?.totalPages ?? null
+      pageCount: pageCount ?? null,
+      contextCategory,
     });
   } catch (error) {
     console.error('Document upload error:', error);
@@ -133,7 +167,7 @@ export async function POST(request) {
       try {
         await Document.findByIdAndUpdate(documentId, {
           status: 'failed',
-          errorMessage: error.message
+          errorMessage: error.message,
         });
       } catch (e) {
         console.error('Failed to update document status:', e);
