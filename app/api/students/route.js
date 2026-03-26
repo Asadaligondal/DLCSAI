@@ -5,6 +5,12 @@ import Goal from '@/models/Goal';
 import { protectRoute } from '@/lib/authMiddleware';
 import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 
+function optDate(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /**
  * GET /api/students
  * Get all students created by the logged-in user
@@ -74,7 +80,40 @@ export async function POST(request) {
 
     const user = authResult.user;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, dateOfBirth, disabilities, strengths, weaknesses, student_accommodations, studentNotes, state, instructionalSetting, performanceQuantitative, performanceNarrative, areaOfNeed } = body;
+    const {
+      name,
+      studentId,
+      gradeLevel,
+      age,
+      dateOfBirth,
+      disabilities,
+      strengths,
+      weaknesses,
+      student_accommodations,
+      studentNotes,
+      state,
+      instructionalSetting,
+      performanceQuantitative,
+      performanceNarrative,
+      areaOfNeed,
+      schoolName,
+      address,
+      parentGuardian1,
+      parentGuardian2,
+      primaryExceptionality,
+      relatedServicesTherapy,
+      otherExceptionalities,
+      originalMeetingPlanDate,
+      initiationDate,
+      durationDate,
+      reviewDueDate,
+      reevaluationDueDate,
+      amendmentDate,
+      previouslyAmended,
+      meetingPurpose,
+      domainsTransitionAreas,
+      associatedPlans,
+    } = body;
 
     // Validate required fields
     if (!name || !studentId || !gradeLevel || !age) {
@@ -120,6 +159,23 @@ export async function POST(request) {
       performanceQuantitative: performanceQuantitative || '',
       performanceNarrative: performanceNarrative || '',
       areaOfNeed: areaOfNeed || '',
+      schoolName: schoolName || '',
+      address: address || '',
+      parentGuardian1: parentGuardian1 || '',
+      parentGuardian2: parentGuardian2 || '',
+      primaryExceptionality: primaryExceptionality || '',
+      relatedServicesTherapy: relatedServicesTherapy || '',
+      otherExceptionalities: otherExceptionalities || '',
+      originalMeetingPlanDate: optDate(originalMeetingPlanDate),
+      initiationDate: optDate(initiationDate),
+      durationDate: optDate(durationDate),
+      reviewDueDate: optDate(reviewDueDate),
+      reevaluationDueDate: optDate(reevaluationDueDate),
+      amendmentDate: optDate(amendmentDate),
+      previouslyAmended: previouslyAmended || '',
+      meetingPurpose: meetingPurpose || '',
+      domainsTransitionAreas: domainsTransitionAreas || '',
+      associatedPlans: associatedPlans || '',
       createdBy: user._id
     });
 

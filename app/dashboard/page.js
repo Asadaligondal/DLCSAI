@@ -13,6 +13,20 @@ import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image 
 import QuickActions from './components/QuickActions';
 import ActivityFeed from './components/ActivityFeed';
 
+/** Map AI-extracted date text to YYYY-MM-DD for date inputs. */
+function normalizeExtractedDate(val) {
+  if (!val || val === 'add manually') return null;
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const mm = m[1].padStart(2, '0');
+    const dd = m[2].padStart(2, '0');
+    return `${m[3]}-${mm}-${dd}`;
+  }
+  return null;
+}
+
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
   'Deaf or Hard-of-Hearing (H)',
@@ -267,7 +281,24 @@ export default function Dashboard() {
     performanceQuantitative: '',
     performanceNarrative: '',
     areaOfNeed: '',
-    studentNotes: ''
+    studentNotes: '',
+    schoolName: '',
+    address: '',
+    parentGuardian1: '',
+    parentGuardian2: '',
+    primaryExceptionality: '',
+    relatedServicesTherapy: '',
+    otherExceptionalities: '',
+    originalMeetingPlanDate: '',
+    initiationDate: '',
+    durationDate: '',
+    reviewDueDate: '',
+    reevaluationDueDate: '',
+    amendmentDate: '',
+    previouslyAmended: '',
+    meetingPurpose: '',
+    domainsTransitionAreas: '',
+    associatedPlans: '',
   });
 
   const calcAgeFromDob = (dob) => {
@@ -341,7 +372,24 @@ export default function Dashboard() {
       performanceQuantitative: '',
       performanceNarrative: '',
       areaOfNeed: '',
-      studentNotes: ''
+      studentNotes: '',
+      schoolName: '',
+      address: '',
+      parentGuardian1: '',
+      parentGuardian2: '',
+      primaryExceptionality: '',
+      relatedServicesTherapy: '',
+      otherExceptionalities: '',
+      originalMeetingPlanDate: '',
+      initiationDate: '',
+      durationDate: '',
+      reviewDueDate: '',
+      reevaluationDueDate: '',
+      amendmentDate: '',
+      previouslyAmended: '',
+      meetingPurpose: '',
+      domainsTransitionAreas: '',
+      associatedPlans: '',
     });
     setWizardStep(1);
     setShowModal(true);
@@ -349,6 +397,7 @@ export default function Dashboard() {
 
   const handleEditStudent = (student) => {
     setEditingStudent(student);
+    const toDateInput = (d) => (d ? new Date(d).toISOString().split('T')[0] : '');
     const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '';
     const ageFromDob = dob ? calcAgeFromDob(dob) : null;
     setFormData({
@@ -368,7 +417,24 @@ export default function Dashboard() {
       performanceQuantitative: student.performanceQuantitative || '',
       performanceNarrative: student.performanceNarrative || '',
       areaOfNeed: student.areaOfNeed || '',
-      studentNotes: student.studentNotes || ''
+      studentNotes: student.studentNotes || '',
+      schoolName: student.schoolName || '',
+      address: student.address || '',
+      parentGuardian1: student.parentGuardian1 || '',
+      parentGuardian2: student.parentGuardian2 || '',
+      primaryExceptionality: student.primaryExceptionality || '',
+      relatedServicesTherapy: student.relatedServicesTherapy || '',
+      otherExceptionalities: student.otherExceptionalities || '',
+      originalMeetingPlanDate: toDateInput(student.originalMeetingPlanDate),
+      initiationDate: toDateInput(student.initiationDate),
+      durationDate: toDateInput(student.durationDate),
+      reviewDueDate: toDateInput(student.reviewDueDate),
+      reevaluationDueDate: toDateInput(student.reevaluationDueDate),
+      amendmentDate: toDateInput(student.amendmentDate),
+      previouslyAmended: student.previouslyAmended || '',
+      meetingPurpose: student.meetingPurpose || '',
+      domainsTransitionAreas: student.domainsTransitionAreas || '',
+      associatedPlans: student.associatedPlans || '',
     });
     if (student.student_accommodations) {
       setAccommodations(student.student_accommodations);
@@ -395,7 +461,24 @@ export default function Dashboard() {
       performanceQuantitative: '',
       performanceNarrative: '',
       areaOfNeed: '',
-      studentNotes: ''
+      studentNotes: '',
+      schoolName: '',
+      address: '',
+      parentGuardian1: '',
+      parentGuardian2: '',
+      primaryExceptionality: '',
+      relatedServicesTherapy: '',
+      otherExceptionalities: '',
+      originalMeetingPlanDate: '',
+      initiationDate: '',
+      durationDate: '',
+      reviewDueDate: '',
+      reevaluationDueDate: '',
+      amendmentDate: '',
+      previouslyAmended: '',
+      meetingPurpose: '',
+      domainsTransitionAreas: '',
+      associatedPlans: '',
     });
   };
 
@@ -514,7 +597,30 @@ export default function Dashboard() {
             instructionalSetting: normalizedInstructional || prev.instructionalSetting,
             performanceQuantitative: normalizedQuant || prev.performanceQuantitative,
             performanceNarrative: normalizedNarr || prev.performanceNarrative,
-            areaOfNeed: extracted.areaOfNeed !== 'add manually' ? extracted.areaOfNeed : prev.areaOfNeed
+            areaOfNeed: extracted.areaOfNeed !== 'add manually' ? extracted.areaOfNeed : prev.areaOfNeed,
+            schoolName: extracted.schoolName !== 'add manually' ? extracted.schoolName : prev.schoolName,
+            address: extracted.address !== 'add manually' ? extracted.address : prev.address,
+            parentGuardian1: extracted.parentGuardian1 !== 'add manually' ? extracted.parentGuardian1 : prev.parentGuardian1,
+            parentGuardian2: extracted.parentGuardian2 !== 'add manually' ? extracted.parentGuardian2 : prev.parentGuardian2,
+            primaryExceptionality:
+              extracted.primaryExceptionality !== 'add manually' ? extracted.primaryExceptionality : prev.primaryExceptionality,
+            relatedServicesTherapy:
+              extracted.relatedServicesTherapy !== 'add manually' ? extracted.relatedServicesTherapy : prev.relatedServicesTherapy,
+            otherExceptionalities:
+              extracted.otherExceptionalities !== 'add manually' ? extracted.otherExceptionalities : prev.otherExceptionalities,
+            originalMeetingPlanDate:
+              normalizeExtractedDate(extracted.originalMeetingPlanDate) ?? prev.originalMeetingPlanDate,
+            initiationDate: normalizeExtractedDate(extracted.initiationDate) ?? prev.initiationDate,
+            durationDate: normalizeExtractedDate(extracted.durationDate) ?? prev.durationDate,
+            reviewDueDate: normalizeExtractedDate(extracted.reviewDueDate) ?? prev.reviewDueDate,
+            reevaluationDueDate: normalizeExtractedDate(extracted.reevaluationDueDate) ?? prev.reevaluationDueDate,
+            amendmentDate: normalizeExtractedDate(extracted.amendmentDate) ?? prev.amendmentDate,
+            previouslyAmended:
+              extracted.previouslyAmended !== 'add manually' ? extracted.previouslyAmended : prev.previouslyAmended,
+            meetingPurpose: extracted.meetingPurpose !== 'add manually' ? extracted.meetingPurpose : prev.meetingPurpose,
+            domainsTransitionAreas:
+              extracted.domainsTransitionAreas !== 'add manually' ? extracted.domainsTransitionAreas : prev.domainsTransitionAreas,
+            associatedPlans: extracted.associatedPlans !== 'add manually' ? extracted.associatedPlans : prev.associatedPlans,
           };
         });
 
@@ -548,7 +654,14 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...formData, age: parseInt(formData.age) };
+      const ageNum = formData.dateOfBirth
+        ? calcAgeFromDob(formData.dateOfBirth).numeric
+        : parseInt(formData.age, 10);
+      const payload = {
+        ...formData,
+        age: typeof ageNum === 'number' && !Number.isNaN(ageNum) ? ageNum : parseInt(formData.age, 10),
+        dateOfBirth: formData.dateOfBirth || null,
+      };
       if (accommodations) payload.student_accommodations = accommodations;
 
       if (editingStudent) {
@@ -1120,7 +1233,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Form grid */}
+                {/* Form grid — matches Florida-style header: Student/School, then ID / Grade / DOB / Age */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-2">Name <span className="text-xs text-slate-500 font-normal">— write only initials</span></label>
@@ -1132,7 +1245,19 @@ export default function Dashboard() {
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">School</label>
+                    <input
+                      type="text"
+                      value={formData.schoolName}
+                      onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="School or campus"
+                    />
+                  </div>
+                </div>
 
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-2">Student ID</label>
                     <input
@@ -1143,31 +1268,6 @@ export default function Dashboard() {
                       required
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Date of Birth</label>
-                    <input
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => {
-                        const dob = e.target.value;
-                        const { numeric } = calcAgeFromDob(dob);
-                        setFormData({ ...formData, dateOfBirth: dob, age: numeric !== '' ? String(numeric) : '' });
-                      }}
-                      max={new Date().toISOString().split('T')[0]}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      required
-                    />
-                    {formData.dateOfBirth && (() => {
-                      const { years, months } = calcAgeFromDob(formData.dateOfBirth);
-                      return (
-                        <p className="mt-1.5 text-xs text-slate-500">
-                          Age: <span className="font-semibold text-slate-700">{years} yr{years !== 1 ? 's' : ''}{months > 0 ? `, ${months} mo` : ''}</span>
-                        </p>
-                      );
-                    })()}
-                  </div>
-
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-2">Grade Level</label>
                     <select
@@ -1191,6 +1291,191 @@ export default function Dashboard() {
                       <option>11th</option>
                       <option>12th</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => {
+                        const dob = e.target.value;
+                        const { numeric } = calcAgeFromDob(dob);
+                        setFormData({ ...formData, dateOfBirth: dob, age: numeric !== '' ? String(numeric) : '' });
+                      }}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
+                    {formData.dateOfBirth ? (
+                      <div className="w-full h-11 px-3 border border-gray-200 rounded-md bg-slate-50 text-sm text-slate-900 flex items-center">
+                        {(() => {
+                          const { years } = calcAgeFromDob(formData.dateOfBirth);
+                          return `${years} Year(s)`;
+                        })()}
+                      </div>
+                    ) : (
+                      <input
+                        type="number"
+                        min={0}
+                        max={30}
+                        value={formData.age}
+                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Contact and exceptionalities (detail)</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Address</label>
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="Mailing or home address"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian</label>
+                      <input
+                        type="text"
+                        value={formData.parentGuardian1}
+                        onChange={(e) => setFormData({ ...formData, parentGuardian1: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian (second)</label>
+                      <input
+                        type="text"
+                        value={formData.parentGuardian2}
+                        onChange={(e) => setFormData({ ...formData, parentGuardian2: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                      <input
+                        type="text"
+                        value={formData.primaryExceptionality}
+                        onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="e.g. Specific Learning Disability"
+                      />
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Other exceptionalities</label>
+                      <input
+                        type="text"
+                        value={formData.otherExceptionalities}
+                        onChange={(e) => setFormData({ ...formData, otherExceptionalities: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="e.g. ADHD"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Related services / therapy</label>
+                      <textarea
+                        value={formData.relatedServicesTherapy}
+                        onChange={(e) => setFormData({ ...formData, relatedServicesTherapy: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 resize-y"
+                        placeholder="e.g. Speech, OT, counseling"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">IEP key dates</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {[
+                      ['originalMeetingPlanDate', 'Original meeting / plan date'],
+                      ['initiationDate', 'Initiation date'],
+                      ['durationDate', 'Duration date'],
+                      ['reviewDueDate', 'Review due date'],
+                      ['reevaluationDueDate', 'Reevaluation due date'],
+                    ].map(([key, label]) => (
+                      <div key={key}>
+                        <label className="block text-xs font-medium text-slate-700 mb-2">{label}</label>
+                        <input
+                          type="date"
+                          value={formData[key]}
+                          onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                          className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Amendment and meeting</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Amendment date</label>
+                      <input
+                        type="date"
+                        value={formData.amendmentDate}
+                        onChange={(e) => setFormData({ ...formData, amendmentDate: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Previously amended</label>
+                      <select
+                        value={formData.previouslyAmended}
+                        onChange={(e) => setFormData({ ...formData, previouslyAmended: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      >
+                        <option value="">—</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Meeting purpose</label>
+                      <input
+                        type="text"
+                        value={formData.meetingPurpose}
+                        onChange={(e) => setFormData({ ...formData, meetingPurpose: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="e.g. annual review, amendment"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Program</p>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Domain(s) / transition service activity area(s)</label>
+                      <textarea
+                        value={formData.domainsTransitionAreas}
+                        onChange={(e) => setFormData({ ...formData, domainsTransitionAreas: e.target.value })}
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 resize-y"
+                        placeholder="Comma-separated"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Associated plans</label>
+                      <input
+                        type="text"
+                        value={formData.associatedPlans}
+                        onChange={(e) => setFormData({ ...formData, associatedPlans: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      />
+                    </div>
                   </div>
                 </div>
 

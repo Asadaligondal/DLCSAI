@@ -23,6 +23,26 @@ import PipelineSelector from './components/PipelineSelector';
 import PipelineMetricsPanel from './components/PipelineMetricsPanel';
 // GoalsCard removed from main layout; custom goals are managed via StudentInfoHeader modal
 
+function calcAgeFromDob(dob) {
+  if (!dob) return { years: '', months: '', numeric: '' };
+  const birth = new Date(dob);
+  const now = new Date();
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (now.getDate() < birth.getDate()) {
+    months--;
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+  }
+  return { years, months, numeric: years };
+}
+
 const DISABILITIES_OPTIONS = [
   'Autism Spectrum Disorder (P)',
   'Deaf or Hard-of-Hearing (H)',
@@ -105,7 +125,25 @@ export default function StudentDetail() {
     strengthsOther: '',
     weaknesses: [],
     weaknessesOther: '',
-    studentNotes: ''
+    studentNotes: '',
+    schoolName: '',
+    address: '',
+    parentGuardian1: '',
+    parentGuardian2: '',
+    primaryExceptionality: '',
+    relatedServicesTherapy: '',
+    otherExceptionalities: '',
+    dateOfBirth: '',
+    originalMeetingPlanDate: '',
+    initiationDate: '',
+    durationDate: '',
+    reviewDueDate: '',
+    reevaluationDueDate: '',
+    amendmentDate: '',
+    previouslyAmended: '',
+    meetingPurpose: '',
+    domainsTransitionAreas: '',
+    associatedPlans: '',
   });
 
   useEffect(() => {
@@ -141,17 +179,38 @@ export default function StudentDetail() {
         .filter(g => g && typeof g === 'object' && g?.title)
         .map(g => ({ title: g.title, _id: g._id, description: g.description, category: g.category }));
       setCustomGoals(goalsForRag);
+      const toDateInput = (d) => (d ? new Date(d).toISOString().split('T')[0] : '');
+      const dob = studentData.dateOfBirth ? toDateInput(studentData.dateOfBirth) : '';
+      const ageFromDob = dob ? calcAgeFromDob(dob) : null;
       setFormData({
         name: studentData.name,
         studentId: studentData.studentId,
-        age: studentData.age,
+        age: ageFromDob ? String(ageFromDob.numeric) : studentData.age != null ? String(studentData.age) : '',
         gradeLevel: studentData.gradeLevel,
+        dateOfBirth: dob,
         disabilities: studentData.disabilities || [],
         strengths: studentData.strengths || [],
         strengthsOther: studentData.strengthsOther || '',
         weaknesses: studentData.weaknesses || [],
         weaknessesOther: studentData.weaknessesOther || '',
-        studentNotes: studentData.studentNotes || ''
+        studentNotes: studentData.studentNotes || '',
+        schoolName: studentData.schoolName || '',
+        address: studentData.address || '',
+        parentGuardian1: studentData.parentGuardian1 || '',
+        parentGuardian2: studentData.parentGuardian2 || '',
+        primaryExceptionality: studentData.primaryExceptionality || '',
+        relatedServicesTherapy: studentData.relatedServicesTherapy || '',
+        otherExceptionalities: studentData.otherExceptionalities || '',
+        originalMeetingPlanDate: toDateInput(studentData.originalMeetingPlanDate),
+        initiationDate: toDateInput(studentData.initiationDate),
+        durationDate: toDateInput(studentData.durationDate),
+        reviewDueDate: toDateInput(studentData.reviewDueDate),
+        reevaluationDueDate: toDateInput(studentData.reevaluationDueDate),
+        amendmentDate: toDateInput(studentData.amendmentDate),
+        previouslyAmended: studentData.previouslyAmended || '',
+        meetingPurpose: studentData.meetingPurpose || '',
+        domainsTransitionAreas: studentData.domainsTransitionAreas || '',
+        associatedPlans: studentData.associatedPlans || '',
       });
 
       // Load existing IEP plan if available
@@ -267,19 +326,40 @@ export default function StudentDetail() {
     const token = localStorage.getItem('token');
 
     try {
+      const ageNum = formData.dateOfBirth
+        ? calcAgeFromDob(formData.dateOfBirth).numeric
+        : parseInt(formData.age, 10);
       await axios.put(
         `/api/students/${id}`,
         {
           name: formData.name,
           studentId: formData.studentId,
-          age: parseInt(formData.age),
+          age: typeof ageNum === 'number' && !Number.isNaN(ageNum) ? ageNum : parseInt(formData.age, 10),
           gradeLevel: formData.gradeLevel,
+          dateOfBirth: formData.dateOfBirth || null,
           disabilities: formData.disabilities,
           strengths: formData.strengths,
           strengthsOther: formData.strengthsOther,
           weaknesses: formData.weaknesses,
           weaknessesOther: formData.weaknessesOther,
-          studentNotes: formData.studentNotes
+          studentNotes: formData.studentNotes,
+          schoolName: formData.schoolName,
+          address: formData.address,
+          parentGuardian1: formData.parentGuardian1,
+          parentGuardian2: formData.parentGuardian2,
+          primaryExceptionality: formData.primaryExceptionality,
+          relatedServicesTherapy: formData.relatedServicesTherapy,
+          otherExceptionalities: formData.otherExceptionalities,
+          originalMeetingPlanDate: formData.originalMeetingPlanDate || null,
+          initiationDate: formData.initiationDate || null,
+          durationDate: formData.durationDate || null,
+          reviewDueDate: formData.reviewDueDate || null,
+          reevaluationDueDate: formData.reevaluationDueDate || null,
+          amendmentDate: formData.amendmentDate || null,
+          previouslyAmended: formData.previouslyAmended,
+          meetingPurpose: formData.meetingPurpose,
+          domainsTransitionAreas: formData.domainsTransitionAreas,
+          associatedPlans: formData.associatedPlans,
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -839,11 +919,35 @@ export default function StudentDetail() {
         return new Date(student.dateOfBirth).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
       })();
       const ageStr = student.dateOfBirth
-        ? (() => { const bd = new Date(student.dateOfBirth); const now = new Date(); let yrs = now.getFullYear() - bd.getFullYear(); let mos = now.getMonth() - bd.getMonth(); if (mos < 0) { yrs--; mos += 12; } return `${yrs} Year(s) & ${mos} Month(s)`; })()
-        : (student.age ? `${student.age} Year(s)` : '—');
-      const primaryExc = student.disabilities?.[0] || '—';
-      const otherExc = student.disabilities?.slice(1).join(', ') || '—';
-      const domains = [...new Set((editablePlan.annual_goals || []).map(g => (g && typeof g === 'object' && g.domain) ? g.domain : null).filter(Boolean))].join(', ') || '—';
+        ? (() => {
+            const bd = new Date(student.dateOfBirth);
+            const now = new Date();
+            let yrs = now.getFullYear() - bd.getFullYear();
+            if (now.getMonth() < bd.getMonth() || (now.getMonth() === bd.getMonth() && now.getDate() < bd.getDate())) yrs--;
+            return `${yrs} Year(s)`;
+          })()
+        : (student.age != null ? `${student.age} Year(s)` : '—');
+      const pdfDate = (d) => {
+        if (!d) return '—';
+        const raw = String(d);
+        const m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+        const dt = new Date(d);
+        return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+      };
+      const primaryExc =
+        (student.primaryExceptionality && String(student.primaryExceptionality).trim()) ||
+        student.disabilities?.[0] ||
+        '—';
+      const otherExc =
+        (student.otherExceptionalities && String(student.otherExceptionalities).trim())
+          ? student.otherExceptionalities
+          : (student.primaryExceptionality && String(student.primaryExceptionality).trim())
+            ? (student.disabilities || []).join(', ') || '—'
+            : student.disabilities?.slice(1).join(', ') || '—';
+      const domainsFromGoals = [...new Set((editablePlan.annual_goals || []).map(g => (g && typeof g === 'object' && g.domain) ? g.domain : null).filter(Boolean))].join(', ') || '—';
+      const domains =
+        (student.domainsTransitionAreas && String(student.domainsTransitionAreas).trim()) || domainsFromGoals;
 
       // ── Header ──
       pdf.setFont('helvetica', 'bold').setFontSize(11).setTextColor(0, 0, 0);
@@ -861,31 +965,67 @@ export default function StudentDetail() {
       const rH = 6;
       const rH2 = 8;
 
-      drawRow([{ text: `Student: ${student.name || '—'}`, w: cW * 0.5, b: true }, { text: `School: —`, w: cW * 0.5 }], y, rH);
+      drawRow(
+        [
+          { text: `Student: ${student.name || '—'}`, w: cW * 0.5, b: true },
+          { text: `School: ${student.schoolName || '—'}`, w: cW * 0.5 },
+        ],
+        y,
+        rH
+      );
       y += rH;
       drawRow([{ text: `Student ID: ${student.studentId || '—'}`, w: col1, b: true }, { text: `Grade: ${student.gradeLevel || '—'}`, w: col2 }, { text: `DOB: ${dobStr}`, w: col3 }, { text: `Age: ${ageStr}`, w: col4 }], y, rH);
       y += rH;
-      drawRow([{ text: `Address: —`, w: cW }], y, rH);
+      drawRow([{ text: `Address: ${student.address || '—'}`, w: cW }], y, rH);
       y += rH;
-      drawRow([{ text: `Parent/Guardian: —`, w: cW * 0.5 }, { text: `Parent/Guardian: —`, w: cW * 0.5 }], y, rH);
+      drawRow(
+        [
+          { text: `Parent/Guardian: ${student.parentGuardian1 || '—'}`, w: cW * 0.5 },
+          { text: `Parent/Guardian: ${student.parentGuardian2 || '—'}`, w: cW * 0.5 },
+        ],
+        y,
+        rH
+      );
       y += rH;
-      drawRow([{ text: `Original Meeting Date/Plan Date: —`, w: cW * 0.34 }, { text: `Initiation Date: —`, w: cW * 0.33 }, { text: `Duration Date: —`, w: cW * 0.33 }], y, rH);
+      drawRow(
+        [
+          { text: `Original Meeting Date/Plan Date: ${pdfDate(student.originalMeetingPlanDate)}`, w: cW * 0.34 },
+          { text: `Initiation Date: ${pdfDate(student.initiationDate)}`, w: cW * 0.33 },
+          { text: `Duration Date: ${pdfDate(student.durationDate)}`, w: cW * 0.33 },
+        ],
+        y,
+        rH
+      );
       y += rH;
-      drawRow([{ text: `Review Due Date: —`, w: cW * 0.5 }, { text: `Reevaluation Due Date: —`, w: cW * 0.5 }], y, rH);
+      drawRow(
+        [
+          { text: `Review Due Date: ${pdfDate(student.reviewDueDate)}`, w: cW * 0.5 },
+          { text: `Reevaluation Due Date: ${pdfDate(student.reevaluationDueDate)}`, w: cW * 0.5 },
+        ],
+        y,
+        rH
+      );
       y += rH;
       drawRow([{ text: `Primary Exceptionality: ${primaryExc}`, w: cW, b: true }], y, rH);
       y += rH;
       drawRow([{ text: `Other Exceptionalities: ${otherExc}`, w: cW }], y, rH);
       y += rH;
-      drawRow([{ text: `Related Services/Therapy(ies): —`, w: cW }], y, rH);
+      drawRow([{ text: `Related Services/Therapy(ies): ${student.relatedServicesTherapy || '—'}`, w: cW }], y, rH);
       y += rH;
-      drawRow([{ text: `Amendment Date: —`, w: cW * 0.5 }, { text: `Previously Amended: —`, w: cW * 0.5 }], y, rH);
+      drawRow(
+        [
+          { text: `Amendment Date: ${pdfDate(student.amendmentDate)}`, w: cW * 0.5 },
+          { text: `Previously Amended: ${student.previouslyAmended || '—'}`, w: cW * 0.5 },
+        ],
+        y,
+        rH
+      );
       y += rH;
-      drawRow([{ text: `Meeting Purpose: —`, w: cW }], y, rH2);
+      drawRow([{ text: `Meeting Purpose: ${student.meetingPurpose || '—'}`, w: cW }], y, rH2);
       y += rH2;
       drawRow([{ text: `Domain(s)/Transition Service Activity Area(s): ${domains}`, w: cW, b: true }], y, rH);
       y += rH;
-      drawRow([{ text: `Associated Plans: —`, w: cW }], y, rH);
+      drawRow([{ text: `Associated Plans: ${student.associatedPlans || '—'}`, w: cW }], y, rH);
       y += rH + 6;
 
       // ── PLAAFP Section ──

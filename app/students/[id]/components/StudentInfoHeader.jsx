@@ -32,6 +32,46 @@ export default function StudentInfoHeader({
   const [showCustomGoalDetails, setShowCustomGoalDetails] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const calcAgeFromDob = (dob) => {
+    if (!dob) return { years: '', months: '', numeric: '' };
+    const birth = new Date(dob);
+    const now = new Date();
+    let years = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth() - birth.getMonth();
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    if (now.getDate() < birth.getDate()) {
+      months--;
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+    }
+    return { years, months, numeric: years };
+  };
+
+  const fmtViewDate = (v) => {
+    if (!v) return '—';
+    const raw = String(v);
+    const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+    const dt = new Date(v);
+    return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const dobForDisplay =
+    formData.dateOfBirth ||
+    (student?.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '');
+  const ageDisplayView = dobForDisplay
+    ? `${calcAgeFromDob(dobForDisplay).years} Year(s)`
+    : formData.age !== '' && formData.age != null
+      ? `${formData.age} Year(s)`
+      : student?.age != null
+        ? `${student.age} Year(s)`
+        : '—';
+
   const openAccommodations = async () => {
     // try to fetch existing accommodations for this student
     if (student && student._id) {
@@ -116,26 +156,122 @@ export default function StudentInfoHeader({
             >
             <div className="overflow-hidden">
             <div className={`px-5 pb-5 pt-0 border-t border-slate-100 transition-opacity duration-300 ease-in-out ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="col-span-2 grid grid-cols-2 gap-3">
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800">{formData.name || student?.name || '—'}</div>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.name || student?.name || '—'}</div>
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">School</label>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.schoolName || student?.schoolName || '—'}</div>
+                </div>
+              </div>
 
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Student ID</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800">{formData.studentId || student?.studentId || '—'}</div>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.studentId || student?.studentId || '—'}</div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Age</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800">{formData.age || student?.age || '—'}</div>
-                </div>
-
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Grade</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800">{formData.gradeLevel || student?.gradeLevel || '—'}</div>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.gradeLevel || student?.gradeLevel || '—'}</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">DOB</label>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{fmtViewDate(dobForDisplay)}</div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Age</label>
+                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{ageDisplayView}</div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Contact and exceptionalities (detail)</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Address</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.address || student?.address || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Parent / Guardian</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.parentGuardian1 || student?.parentGuardian1 || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Parent / Guardian (second)</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.parentGuardian2 || student?.parentGuardian2 || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Primary exceptionality</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.primaryExceptionality || student?.primaryExceptionality || '—'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Other exceptionalities</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.otherExceptionalities || student?.otherExceptionalities || '—'}</div>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Related services / therapy</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 whitespace-pre-wrap min-h-[38px]">{formData.relatedServicesTherapy || student?.relatedServicesTherapy || '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">IEP key dates</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    ['originalMeetingPlanDate', 'Original meeting / plan date'],
+                    ['initiationDate', 'Initiation date'],
+                    ['durationDate', 'Duration date'],
+                    ['reviewDueDate', 'Review due date'],
+                    ['reevaluationDueDate', 'Reevaluation due date'],
+                  ].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                      <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
+                        {fmtViewDate(formData[key] || (student?.[key] ? new Date(student[key]).toISOString().split('T')[0] : ''))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Amendment and meeting</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Amendment date</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
+                      {fmtViewDate(formData.amendmentDate || (student?.amendmentDate ? new Date(student.amendmentDate).toISOString().split('T')[0] : ''))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Previously amended</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
+                      {formData.previouslyAmended || student?.previouslyAmended || '—'}
+                    </div>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Meeting purpose</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.meetingPurpose || student?.meetingPurpose || '—'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Program</div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Domain(s) / transition service activity area(s)</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 whitespace-pre-wrap min-h-[38px]">
+                      {formData.domainsTransitionAreas || student?.domainsTransitionAreas || '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Associated plans</label>
+                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.associatedPlans || student?.associatedPlans || '—'}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -299,44 +435,251 @@ export default function StudentInfoHeader({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Name <span className="text-xs text-slate-500 font-normal">— write only initials</span></label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">School</label>
+                  <input
+                    type="text"
+                    value={formData.schoolName || ''}
+                    onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    placeholder="School or campus"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Student ID</label>
                   <input
                     type="text"
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                  <input
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Grade Level</label>
+                  <select
                     value={formData.gradeLevel}
                     onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                  >
+                    <option value="">Select grade...</option>
+                    <option>KG</option>
+                    <option>1st</option>
+                    <option>2nd</option>
+                    <option>3rd</option>
+                    <option>4th</option>
+                    <option>5th</option>
+                    <option>6th</option>
+                    <option>7th</option>
+                    <option>8th</option>
+                    <option>9th</option>
+                    <option>10th</option>
+                    <option>11th</option>
+                    <option>12th</option>
+                    {formData.gradeLevel &&
+                      !['KG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'].includes(
+                        formData.gradeLevel
+                      ) && (
+                        <option value={formData.gradeLevel}>{formData.gradeLevel}</option>
+                      )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={formData.dateOfBirth || ''}
+                    onChange={(e) => {
+                      const dob = e.target.value;
+                      const { numeric } = calcAgeFromDob(dob);
+                      setFormData({ ...formData, dateOfBirth: dob, age: numeric !== '' ? String(numeric) : '' });
+                    }}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
+                  {formData.dateOfBirth ? (
+                    <div className="w-full h-11 px-3 border border-gray-200 rounded-md bg-slate-50 text-sm text-slate-900 flex items-center">
+                      {(() => {
+                        const { years } = calcAgeFromDob(formData.dateOfBirth);
+                        return `${years} Year(s)`;
+                      })()}
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      min={0}
+                      max={30}
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      required
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Contact and exceptionalities (detail)</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Address</label>
+                    <input
+                      type="text"
+                      value={formData.address || ''}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="Mailing or home address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian</label>
+                    <input
+                      type="text"
+                      value={formData.parentGuardian1 || ''}
+                      onChange={(e) => setFormData({ ...formData, parentGuardian1: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian (second)</label>
+                    <input
+                      type="text"
+                      value={formData.parentGuardian2 || ''}
+                      onChange={(e) => setFormData({ ...formData, parentGuardian2: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                    <input
+                      type="text"
+                      value={formData.primaryExceptionality || ''}
+                      onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="e.g. Specific Learning Disability"
+                    />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Other exceptionalities</label>
+                    <input
+                      type="text"
+                      value={formData.otherExceptionalities || ''}
+                      onChange={(e) => setFormData({ ...formData, otherExceptionalities: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="e.g. ADHD"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Related services / therapy</label>
+                    <textarea
+                      value={formData.relatedServicesTherapy || ''}
+                      onChange={(e) => setFormData({ ...formData, relatedServicesTherapy: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 resize-y"
+                      placeholder="e.g. Speech, OT, counseling"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">IEP key dates</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    ['originalMeetingPlanDate', 'Original meeting / plan date'],
+                    ['initiationDate', 'Initiation date'],
+                    ['durationDate', 'Duration date'],
+                    ['reviewDueDate', 'Review due date'],
+                    ['reevaluationDueDate', 'Reevaluation due date'],
+                  ].map(([key, label]) => (
+                    <div key={key}>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">{label}</label>
+                      <input
+                        type="date"
+                        value={formData[key] || ''}
+                        onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Amendment and meeting</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Amendment date</label>
+                    <input
+                      type="date"
+                      value={formData.amendmentDate || ''}
+                      onChange={(e) => setFormData({ ...formData, amendmentDate: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Previously amended</label>
+                    <select
+                      value={formData.previouslyAmended || ''}
+                      onChange={(e) => setFormData({ ...formData, previouslyAmended: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    >
+                      <option value="">—</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Meeting purpose</label>
+                    <input
+                      type="text"
+                      value={formData.meetingPurpose || ''}
+                      onChange={(e) => setFormData({ ...formData, meetingPurpose: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="e.g. annual review, amendment"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Program</p>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Domain(s) / transition service activity area(s)</label>
+                    <textarea
+                      value={formData.domainsTransitionAreas || ''}
+                      onChange={(e) => setFormData({ ...formData, domainsTransitionAreas: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 resize-y"
+                      placeholder="Comma-separated"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Associated plans</label>
+                    <input
+                      type="text"
+                      value={formData.associatedPlans || ''}
+                      onChange={(e) => setFormData({ ...formData, associatedPlans: e.target.value })}
+                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                    />
+                  </div>
                 </div>
               </div>
 

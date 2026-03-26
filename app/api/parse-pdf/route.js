@@ -23,6 +23,23 @@ const EXTRACTION_PROMPT = `You are a Data Extraction Assistant. Extract the foll
 - performanceQuantitative (return a concise phrase describing quantitative level)
 - performanceNarrative (return a concise sentence summarizing performance)
 - areaOfNeed (academic areas needing support: Reading, Math, Writing, etc.)
+- schoolName (school or campus name if listed)
+- address (full street/city line or mailing address if present)
+- parentGuardian1 (first parent/guardian name or label if listed)
+- parentGuardian2 (second parent/guardian if listed)
+- primaryExceptionality (primary disability category label, e.g. Specific Learning Disability, if clearly stated)
+- relatedServicesTherapy (comma-separated related services such as Speech, OT, PT, Counseling if listed)
+- otherExceptionalities (comma-separated labels for secondary exceptionalities, e.g. ADHD, if distinct from primary)
+- originalMeetingPlanDate (ISO date YYYY-MM-DD if found)
+- initiationDate (ISO date YYYY-MM-DD if found)
+- durationDate (ISO date YYYY-MM-DD if found)
+- reviewDueDate (ISO date YYYY-MM-DD if found)
+- reevaluationDueDate (ISO date YYYY-MM-DD if found)
+- amendmentDate (ISO date YYYY-MM-DD if found)
+- previouslyAmended (short text: Yes, No, or brief note if stated)
+- meetingPurpose (short phrase if stated, e.g. annual review, amendment)
+- domainsTransitionAreas (comma-separated domains or transition areas if listed)
+- associatedPlans (short text if listed)
 
 Special handling for performance fields:
 - If the document contains long or descriptive passages for current performance, produce concise, normalized outputs:
@@ -31,7 +48,8 @@ Special handling for performance fields:
 
 Rules:
 - Return ONLY valid JSON with these exact field names.
-- For disabilities, strengths, weaknesses, and areaOfNeed, combine multiple items into a single comma-separated string (e.g., "ADHD, Dyslexia" or "Reading, Math").
+- For disabilities, strengths, weaknesses, areaOfNeed, relatedServicesTherapy, and otherExceptionalities, combine multiple items into a single comma-separated string when needed (e.g., "ADHD, Dyslexia" or "Reading, Math").
+- For any date field above, use YYYY-MM-DD only when a clear calendar date appears; otherwise use "add manually".
 - If a field is not found in the document, set it to the exact string "add manually" (lowercase).
 - Do not leave any field as an empty string - use "add manually" for missing data.
 - For performanceQuantitative and performanceNarrative, prefer concise normalized values as described above.
@@ -111,7 +129,7 @@ export async function POST(request) {
       model: 'gpt-4o-mini',
       messages,
       temperature: 0.1,
-      max_tokens: 1500
+      max_tokens: 2000
     });
 
     const responseText = completion.choices[0]?.message?.content || '{}';

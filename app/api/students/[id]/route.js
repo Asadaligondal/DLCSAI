@@ -5,6 +5,13 @@ import '@/models/Goal';
 import { protectRoute } from '@/lib/authMiddleware';
 import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 
+function optDate(v) {
+  if (v === undefined) return undefined;
+  if (v === null || v === '') return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /**
  * GET /api/students/[id]
  * Get a specific student by ID
@@ -88,7 +95,43 @@ export async function PUT(request, { params }) {
     const user = authResult.user;
     const { id } = await params;
     const body = await request.json();
-    const { name, studentId, gradeLevel, age, dateOfBirth, disabilities, strengths, weaknesses, assignedGoals, annualGoals, servicesRecommendations, student_accommodations, studentNotes, state, instructionalSetting, performanceQuantitative, performanceNarrative, areaOfNeed } = body;
+    const {
+      name,
+      studentId,
+      gradeLevel,
+      age,
+      dateOfBirth,
+      disabilities,
+      strengths,
+      weaknesses,
+      assignedGoals,
+      annualGoals,
+      servicesRecommendations,
+      student_accommodations,
+      studentNotes,
+      state,
+      instructionalSetting,
+      performanceQuantitative,
+      performanceNarrative,
+      areaOfNeed,
+      schoolName,
+      address,
+      parentGuardian1,
+      parentGuardian2,
+      primaryExceptionality,
+      relatedServicesTherapy,
+      otherExceptionalities,
+      originalMeetingPlanDate,
+      initiationDate,
+      durationDate,
+      reviewDueDate,
+      reevaluationDueDate,
+      amendmentDate,
+      previouslyAmended,
+      meetingPurpose,
+      domainsTransitionAreas,
+      associatedPlans,
+    } = body;
 
     // Connect to database
     await connectDB();
@@ -121,6 +164,23 @@ export async function PUT(request, { params }) {
     if (performanceQuantitative !== undefined) student.performanceQuantitative = performanceQuantitative;
     if (performanceNarrative !== undefined) student.performanceNarrative = performanceNarrative;
     if (areaOfNeed !== undefined) student.areaOfNeed = areaOfNeed;
+    if (schoolName !== undefined) student.schoolName = schoolName;
+    if (address !== undefined) student.address = address;
+    if (parentGuardian1 !== undefined) student.parentGuardian1 = parentGuardian1;
+    if (parentGuardian2 !== undefined) student.parentGuardian2 = parentGuardian2;
+    if (primaryExceptionality !== undefined) student.primaryExceptionality = primaryExceptionality;
+    if (relatedServicesTherapy !== undefined) student.relatedServicesTherapy = relatedServicesTherapy;
+    if (otherExceptionalities !== undefined) student.otherExceptionalities = otherExceptionalities;
+    if (originalMeetingPlanDate !== undefined) student.originalMeetingPlanDate = optDate(originalMeetingPlanDate);
+    if (initiationDate !== undefined) student.initiationDate = optDate(initiationDate);
+    if (durationDate !== undefined) student.durationDate = optDate(durationDate);
+    if (reviewDueDate !== undefined) student.reviewDueDate = optDate(reviewDueDate);
+    if (reevaluationDueDate !== undefined) student.reevaluationDueDate = optDate(reevaluationDueDate);
+    if (amendmentDate !== undefined) student.amendmentDate = optDate(amendmentDate);
+    if (previouslyAmended !== undefined) student.previouslyAmended = previouslyAmended;
+    if (meetingPurpose !== undefined) student.meetingPurpose = meetingPurpose;
+    if (domainsTransitionAreas !== undefined) student.domainsTransitionAreas = domainsTransitionAreas;
+    if (associatedPlans !== undefined) student.associatedPlans = associatedPlans;
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
     if (annualGoals !== undefined) student.annualGoals = annualGoals;
     if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;

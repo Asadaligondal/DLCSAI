@@ -60,6 +60,74 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  schoolName: {
+    type: String,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
+  parentGuardian1: {
+    type: String,
+    default: ''
+  },
+  parentGuardian2: {
+    type: String,
+    default: ''
+  },
+  primaryExceptionality: {
+    type: String,
+    default: ''
+  },
+  relatedServicesTherapy: {
+    type: String,
+    default: ''
+  },
+  otherExceptionalities: {
+    type: String,
+    default: ''
+  },
+  originalMeetingPlanDate: {
+    type: Date,
+    default: null
+  },
+  initiationDate: {
+    type: Date,
+    default: null
+  },
+  durationDate: {
+    type: Date,
+    default: null
+  },
+  reviewDueDate: {
+    type: Date,
+    default: null
+  },
+  reevaluationDueDate: {
+    type: Date,
+    default: null
+  },
+  amendmentDate: {
+    type: Date,
+    default: null
+  },
+  previouslyAmended: {
+    type: String,
+    default: ''
+  },
+  meetingPurpose: {
+    type: String,
+    default: ''
+  },
+  domainsTransitionAreas: {
+    type: String,
+    default: ''
+  },
+  associatedPlans: {
+    type: String,
+    default: ''
+  },
   student_accommodations: {
     consent: {
       parentConsentRequired: { type: Boolean, default: false },
@@ -151,4 +219,8 @@ const StudentSchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.models.Student || mongoose.model('Student', StudentSchema);
+// Avoid a stale compiled model (Next.js HMR / schema edits) stripping fields not in the cached schema.
+if (mongoose.models.Student) {
+  delete mongoose.models.Student;
+}
+export default mongoose.model('Student', StudentSchema);
