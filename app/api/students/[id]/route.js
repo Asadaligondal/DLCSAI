@@ -129,6 +129,7 @@ export async function PUT(request, { params }) {
       amendmentDate,
       previouslyAmended,
       meetingPurpose,
+      generationType,
       domainsTransitionAreas,
       associatedPlans,
     } = body;
@@ -179,6 +180,7 @@ export async function PUT(request, { params }) {
     if (amendmentDate !== undefined) student.amendmentDate = optDate(amendmentDate);
     if (previouslyAmended !== undefined) student.previouslyAmended = previouslyAmended;
     if (meetingPurpose !== undefined) student.meetingPurpose = meetingPurpose;
+    if (generationType !== undefined) student.generationType = generationType;
     if (domainsTransitionAreas !== undefined) student.domainsTransitionAreas = domainsTransitionAreas;
     if (associatedPlans !== undefined) student.associatedPlans = associatedPlans;
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;

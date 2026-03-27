@@ -111,6 +111,7 @@ export async function POST(request) {
       amendmentDate,
       previouslyAmended,
       meetingPurpose,
+      generationType,
       domainsTransitionAreas,
       associatedPlans,
     } = body;
@@ -174,6 +175,7 @@ export async function POST(request) {
       amendmentDate: optDate(amendmentDate),
       previouslyAmended: previouslyAmended || '',
       meetingPurpose: meetingPurpose || '',
+      generationType: generationType || '',
       domainsTransitionAreas: domainsTransitionAreas || '',
       associatedPlans: associatedPlans || '',
       createdBy: user._id

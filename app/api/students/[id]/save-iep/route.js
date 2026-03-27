@@ -1,45 +1,46 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
-import jwt from 'jsonwebtoken';
+import { protectRoute } from '@/lib/authMiddleware';
+import { hasMeaningfulIepPlan, cloneIepPlanData, MAX_IEP_VERSION_ENTRIES } from '@/lib/iepSnapshot';
 
 export async function PUT(req, { params }) {
   try {
-    await connectDB();
-
-    const { id } = params;
-    const authHeader = req.headers.get('authorization');
-    
-    if (!authHeader) {
-      return NextResponse.json(
-        { success: false, message: 'No authorization token' },
-        { status: 401 }
-      );
+    const authResult = await protectRoute(req);
+    if (authResult.error) {
+      return authResult.response;
     }
+    const user = authResult.user;
 
-    const token = authHeader.replace('Bearer ', '');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    await connectDB();
+    const { id } = await params;
 
     const body = await req.json();
-    const { original_ai_draft, user_edited_version, is_reviewed, rag_context } = body;
+    const {
+      original_ai_draft,
+      user_edited_version,
+      is_reviewed,
+      rag_context,
+      source,
+      label,
+      skip_snapshot,
+      append_active_snapshot,
+      active_snapshot_label
+    } = body;
 
-    console.log('💾 Save IEP Request Body:', body);
-    console.log('📝 Original AI Draft keys:', original_ai_draft ? Object.keys(original_ai_draft) : 'null');
-    console.log('✏️ User Edited Version keys:', user_edited_version ? Object.keys(user_edited_version) : 'null');
+    console.log('💾 Save IEP Request Body keys:', Object.keys(body));
 
-    const student = await Student.findById(id);
+    const student = await Student.findOne({ _id: id, createdBy: user._id });
 
     if (!student) {
       return NextResponse.json(
-        { success: false, message: 'Student not found' },
+        { success: false, message: 'Student not found or unauthorized' },
         { status: 404 }
       );
     }
 
     console.log('📦 Existing IEP data before save:', student.iep_plan_data);
 
-    // Normalize AI-generated and user-edited IEP structures so fields that
-    // are expected to be arrays of strings (per Mongoose schema) contain strings.
     function pickStringFromItem(item) {
       if (typeof item === 'string') return item;
       if (item == null) return '';
@@ -66,16 +67,14 @@ export async function PUT(req, { params }) {
       if (!content || typeof content !== 'object') return content;
       const copy = { ...content };
 
-      // Preserve structured goal/objective objects (domain, progress_measurement, etc.)
-      // Only flatten to string if the item is not a structured object
       if (Array.isArray(copy.annual_goals)) {
-        copy.annual_goals = copy.annual_goals.map(item => {
+        copy.annual_goals = copy.annual_goals.map((item) => {
           if (item && typeof item === 'object' && (item.domain || item.condition || item.observable_behavior || item.progress_measurement || item.goal)) return item;
           return pickStringFromItem(item);
         });
       }
       if (Array.isArray(copy.short_term_objectives)) {
-        copy.short_term_objectives = copy.short_term_objectives.map(item => {
+        copy.short_term_objectives = copy.short_term_objectives.map((item) => {
           if (item && typeof item === 'object' && (typeof item.aligned_goal_index === 'number' || item.condition || item.observable_behavior || item.objective)) return item;
           return pickStringFromItem(item);
         });
@@ -98,7 +97,6 @@ export async function PUT(req, { params }) {
         }));
       }
 
-      // Preserve recommendedAccommodations, academicPerformanceAchievement, custom_goals
       if (Array.isArray(copy.recommendedAccommodations)) copy.recommendedAccommodations = copy.recommendedAccommodations.map((a) => (typeof a === 'string' ? a : String(a)));
       if (Array.isArray(copy.custom_goals)) copy.custom_goals = copy.custom_goals.map((cg) => ({
         title: cg?.title || '',
@@ -112,7 +110,27 @@ export async function PUT(req, { params }) {
     const normalizedOriginal = normalizeGeneratedContent(original_ai_draft) || student.iep_plan_data?.original_ai_draft || {};
     const normalizedUserEdited = normalizeGeneratedContent(user_edited_version) || {};
 
-    // Update the IEP plan data (with normalized contents)
+    // ── Milestone 3: snapshot previous IEP before overwrite ──
+    if (!skip_snapshot && hasMeaningfulIepPlan(student.iep_plan_data)) {
+      const prev = student.iep_plan_data;
+      const nextVersion = (student.iep_version_history?.length || 0) + 1;
+      student.iep_version_history.push({
+        version: nextVersion,
+        createdAt: new Date(),
+        source: typeof source === 'string' && source ? source : 'save',
+        label: typeof label === 'string' ? label : '',
+        snapshot: cloneIepPlanData(prev),
+        meta: {
+          is_reviewed: !!prev.is_reviewed,
+          last_updated: prev.last_updated || null
+        }
+      });
+      while (student.iep_version_history.length > MAX_IEP_VERSION_ENTRIES) {
+        student.iep_version_history.shift();
+      }
+      student.markModified('iep_version_history');
+    }
+
     student.iep_plan_data = {
       ...(student.iep_plan_data && typeof student.iep_plan_data === 'object' ? student.iep_plan_data : {}),
       original_ai_draft: normalizedOriginal,
@@ -124,17 +142,35 @@ export async function PUT(req, { params }) {
 
     student.markModified('iep_plan_data');
 
+    // After stream generation: record the new plan in version history (skip_snapshot avoids duplicating a pre-overwrite row).
+    if (append_active_snapshot) {
+      const nextVersion = (student.iep_version_history?.length || 0) + 1;
+      student.iep_version_history.push({
+        version: nextVersion,
+        createdAt: new Date(),
+        source: 'generated',
+        label: typeof active_snapshot_label === 'string' ? active_snapshot_label : '',
+        snapshot: cloneIepPlanData(student.iep_plan_data),
+        meta: {
+          is_reviewed: !!student.iep_plan_data.is_reviewed,
+          last_updated: student.iep_plan_data.last_updated || null
+        }
+      });
+      while (student.iep_version_history.length > MAX_IEP_VERSION_ENTRIES) {
+        student.iep_version_history.shift();
+      }
+      student.markModified('iep_version_history');
+    }
+
     await student.save();
-    
+
     console.log('✅ IEP saved successfully to database');
-    console.log('📦 Saved student IEP data:', student.iep_plan_data);
 
     return NextResponse.json({
       success: true,
       message: 'IEP plan saved successfully',
       student
     });
-
   } catch (error) {
     console.error('Save IEP Error:', error);
     return NextResponse.json(

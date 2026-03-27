@@ -120,6 +120,11 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  /** Last IEP generation / meeting type (e.g. Annual review) — set from regenerate modal (M5) */
+  generationType: {
+    type: String,
+    default: ''
+  },
   domainsTransitionAreas: {
     type: String,
     default: ''
@@ -203,6 +208,20 @@ const StudentSchema = new mongoose.Schema({
   servicesRecommendations: {
     type: String,
     default: ''
+  },
+  iep_version_history: {
+    type: [{
+      version: { type: Number, required: true },
+      createdAt: { type: Date, default: Date.now },
+      source: { type: String, default: 'save' },
+      label: { type: String, default: '' },
+      snapshot: { type: mongoose.Schema.Types.Mixed, required: true },
+      meta: {
+        is_reviewed: { type: Boolean, default: false },
+        last_updated: { type: Date }
+      }
+    }],
+    default: []
   },
   assignedGoals: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -36,7 +36,8 @@ export async function POST(req) {
         studentGrade, studentAge, areaOfNeed, currentPerformance,
         disabilityCategory, instructionalSetting,
         exceptionalities, customGoals, studentId, student_accommodations,
-        ragStrategy = 'baseline'
+        ragStrategy = 'baseline',
+        generationContext
       } = body;
 
       if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -119,6 +120,7 @@ export async function POST(req) {
         ragContextByQuery,
         strategy,
         ragMetrics,
+        generationContext,
         onSectionComplete(key, label, error) {
           sectionsCompleted++;
           send({
