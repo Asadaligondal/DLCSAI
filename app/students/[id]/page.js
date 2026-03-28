@@ -931,10 +931,10 @@ export default function StudentDetail() {
   };
 
   // ── Florida IEP Format PDF Export (see lib/floridaIepPdf.js)
-  const handleExportFloridaIEP = () => {
+  const handleExportFloridaIEP = async () => {
     if (!editablePlan || !isReviewed) return;
     try {
-      downloadFloridaIepPdf(student, editablePlan);
+      await downloadFloridaIepPdf(student, editablePlan);
       toast.success('Florida IEP format exported');
     } catch (error) {
       toast.error('Failed to export Florida IEP');

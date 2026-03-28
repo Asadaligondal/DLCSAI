@@ -63,12 +63,12 @@ export default function IEPVersionHistory({ student, onRefresh }) {
     return null;
   }, [sorted, livePlan, liveNonEmpty]);
 
-  const handleDownload = (entry) => {
+  const handleDownload = async (entry) => {
     const plan = mergePlanFromSnapshot(entry);
     if (!plan || typeof plan !== 'object') return;
     const stamp = entry.createdAt;
     const stampISO = stamp ? new Date(stamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    downloadFloridaIepPdf(student, plan, {
+    await downloadFloridaIepPdf(student, plan, {
       stampDate: stamp,
       fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${entry.version}_${stampISO}.pdf`
     });
