@@ -22,6 +22,45 @@ function toDateInput(d) {
   }
 }
 
+function parseLocalYMD(s) {
+  if (!s || typeof s !== 'string') return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = +m[1];
+  const mo = +m[2] - 1;
+  const da = +m[3];
+  const dt = new Date(y, mo, da);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== da) return null;
+  return dt;
+}
+
+function formatLocalYMD(dt) {
+  if (!dt || Number.isNaN(dt.getTime())) return '';
+  const y = dt.getFullYear();
+  const mo = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${d}`;
+}
+
+/** Original plan date + 1 year − 1 calendar day */
+function reviewDurationFromOriginal(originalYmd) {
+  const o = parseLocalYMD(originalYmd);
+  if (!o) return '';
+  const t = new Date(o.getFullYear(), o.getMonth(), o.getDate());
+  t.setFullYear(t.getFullYear() + 1);
+  t.setDate(t.getDate() - 1);
+  return formatLocalYMD(t);
+}
+
+/** Original plan date + 3 years */
+function reevaluationFromOriginal(originalYmd) {
+  const o = parseLocalYMD(originalYmd);
+  if (!o) return '';
+  const t = new Date(o.getFullYear(), o.getMonth(), o.getDate());
+  t.setFullYear(t.getFullYear() + 3);
+  return formatLocalYMD(t);
+}
+
 export default function RegenerateIepModal({
   isOpen,
   onClose,
@@ -32,27 +71,40 @@ export default function RegenerateIepModal({
   const [generationType, setGenerationType] = useState('');
   const [meetingPurpose, setMeetingPurpose] = useState('');
   const [originalMeetingPlanDate, setOriginalMeetingPlanDate] = useState('');
-  const [reviewDueDate, setReviewDueDate] = useState('');
+  const [reviewDurationDate, setReviewDurationDate] = useState('');
   const [reevaluationDueDate, setReevaluationDueDate] = useState('');
   const [initiationDate, setInitiationDate] = useState('');
-  const [durationDate, setDurationDate] = useState('');
   const [amendmentDate, setAmendmentDate] = useState('');
-  const [previouslyAmended, setPreviouslyAmended] = useState('');
   const [persistProfile, setPersistProfile] = useState(true);
 
   useEffect(() => {
     if (!isOpen || !student) return;
     setGenerationType(student.generationType || '');
     setMeetingPurpose(student.meetingPurpose || '');
-    setOriginalMeetingPlanDate(toDateInput(student.originalMeetingPlanDate));
-    setReviewDueDate(toDateInput(student.reviewDueDate));
-    setReevaluationDueDate(toDateInput(student.reevaluationDueDate));
+    const orig = toDateInput(student.originalMeetingPlanDate);
+    setOriginalMeetingPlanDate(orig);
+    if (orig) {
+      setReviewDurationDate(reviewDurationFromOriginal(orig));
+      setReevaluationDueDate(reevaluationFromOriginal(orig));
+    } else {
+      setReviewDurationDate(toDateInput(student.reviewDueDate || student.durationDate));
+      setReevaluationDueDate(toDateInput(student.reevaluationDueDate));
+    }
     setInitiationDate(toDateInput(student.initiationDate));
-    setDurationDate(toDateInput(student.durationDate));
     setAmendmentDate(toDateInput(student.amendmentDate));
-    setPreviouslyAmended(student.previouslyAmended || '');
     setPersistProfile(true);
   }, [isOpen, student]);
+
+  const handleOriginalPlanChange = (value) => {
+    setOriginalMeetingPlanDate(value);
+    if (value) {
+      setReviewDurationDate(reviewDurationFromOriginal(value));
+      setReevaluationDueDate(reevaluationFromOriginal(value));
+    } else {
+      setReviewDurationDate('');
+      setReevaluationDueDate('');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -63,12 +115,11 @@ export default function RegenerateIepModal({
       generationType,
       meetingPurpose,
       originalMeetingPlanDate,
-      reviewDueDate,
+      reviewDueDate: reviewDurationDate,
       reevaluationDueDate,
       initiationDate,
-      durationDate,
+      durationDate: reviewDurationDate,
       amendmentDate,
-      previouslyAmended,
       persistProfile
     });
   };
@@ -120,16 +171,16 @@ export default function RegenerateIepModal({
               <input
                 type="date"
                 value={originalMeetingPlanDate}
-                onChange={(e) => setOriginalMeetingPlanDate(e.target.value)}
+                onChange={(e) => handleOriginalPlanChange(e.target.value)}
                 className="w-full h-10 px-2 border border-gray-200 rounded-md bg-white text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-600 mb-1">Review due</label>
+              <label className="block text-xs text-slate-600 mb-1">Review / duration date</label>
               <input
                 type="date"
-                value={reviewDueDate}
-                onChange={(e) => setReviewDueDate(e.target.value)}
+                value={reviewDurationDate}
+                onChange={(e) => setReviewDurationDate(e.target.value)}
                 className="w-full h-10 px-2 border border-gray-200 rounded-md bg-white text-sm"
               />
             </div>
@@ -143,22 +194,13 @@ export default function RegenerateIepModal({
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             <div>
               <label className="block text-xs text-slate-600 mb-1">Initiation date</label>
               <input
                 type="date"
                 value={initiationDate}
                 onChange={(e) => setInitiationDate(e.target.value)}
-                className="w-full h-10 px-2 border border-gray-200 rounded-md bg-white text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">Duration date</label>
-              <input
-                type="date"
-                value={durationDate}
-                onChange={(e) => setDurationDate(e.target.value)}
                 className="w-full h-10 px-2 border border-gray-200 rounded-md bg-white text-sm"
               />
             </div>
@@ -171,18 +213,6 @@ export default function RegenerateIepModal({
                 className="w-full h-10 px-2 border border-gray-200 rounded-md bg-white text-sm"
               />
             </div>
-          </div>
-          <div className="mt-3">
-            <label className="block text-xs text-slate-600 mb-1">Previously amended</label>
-            <select
-              value={previouslyAmended}
-              onChange={(e) => setPreviouslyAmended(e.target.value)}
-              className="w-full sm:max-w-xs h-10 px-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">—</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
           </div>
         </div>
 

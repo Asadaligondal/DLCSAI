@@ -530,7 +530,6 @@ export default function StudentDetail() {
             initiationDate: ctx.initiationDate || null,
             durationDate: ctx.durationDate || null,
             amendmentDate: ctx.amendmentDate || null,
-            previouslyAmended: ctx.previouslyAmended ?? '',
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -549,8 +548,7 @@ export default function StudentDetail() {
           reevaluationDueDate: ctx.reevaluationDueDate || '',
           initiationDate: ctx.initiationDate || '',
           durationDate: ctx.durationDate || '',
-          amendmentDate: ctx.amendmentDate || '',
-          previouslyAmended: ctx.previouslyAmended || ''
+          amendmentDate: ctx.amendmentDate || ''
         }
       };
 
