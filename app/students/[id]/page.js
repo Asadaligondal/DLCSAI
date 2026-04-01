@@ -383,13 +383,14 @@ export default function StudentDetail() {
 
   const openGenerateModal = () => setShowGenerateModal(true);
 
-  const runGenerateStreamWithContext = async (generationContext, studentPayload) => {
+  const runGenerateStreamWithContext = async (generationContext, studentPayload, streamOpts = {}) => {
     const s = studentPayload || student;
     setIsGenerating(true);
     setGenerateStage('idle');
     setGenerateProgress('');
     try {
-      const customGoalsForAPI = customGoals.map(g => g.title || g.description || g);
+      const goalsSource = streamOpts.customGoals != null ? streamOpts.customGoals : customGoals;
+      const customGoalsForAPI = goalsSource.map(g => g.title || g.description || g);
       const studentNotesValue = formData.studentNotes || s.studentNotes || '';
 
       const payload = {
@@ -400,6 +401,8 @@ export default function StudentDetail() {
         disabilityCategory: s.disabilities?.join(', ') || 'Not specified',
         instructionalSetting: s.instructionalSetting || 'General Education',
         exceptionalities: Array.isArray(s.disabilities) ? s.disabilities : [],
+        weaknesses: Array.isArray(s.weaknesses) ? s.weaknesses : [],
+        strengths: Array.isArray(s.strengths) ? s.strengths : [],
         studentId: id,
         student_accommodations: s.student_accommodations || null,
         customGoals: customGoalsForAPI,
@@ -516,7 +519,22 @@ export default function StudentDetail() {
     setShowGenerateModal(false);
     const token = localStorage.getItem('token');
     try {
-      let s = student;
+      if (ctx.profile) {
+        setFormData((prev) => ({
+          ...prev,
+          gradeLevel: ctx.profile.gradeLevel ?? prev.gradeLevel,
+          disabilities: ctx.profile.disabilities ?? prev.disabilities,
+          strengths: ctx.profile.strengths ?? prev.strengths,
+          weaknesses: ctx.profile.weaknesses ?? prev.weaknesses,
+          primaryExceptionality: ctx.profile.primaryExceptionality ?? prev.primaryExceptionality,
+          otherExceptionalities: ctx.profile.otherExceptionalities ?? prev.otherExceptionalities,
+          relatedServicesTherapy: ctx.profile.relatedServicesTherapy ?? prev.relatedServicesTherapy,
+          domainsTransitionAreas: ctx.profile.domainsTransitionAreas ?? prev.domainsTransitionAreas
+        }));
+      }
+      if (ctx.customGoals) setCustomGoals(ctx.customGoals);
+
+      let s = { ...student, ...(ctx.profile || {}) };
 
       if (ctx.persistProfile) {
         const res = await axios.put(
@@ -530,12 +548,13 @@ export default function StudentDetail() {
             initiationDate: ctx.initiationDate || null,
             durationDate: ctx.durationDate || null,
             amendmentDate: ctx.amendmentDate || null,
+            ...(ctx.profile || {}),
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (res.data?.student) {
-          s = res.data.student;
-          setStudent(s);
+          s = { ...s, ...res.data.student };
+          setStudent(res.data.student);
         }
       }
 
@@ -552,7 +571,7 @@ export default function StudentDetail() {
         }
       };
 
-      await runGenerateStreamWithContext(generationContext, s);
+      await runGenerateStreamWithContext(generationContext, s, { customGoals: ctx.customGoals });
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Failed to prepare or generate IEP');
       console.error('Generate modal confirm error:', error);
@@ -1017,6 +1036,11 @@ export default function StudentDetail() {
             onConfirm={handleGenerateModalConfirm}
             student={student}
             busy={isGenerating}
+            profileForm={formData}
+            customGoals={customGoals}
+            disabilitiesOptions={DISABILITIES_OPTIONS}
+            strengthsOptions={STRENGTHS_OPTIONS}
+            weaknessesOptions={WEAKNESSES_OPTIONS}
           />
 
           {showCustomizeModal && (

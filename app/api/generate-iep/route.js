@@ -9,7 +9,10 @@ export async function POST(req) {
       studentGrade, studentAge, areaOfNeed, currentPerformance,
       disabilityCategory, instructionalSetting,
       exceptionalities, customGoals, studentId, student_accommodations,
-      ragStrategy = 'baseline'
+      weaknesses: bodyWeaknesses,
+      strengths: bodyStrengths,
+      ragStrategy = 'baseline',
+      generationContext
     } = body;
 
     if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -21,8 +24,8 @@ export async function POST(req) {
       : null;
 
     let accommodationsRaw = student_accommodations || null;
-    let weaknesses = [];
-    let strengths = [];
+    let weaknesses = Array.isArray(bodyWeaknesses) ? bodyWeaknesses : [];
+    let strengths = Array.isArray(bodyStrengths) ? bodyStrengths : [];
     try {
       if (studentId) {
         const connectDB = (await import('@/lib/mongodb')).default;
@@ -31,8 +34,8 @@ export async function POST(req) {
         const stu = await Student.findById(studentId).lean();
         if (stu) {
           if (!accommodationsRaw && stu.student_accommodations) accommodationsRaw = stu.student_accommodations;
-          if (stu.weaknesses) weaknesses = Array.isArray(stu.weaknesses) ? stu.weaknesses : [];
-          if (stu.strengths) strengths = Array.isArray(stu.strengths) ? stu.strengths : [];
+          if (weaknesses.length === 0 && stu.weaknesses) weaknesses = Array.isArray(stu.weaknesses) ? stu.weaknesses : [];
+          if (strengths.length === 0 && stu.strengths) strengths = Array.isArray(stu.strengths) ? stu.strengths : [];
         }
       }
     } catch (e) {
@@ -81,7 +84,8 @@ export async function POST(req) {
       accommodationsList: accommodationLabels.join(', '),
       ragContextByQuery,
       strategy,
-      ragMetrics
+      ragMetrics,
+      generationContext
     });
 
     return NextResponse.json({

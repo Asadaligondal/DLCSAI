@@ -3,7 +3,23 @@
 import { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
-export default function MultiSelect({ label, options, value = [], onChange, placeholder = 'Select options...', allowMultiplePerGroup = false }) {
+export default function MultiSelect({
+  label,
+  options,
+  value = [],
+  onChange,
+  placeholder = 'Select options...',
+  allowMultiplePerGroup = false,
+  baselineValues = null
+}) {
+  const baselineSet = baselineValues != null ? new Set(baselineValues) : null;
+  const chipClass = (item) => {
+    if (!baselineSet) return 'inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 rounded-md text-xs font-medium';
+    if (baselineSet.has(item)) {
+      return 'inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded-md text-xs font-medium';
+    }
+    return 'inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200/80 rounded-md text-xs font-medium';
+  };
   const [isOpen, setIsOpen] = useState(false);
 
   const isGrouped = Array.isArray(options) && options.length > 0 && typeof options[0] === 'object' && options[0] !== null && 'label' in options[0] && 'options' in options[0];
@@ -46,7 +62,7 @@ export default function MultiSelect({ label, options, value = [], onChange, plac
           <span className="text-slate-400 text-sm">{placeholder}</span>
         ) : (
           value.map((item) => (
-            <span key={item} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-50 text-primary-700 rounded-md text-xs font-medium">
+            <span key={item} className={chipClass(item)}>
               <span className="truncate max-w-[180px]">{item}</span>
               <button onClick={(e) => removeOption(item, e)} className="hover:bg-primary-100 rounded-full p-0.5 transition-colors">
                 <X className="w-3 h-3" />
