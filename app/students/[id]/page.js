@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
-import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import MultiSelect from '@/components/MultiSelect';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -1033,10 +1033,15 @@ export default function StudentDetail() {
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
-        <Navbar />
+        <WorkspaceTopBar user={userLocal} />
 
-        <div className="max-w-full px-6 py-5 lg:px-8">
-          <EditorHeader student={student} />
+        <main className="p-6 lg:p-8">
+          <div className="max-w-[1400px] mx-auto space-y-5">
+          <div>
+            <EditorHeader student={student} />
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">IEP Plan</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{student.name || 'Student'}</p>
+          </div>
 
           <StickyActionBar
             onRegenerate={openGenerateModal}
@@ -1168,7 +1173,8 @@ export default function StudentDetail() {
             )}
           </div>
 
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

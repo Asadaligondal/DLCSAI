@@ -11,7 +11,7 @@ import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
-import QuickActions from './components/QuickActions';
+import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import ActivityFeed from './components/ActivityFeed';
 
 /** Map AI-extracted date text to YYYY-MM-DD for date inputs. */
@@ -724,6 +724,7 @@ export default function Dashboard() {
           const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           cmp = ta - tb;
+          if (cmp === 0) cmp = String(b._id || '').localeCompare(String(a._id || ''));
           break;
         }
         default: cmp = 0;
@@ -739,8 +740,21 @@ export default function Dashboard() {
   const clearFilters = () => { setFilterGrade(''); setFilterIEP(''); setFilterExceptionality(''); setCurrentPage(1); };
 
   const handleSort = (key) => {
-    if (sortKey === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
-    else { setSortKey(key); setSortDir('asc'); }
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      // Newest-first when sorting by date; A→Z for name/grade, etc.
+      setSortDir(key === 'createdAt' ? 'desc' : 'asc');
+    }
+  };
+
+  const formatAdded = (d) => {
+    if (!d) return '—';
+    try {
+      return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return '—';
+    }
   };
 
   if (!user) return null;
@@ -750,22 +764,7 @@ export default function Dashboard() {
       <Sidebar user={user} onLogout={handleLogout} />
 
       <div className="flex-1 overflow-auto">
-        {/* Top bar */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-8 h-16 flex items-center justify-between sticky top-0 z-10">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Dashboard</h2>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-500 hidden sm:inline">Welcome, {user?.name}</span>
-            <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center ring-2 ring-white shrink-0">
-              {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-sm font-bold text-primary-700">{user?.name?.[0] || '?'}</span>
-              )}
-            </div>
-          </div>
-        </header>
+        <WorkspaceTopBar user={user} />
 
         <main className="p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto space-y-5">
@@ -791,8 +790,6 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <QuickActions onAddStudent={handleOpenModal} />
-
             {/* Main content: table + activity feed */}
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5">
               {/* Student table card */}
@@ -893,6 +890,7 @@ export default function Dashboard() {
                             { key: null,    label: 'Student ID' },
                             { key: 'age',   label: 'Age' },
                             { key: 'grade', label: 'Grade' },
+                            { key: 'createdAt', label: 'Added' },
                             { key: null,    label: 'Goals' },
                             { key: 'iep',   label: 'IEP Plan' },
                           ].map(({ key, label }) => (
@@ -915,7 +913,7 @@ export default function Dashboard() {
                       <tbody className="divide-y divide-slate-50">
                         {loading ? (
                           <tr>
-                            <td colSpan="7" className="px-6 py-20 text-center">
+                            <td colSpan="8" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -927,7 +925,7 @@ export default function Dashboard() {
                           </tr>
                         ) : paginatedStudents.length === 0 ? (
                           <tr>
-                            <td colSpan="7" className="px-6 py-20 text-center">
+                            <td colSpan="8" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
                                   <Users className="w-6 h-6 text-slate-300" />
@@ -958,6 +956,7 @@ export default function Dashboard() {
                                 <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600">{student.age}</td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600">{student.gradeLevel}</td>
+                                <td className="px-5 py-3.5 text-sm text-slate-600 tabular-nums whitespace-nowrap">{formatAdded(student.createdAt)}</td>
                                 <td className="px-5 py-3.5">
                                   {student?.assignedGoals && student.assignedGoals.length > 0 ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">

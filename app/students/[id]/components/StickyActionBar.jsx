@@ -22,8 +22,7 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDo
   const secondaryDisabled = isBusy;
 
   return (
-    <div style={{ position: 'sticky', top: 0, zIndex: 60 }} className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60">
-      <div className="max-w-full px-8 h-12 flex items-center justify-end gap-2">
+    <div className="sticky top-16 z-30 bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">
           <button
             onClick={onSave}
             disabled={isBusy}
@@ -95,7 +94,6 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDo
 
           <div className="w-px h-6 bg-slate-200 mx-0.5" />
           <span className="text-[11px] text-slate-500 min-w-0 truncate max-w-[140px]">{statusText}</span>
-      </div>
     </div>
   );
 }
