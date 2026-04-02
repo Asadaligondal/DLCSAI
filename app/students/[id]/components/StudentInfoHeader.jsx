@@ -118,6 +118,13 @@ export default function StudentInfoHeader({
     setShowCustomGoals(false);
     if (onCustomGoalsSaved) onCustomGoalsSaved(goals);
   };
+
+  const pillText = (raw) => {
+    const s = raw != null ? String(raw).trim() : '';
+    if (!s || s === '—') return null;
+    return s;
+  };
+
   return (
     <div className="mb-6">
       <div>
@@ -157,69 +164,153 @@ export default function StudentInfoHeader({
             <div className="overflow-hidden">
             <div className={`px-5 pb-5 pt-0 border-t border-slate-100 transition-opacity duration-300 ease-in-out ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
             <div className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.name || student?.name || '—'}</div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Name</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.name || student?.name) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.name || student?.name}</span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">School</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.schoolName || student?.schoolName) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.schoolName || student?.schoolName}</span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">School</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.schoolName || student?.schoolName || '—'}</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Student ID</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.studentId || student?.studentId || '—'}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Grade</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{formData.gradeLevel || student?.gradeLevel || '—'}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">DOB</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{fmtViewDate(dobForDisplay)}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Age</label>
-                  <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 flex items-center text-slate-800 min-h-[38px]">{ageDisplayView}</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Student ID</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.studentId || student?.studentId) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.studentId || student?.studentId}</span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Grade</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.gradeLevel || student?.gradeLevel) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.gradeLevel || student?.gradeLevel}</span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">DOB</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(() => {
+                        const v = fmtViewDate(dobForDisplay);
+                        return v === '—' ? (
+                          <span className="text-sm text-slate-500">None</span>
+                        ) : (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{v}</span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Age</div>
+                    <div className="flex flex-wrap gap-2">
+                      {ageDisplayView === '—' ? (
+                        <span className="text-sm text-slate-500">None</span>
+                      ) : (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{ageDisplayView}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Contact and exceptionalities (detail)</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Address</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.address || student?.address || '—'}</div>
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Contact and exceptionalities (detail)</div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Address</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.address || student?.address) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
+                          {formData.address || student?.address}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">Parent / Guardian</div>
+                      <div className="flex flex-wrap gap-2">
+                        {pillText(formData.parentGuardian1 || student?.parentGuardian1) ? (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.parentGuardian1 || student?.parentGuardian1}</span>
+                        ) : (
+                          <span className="text-sm text-slate-500">None</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">Parent / Guardian (second)</div>
+                      <div className="flex flex-wrap gap-2">
+                        {pillText(formData.parentGuardian2 || student?.parentGuardian2) ? (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.parentGuardian2 || student?.parentGuardian2}</span>
+                        ) : (
+                          <span className="text-sm text-slate-500">None</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">Primary exceptionality</div>
+                      <div className="flex flex-wrap gap-2">
+                        {pillText(formData.primaryExceptionality || student?.primaryExceptionality) ? (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.primaryExceptionality || student?.primaryExceptionality}</span>
+                        ) : (
+                          <span className="text-sm text-slate-500">None</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">Other exceptionalities</div>
+                      <div className="flex flex-wrap gap-2">
+                        {pillText(formData.otherExceptionalities || student?.otherExceptionalities) ? (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.otherExceptionalities || student?.otherExceptionalities}</span>
+                        ) : (
+                          <span className="text-sm text-slate-500">None</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Parent / Guardian</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.parentGuardian1 || student?.parentGuardian1 || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Parent / Guardian (second)</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.parentGuardian2 || student?.parentGuardian2 || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Primary exceptionality</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.primaryExceptionality || student?.primaryExceptionality || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Other exceptionalities</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.otherExceptionalities || student?.otherExceptionalities || '—'}</div>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Related services / therapy</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 whitespace-pre-wrap min-h-[38px]">{formData.relatedServicesTherapy || student?.relatedServicesTherapy || '—'}</div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Related services / therapy</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.relatedServicesTherapy || student?.relatedServicesTherapy) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
+                          {formData.relatedServicesTherapy || student?.relatedServicesTherapy}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">IEP key dates</div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">IEP key dates</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
                   {[
                     ['originalMeetingPlanDate', 'Original meeting / plan date'],
                     ['initiationDate', 'Initiation date'],
@@ -228,9 +319,16 @@ export default function StudentInfoHeader({
                     ['reevaluationDueDate', 'Reevaluation due date'],
                   ].map(([key, label]) => (
                     <div key={key}>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
-                      <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
-                        {fmtViewDate(formData[key] || (student?.[key] ? new Date(student[key]).toISOString().split('T')[0] : ''))}
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">{label}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const v = fmtViewDate(formData[key] || (student?.[key] ? new Date(student[key]).toISOString().split('T')[0] : ''));
+                          return v === '—' ? (
+                            <span className="text-sm text-slate-500">None</span>
+                          ) : (
+                            <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{v}</span>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}
@@ -238,39 +336,74 @@ export default function StudentInfoHeader({
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Amendment and meeting</div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Amendment and meeting</div>
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Amendment date</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
-                      {fmtViewDate(formData.amendmentDate || (student?.amendmentDate ? new Date(student.amendmentDate).toISOString().split('T')[0] : ''))}
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Amendment date</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(() => {
+                        const v = fmtViewDate(formData.amendmentDate || (student?.amendmentDate ? new Date(student.amendmentDate).toISOString().split('T')[0] : ''));
+                        return v === '—' ? (
+                          <span className="text-sm text-slate-500">None</span>
+                        ) : (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{v}</span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Previously amended</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px] flex items-center">
-                      {formData.previouslyAmended || student?.previouslyAmended || '—'}
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Previously amended</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.previouslyAmended || student?.previouslyAmended) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">
+                          {formData.previouslyAmended || student?.previouslyAmended}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
                     </div>
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Meeting purpose</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.meetingPurpose || student?.meetingPurpose || '—'}</div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Meeting purpose</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.meetingPurpose || student?.meetingPurpose) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
+                          {formData.meetingPurpose || student?.meetingPurpose}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Program</div>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Program</div>
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Domain(s) / transition service activity area(s)</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 whitespace-pre-wrap min-h-[38px]">
-                      {formData.domainsTransitionAreas || student?.domainsTransitionAreas || '—'}
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Domain(s) / transition service activity area(s)</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.domainsTransitionAreas || student?.domainsTransitionAreas) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
+                          {formData.domainsTransitionAreas || student?.domainsTransitionAreas}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Associated plans</label>
-                    <div className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-800 min-h-[38px]">{formData.associatedPlans || student?.associatedPlans || '—'}</div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Associated plans</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.associatedPlans || student?.associatedPlans) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
+                          {formData.associatedPlans || student?.associatedPlans}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
