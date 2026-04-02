@@ -9,7 +9,8 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
-import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
+import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import QuickActions from './components/QuickActions';
 import ActivityFeed from './components/ActivityFeed';
 
@@ -771,6 +772,12 @@ export default function Dashboard() {
             {/* Page header */}
             <div className="flex items-center justify-between">
               <div>
+                <WorkspaceBreadcrumb
+                  items={[
+                    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+                    { label: 'Students', icon: Users },
+                  ]}
+                />
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Students</h1>
                 <p className="text-sm text-slate-500 mt-0.5">{students.length} student{students.length !== 1 ? 's' : ''} enrolled</p>
               </div>

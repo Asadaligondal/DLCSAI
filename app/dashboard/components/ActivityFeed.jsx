@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { FileText, UserPlus, CheckCircle2, Clock } from 'lucide-react';
 
 function timeAgo(date) {
@@ -23,15 +24,19 @@ const EVENT_CONFIG = {
 };
 
 export default function ActivityFeed({ students = [] }) {
+  const router = useRouter();
+
   const events = useMemo(() => {
     const items = [];
 
     students.forEach((s) => {
+      const sid = s._id != null ? String(s._id) : '';
       items.push({
         type: 'student_added',
         name: s.name,
         date: s.createdAt || s._id?.toString().substring(0, 8),
         id: `add-${s._id}`,
+        studentId: sid,
       });
 
       const iep = s.iep_plan_data;
@@ -46,6 +51,7 @@ export default function ActivityFeed({ students = [] }) {
             name: s.name,
             date: iep.last_updated || s.createdAt,
             id: `gen-${s._id}`,
+            studentId: sid,
           });
         }
 
@@ -55,6 +61,7 @@ export default function ActivityFeed({ students = [] }) {
             name: s.name,
             date: iep.last_updated || s.createdAt,
             id: `rev-${s._id}`,
+            studentId: sid,
           });
         }
       }
@@ -80,8 +87,23 @@ export default function ActivityFeed({ students = [] }) {
           {events.map((ev) => {
             const cfg = EVENT_CONFIG[ev.type];
             const Icon = cfg.icon;
+            const go = () => {
+              if (ev.studentId) router.push(`/students/${ev.studentId}`);
+            };
             return (
-              <li key={ev.id} className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50/50 transition-colors">
+              <li
+                key={ev.id}
+                className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50/50 transition-colors cursor-pointer"
+                onClick={go}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    go();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${cfg.color}`}>
                   <Icon className="w-3.5 h-3.5" />
                 </div>
