@@ -3,15 +3,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { User, Lock, Bell, Globe, Camera, Settings as SettingsIcon } from 'lucide-react';
+import { User, Lock, Bell, Globe, Camera, Settings as SettingsIcon, GraduationCap } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
   const fileInputRef = useRef(null);
+  const floridaLogoInputRef = useRef(null);
   const [user, setUser] = useState({ name: 'Guest', email: '' });
   const [profilePicture, setProfilePicture] = useState(null);
+  const [floridaIepLogo, setFloridaIepLogo] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [floridaLogoUploading, setFloridaLogoUploading] = useState(false);
+  const [floridaLogoError, setFloridaLogoError] = useState(null);
 
   const handleLogout = () => { localStorage.clear(); router.push('/login'); };
 
@@ -24,6 +28,7 @@ export default function SettingsPage() {
         const data = await res.json();
         setUser(data.user);
         setProfilePicture(data.user.profilePicture);
+        setFloridaIepLogo(data.user.floridaIepLogo || null);
       }
     } catch {}
   };
@@ -36,6 +41,7 @@ export default function SettingsPage() {
         const u = JSON.parse(raw);
         setUser(u);
         setProfilePicture(u.profilePicture || null);
+        setFloridaIepLogo(u.floridaIepLogo || null);
       }
       fetchUser();
     } catch {}
@@ -64,6 +70,51 @@ export default function SettingsPage() {
       window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser }));
     } catch { setUploadError('Upload failed'); }
     finally { setUploading(false); e.target.value = ''; }
+  };
+
+  const handleFloridaLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFloridaLogoError(null);
+    setFloridaLogoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/florida-iep-logo', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) { setFloridaLogoError(data.message || 'Upload failed'); return; }
+      setFloridaIepLogo(data.floridaIepLogo);
+      const updatedUser = { ...user, floridaIepLogo: data.floridaIepLogo };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser }));
+    } catch { setFloridaLogoError('Upload failed'); }
+    finally { setFloridaLogoUploading(false); e.target.value = ''; }
+  };
+
+  const handleFloridaLogoRemove = async () => {
+    setFloridaLogoError(null);
+    setFloridaLogoUploading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/florida-iep-logo', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) { setFloridaLogoError(data.message || 'Remove failed'); return; }
+      setFloridaIepLogo(null);
+      const updatedUser = { ...user, floridaIepLogo: null };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedUser }));
+    } catch { setFloridaLogoError('Remove failed'); }
+    finally { setFloridaLogoUploading(false); }
   };
 
   const inputCls = "w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all";
@@ -137,6 +188,61 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Florida IEP PDF logo */}
+            <section className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2.5">
+                <GraduationCap className="w-4 h-4 text-slate-500" />
+                <h2 className="text-sm font-semibold text-slate-900">Florida IEP PDF logo</h2>
+              </div>
+              <div className="p-5 space-y-3">
+                <p className="text-xs text-slate-500">
+                  PNG only. Shown top-left on exported &quot;Florida IEP Format&quot; PDFs. No logo is shown until you upload one.
+                </p>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="relative h-14 px-2 min-w-[7rem] border border-slate-100 rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden">
+                    {floridaIepLogo ? (
+                      <img src={floridaIepLogo} alt="Florida IEP logo preview" className="max-h-12 max-w-full object-contain" />
+                    ) : (
+                      <span className="text-[11px] text-slate-400">No logo</span>
+                    )}
+                    {floridaLogoUploading && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-lg">
+                        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      ref={floridaLogoInputRef}
+                      type="file"
+                      accept="image/png"
+                      onChange={handleFloridaLogoChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => floridaLogoInputRef.current?.click()}
+                      disabled={floridaLogoUploading}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                    >
+                      {floridaIepLogo ? 'Replace' : 'Upload PNG'}
+                    </button>
+                    {floridaIepLogo && (
+                      <button
+                        type="button"
+                        onClick={handleFloridaLogoRemove}
+                        disabled={floridaLogoUploading}
+                        className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {floridaLogoError && <p className="text-xs text-red-600">{floridaLogoError}</p>}
               </div>
             </section>
 

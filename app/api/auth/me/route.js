@@ -14,7 +14,8 @@ export async function GET(request) {
       email: user.email,
       role: user.role,
       schoolId: user.schoolId,
-      profilePicture: user.profilePicture || null
+      profilePicture: user.profilePicture || null,
+      floridaIepLogo: user.floridaIepLogo || null
     }
   });
 }

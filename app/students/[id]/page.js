@@ -161,12 +161,31 @@ export default function StudentDetail() {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
     setUserLocal(u);
 
+    (async () => {
+      try {
+        const r = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) {
+          const data = await r.json();
+          setUserLocal(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+      } catch { /* ignore */ }
+    })();
+
     // Load persisted pipeline metrics for this student
     try {
       const stored = localStorage.getItem(`pipeline_metrics_${id}`);
       if (stored) setPipelineMetrics(JSON.parse(stored));
     } catch { /* ignore corrupt data */ }
   }, [id, router]);
+
+  useEffect(() => {
+    const onUserUpdated = (e) => {
+      if (e.detail) setUserLocal(e.detail);
+    };
+    window.addEventListener('user-updated', onUserUpdated);
+    return () => window.removeEventListener('user-updated', onUserUpdated);
+  }, []);
 
   const fetchStudent = async (token) => {
     try {
@@ -951,7 +970,9 @@ export default function StudentDetail() {
   const handleExportFloridaIEP = async () => {
     if (!editablePlan || !isReviewed) return;
     try {
-      await downloadFloridaIepPdf(student, editablePlan);
+      await downloadFloridaIepPdf(student, editablePlan, {
+        logoUrl: userLocal?.floridaIepLogo || undefined
+      });
       toast.success('Florida IEP format exported');
     } catch (error) {
       toast.error('Failed to export Florida IEP');
@@ -1086,7 +1107,9 @@ export default function StudentDetail() {
                 <PipelineMetricsPanel pipelineMetrics={pipelineMetrics} />
               </div>
 
-              {hasExistingPlan && <IEPVersionHistory student={student} />}
+              {hasExistingPlan && (
+                <IEPVersionHistory student={student} floridaIepLogo={userLocal?.floridaIepLogo} />
+              )}
 
               {!hasExistingPlan && (
                 <div className="mt-4 flex flex-col items-center justify-center py-12 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">

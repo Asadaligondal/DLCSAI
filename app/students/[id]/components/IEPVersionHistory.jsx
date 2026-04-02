@@ -36,7 +36,7 @@ function formatWhen(d) {
   }
 }
 
-export default function IEPVersionHistory({ student, onRefresh }) {
+export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }) {
   const [expanded, setExpanded] = useState(true);
   const [viewEntry, setViewEntry] = useState(null);
 
@@ -70,7 +70,8 @@ export default function IEPVersionHistory({ student, onRefresh }) {
     const stampISO = stamp ? new Date(stamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     await downloadFloridaIepPdf(student, plan, {
       stampDate: stamp,
-      fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${entry.version}_${stampISO}.pdf`
+      fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${entry.version}_${stampISO}.pdf`,
+      logoUrl: floridaIepLogo || undefined
     });
   };
 

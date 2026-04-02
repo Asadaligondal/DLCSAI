@@ -34,6 +34,11 @@ const UserSchema = new mongoose.Schema({
     required: false,
     default: null
   },
+  floridaIepLogo: {
+    type: String,
+    required: false,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now
