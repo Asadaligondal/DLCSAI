@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { History, Eye, Download, ChevronDown } from 'lucide-react';
 import Modal from '@/components/Modal';
-import { downloadFloridaIepPdf } from '@/lib/floridaIepPdf';
+import { downloadFloridaIepPdf, getFloridaIepPdfBlobUrl } from '@/lib/floridaIepPdf';
 
 function mergePlanFromSnapshot(entry) {
   const snap = entry?.snapshot || {};
@@ -39,6 +39,9 @@ function formatWhen(d) {
 export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }) {
   const [expanded, setExpanded] = useState(true);
   const [viewEntry, setViewEntry] = useState(null);
+  const [pdfPreview, setPdfPreview] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const pdfRevokeRef = useRef(null);
 
   const versions = student?.iep_version_history || [];
   const sorted = useMemo(
@@ -63,6 +66,67 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
     return null;
   }, [sorted, livePlan, liveNonEmpty]);
 
+  useEffect(() => {
+    if (!viewEntry) {
+      if (pdfRevokeRef.current) {
+        pdfRevokeRef.current();
+        pdfRevokeRef.current = null;
+      }
+      setPdfPreview(null);
+      setPdfLoading(false);
+      return;
+    }
+
+    if (pdfRevokeRef.current) {
+      pdfRevokeRef.current();
+      pdfRevokeRef.current = null;
+    }
+    setPdfPreview(null);
+
+    const plan = mergePlanFromSnapshot(viewEntry);
+    if (!plan || typeof plan !== 'object') {
+      setPdfLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPdfLoading(true);
+
+    const stamp = viewEntry.createdAt;
+    const stampISO = stamp ? new Date(stamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+    (async () => {
+      try {
+        const { url, revoke } = await getFloridaIepPdfBlobUrl(student, plan, {
+          stampDate: stamp,
+          fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${viewEntry.version}_${stampISO}.pdf`,
+          logoUrl: floridaIepLogo || undefined
+        });
+        if (cancelled) {
+          revoke();
+          return;
+        }
+        pdfRevokeRef.current = revoke;
+        setPdfPreview({ url });
+      } catch {
+        if (!cancelled) setPdfPreview(null);
+      } finally {
+        if (!cancelled) setPdfLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewEntry, student, floridaIepLogo]);
+
+  useEffect(() => () => {
+    if (pdfRevokeRef.current) {
+      pdfRevokeRef.current();
+      pdfRevokeRef.current = null;
+    }
+  }, []);
+
   const handleDownload = async (entry) => {
     const plan = mergePlanFromSnapshot(entry);
     if (!plan || typeof plan !== 'object') return;
@@ -73,12 +137,6 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
       fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${entry.version}_${stampISO}.pdf`,
       logoUrl: floridaIepLogo || undefined
     });
-  };
-
-  const plaafpPreview = (entry) => {
-    const plan = mergePlanFromSnapshot(entry);
-    const t = plan?.plaafp_narrative || '';
-    return t.length > 600 ? `${t.slice(0, 600)}…` : t;
   };
 
   if (!sorted.length) {
@@ -184,11 +242,12 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
         <Modal
           isOpen
           onClose={() => setViewEntry(null)}
-          title={`IEP snapshot v${viewEntry.version} · ${formatWhen(viewEntry.createdAt)}`}
-          size="lg"
+          title={`Florida IEP — v${viewEntry.version} · ${formatWhen(viewEntry.createdAt)}`}
+          size="xl"
+          noScroll
         >
-          <div className="p-6 pt-0 max-h-[70vh] overflow-y-auto text-sm text-slate-800 space-y-4">
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 border-b border-slate-100 pb-3">
+          <div className="px-6 pb-6 pt-0 flex flex-col flex-1 min-h-0">
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 border-b border-slate-100 pb-3 mb-3 shrink-0">
               <div>
                 <span className="font-semibold text-slate-700">Source:</span> {viewEntry.source || '—'}
               </div>
@@ -197,15 +256,20 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
                 {viewEntry.meta?.is_reviewed ? 'Yes' : 'No'}
               </div>
             </div>
-            <div>
-              <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">PLAAFP (preview)</h4>
-              <p className="whitespace-pre-wrap text-slate-800 bg-slate-50 rounded-lg p-3 border border-slate-100">
-                {plaafpPreview(viewEntry) || '—'}
-              </p>
-            </div>
-            <div className="text-xs text-slate-500">
-              Use <strong>PDF</strong> in the table for a full Florida-format export using this snapshot (stamped with the capture date in the footer).
-            </div>
+            {pdfLoading && (
+              <div className="py-16 text-center text-sm text-slate-500">Building PDF preview…</div>
+            )}
+            {!pdfLoading && pdfPreview && (
+              <div className="h-[min(75vh,720px)] w-full bg-slate-100 rounded-lg overflow-hidden">
+                <iframe title="Florida IEP PDF" src={pdfPreview.url} className="w-full h-full border-0" />
+              </div>
+            )}
+            {!pdfLoading && !pdfPreview && (
+              <p className="text-sm text-slate-500 py-8 text-center">Could not generate preview.</p>
+            )}
+            <p className="text-xs text-slate-500 mt-3 shrink-0">
+              Use <strong>PDF</strong> in the table to download the same file. Footer uses the capture date as plan date.
+            </p>
           </div>
         </Modal>
       )}

@@ -9,7 +9,7 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
-import { Plus, Search, Trash2, Zap, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
+import { Plus, Search, Trash2, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import ActivityFeed from './components/ActivityFeed';
@@ -888,10 +888,7 @@ export default function Dashboard() {
                           {[
                             { key: 'name',  label: 'Name' },
                             { key: null,    label: 'Student ID' },
-                            { key: 'age',   label: 'Age' },
-                            { key: 'grade', label: 'Grade' },
                             { key: 'createdAt', label: 'Added' },
-                            { key: null,    label: 'Goals' },
                             { key: 'iep',   label: 'IEP Plan' },
                           ].map(({ key, label }) => (
                             <th
@@ -913,7 +910,7 @@ export default function Dashboard() {
                       <tbody className="divide-y divide-slate-50">
                         {loading ? (
                           <tr>
-                            <td colSpan="8" className="px-6 py-20 text-center">
+                            <td colSpan="5" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -925,7 +922,7 @@ export default function Dashboard() {
                           </tr>
                         ) : paginatedStudents.length === 0 ? (
                           <tr>
-                            <td colSpan="8" className="px-6 py-20 text-center">
+                            <td colSpan="5" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
                                   <Users className="w-6 h-6 text-slate-300" />
@@ -940,34 +937,31 @@ export default function Dashboard() {
                         ) : (
                           paginatedStudents.map((student) => {
                             const status = getIEPStatus(student);
+                            const iepPath = `/students/${student._id}`;
                             return (
-                              <tr key={student._id} className="hover:bg-slate-50/60 transition-colors group">
+                              <tr
+                                key={student._id}
+                                className="hover:bg-slate-50/60 transition-colors group cursor-pointer"
+                                onClick={() => router.push(iepPath)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    router.push(iepPath);
+                                  }
+                                }}
+                                role="link"
+                                tabIndex={0}
+                              >
                                 <td className="px-5 py-3.5">
                                   <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
                                       <span className="font-bold text-sm">{student.name.charAt(0).toUpperCase()}</span>
                                     </div>
-                                    <div>
-                                      <div className="text-sm font-semibold text-slate-900">{student.name}</div>
-                                      <div className="text-[12px] text-slate-500">{student.gradeLevel} · {student.age} yrs</div>
-                                    </div>
+                                    <div className="text-sm font-semibold text-slate-900">{student.name}</div>
                                   </div>
                                 </td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
-                                <td className="px-5 py-3.5 text-sm text-slate-600">{student.age}</td>
-                                <td className="px-5 py-3.5 text-sm text-slate-600">{student.gradeLevel}</td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 tabular-nums whitespace-nowrap">{formatAdded(student.createdAt)}</td>
-                                <td className="px-5 py-3.5">
-                                  {student?.assignedGoals && student.assignedGoals.length > 0 ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Created
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Pending
-                                    </span>
-                                  )}
-                                </td>
                                 <td className="px-5 py-3.5">
                                   {status === 'reviewed' ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700">
@@ -983,18 +977,15 @@ export default function Dashboard() {
                                     </span>
                                   )}
                                 </td>
-                                <td className="px-5 py-3.5">
+                                <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEditStudent(student)} className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors" title="Edit">
+                                    <button type="button" onClick={() => handleEditStudent(student)} className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors" title="Edit">
                                       <Pencil className="w-3.5 h-3.5" />Edit
                                     </button>
-                                    <button onClick={() => router.push(`/students/${student._id}`)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title="IEP">
+                                    <button type="button" onClick={() => router.push(iepPath)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title="IEP">
                                       <FileText className="w-3.5 h-3.5" />IEP
                                     </button>
-                                    <button onClick={() => router.push(`/services/${student._id}`)} className="flex items-center gap-1.5 px-3 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[13px] font-medium transition-colors" title="View Recs">
-                                      <Zap className="w-3.5 h-3.5" />Recs
-                                    </button>
-                                    <button onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                                    <button type="button" onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
@@ -1075,9 +1066,6 @@ export default function Dashboard() {
                                 </button>
                                 <button onClick={() => router.push(`/students/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[12px] font-medium transition-colors">
                                   <FileText className="w-3 h-3" />IEP
-                                </button>
-                                <button onClick={() => router.push(`/services/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-emerald-700 hover:bg-emerald-50 rounded-md text-[12px] font-medium transition-colors">
-                                  <Zap className="w-3 h-3" />Recs
                                 </button>
                                 <button onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
                                   <Trash2 className="w-3 h-3" />

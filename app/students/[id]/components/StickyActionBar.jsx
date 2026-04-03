@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Wand2, Download, ChevronDown, FileText, FileType, GraduationCap } from 'lucide-react';
+import { Save, Wand2, Download, ChevronDown, FileText, FileType, GraduationCap, Eye } from 'lucide-react';
 
-export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = '' }) {
+export default function StickyActionBar({
+  onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onPreviewFloridaIEP, floridaPreviewBusy,
+  onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = ''
+}) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
 
@@ -81,12 +84,24 @@ export default function StickyActionBar({ onRegenerate, onSave, onDownload, onDo
                   PDF (.pdf)
                 </button>
                 <div className="mx-2 border-t border-slate-100" />
+                {onPreviewFloridaIEP && (
+                  <button
+                    type="button"
+                    onClick={() => { onPreviewFloridaIEP(); setExportOpen(false); }}
+                    disabled={exportDisabled || floridaPreviewBusy}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Eye className="w-4 h-4 text-indigo-500" />
+                    {floridaPreviewBusy ? 'Building preview…' : 'Preview Florida IEP (PDF)'}
+                  </button>
+                )}
                 <button
+                  type="button"
                   onClick={() => { onDownloadFloridaIEP(); setExportOpen(false); }}
                   className="flex items-center gap-2.5 w-full px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
                 >
                   <GraduationCap className="w-4 h-4 text-indigo-400" />
-                  Florida IEP Format
+                  Download Florida IEP
                 </button>
               </div>
             )}

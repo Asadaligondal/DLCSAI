@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -11,7 +11,8 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import { ArrowLeft, Save, Wand2 } from 'lucide-react';
-import { downloadFloridaIepPdf } from '@/lib/floridaIepPdf';
+import { downloadFloridaIepPdf, getFloridaIepPdfBlobUrl } from '@/lib/floridaIepPdf';
+import Modal from '@/components/Modal';
 
 import StudentInfoHeader from './components/StudentInfoHeader';
 import EditorHeader from './components/EditorHeader';
@@ -119,6 +120,9 @@ export default function StudentDetail() {
   const [ragStrategy, setRagStrategy] = useState('baseline');
   const [pipelineMetrics, setPipelineMetrics] = useState({});
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [floridaPreview, setFloridaPreview] = useState(null);
+  const [floridaPreviewBusy, setFloridaPreviewBusy] = useState(false);
+  const floridaPreviewRevokeRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     studentId: '',
@@ -178,6 +182,13 @@ export default function StudentDetail() {
       if (stored) setPipelineMetrics(JSON.parse(stored));
     } catch { /* ignore corrupt data */ }
   }, [id, router]);
+
+  useEffect(() => () => {
+    if (floridaPreviewRevokeRef.current) {
+      floridaPreviewRevokeRef.current();
+      floridaPreviewRevokeRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     const onUserUpdated = (e) => {
@@ -980,6 +991,36 @@ export default function StudentDetail() {
     }
   };
 
+  const closeFloridaPreview = () => {
+    if (floridaPreviewRevokeRef.current) {
+      floridaPreviewRevokeRef.current();
+      floridaPreviewRevokeRef.current = null;
+    }
+    setFloridaPreview(null);
+  };
+
+  const handlePreviewFloridaIEP = async () => {
+    if (!editablePlan || !isReviewed) return;
+    if (floridaPreviewRevokeRef.current) {
+      floridaPreviewRevokeRef.current();
+      floridaPreviewRevokeRef.current = null;
+    }
+    setFloridaPreview(null);
+    setFloridaPreviewBusy(true);
+    try {
+      const { url, revoke } = await getFloridaIepPdfBlobUrl(student, editablePlan, {
+        logoUrl: userLocal?.floridaIepLogo || undefined
+      });
+      floridaPreviewRevokeRef.current = revoke;
+      setFloridaPreview({ url });
+    } catch (error) {
+      toast.error('Could not build PDF preview');
+      console.error(error);
+    } finally {
+      setFloridaPreviewBusy(false);
+    }
+  };
+
   // Remove a goal from the editable plan
   const removeGoal = (index) => {
     const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
@@ -1049,12 +1090,28 @@ export default function StudentDetail() {
             onDownload={handleExportToWord}
             onDownloadPDF={handleExportToPDF}
             onDownloadFloridaIEP={handleExportFloridaIEP}
+            onPreviewFloridaIEP={handlePreviewFloridaIEP}
+            floridaPreviewBusy={floridaPreviewBusy}
             onReset={handleResetToOriginal}
             isReviewed={isReviewed}
             isBusy={isGenerating}
             generateStage={generateStage}
             generateProgress={generateProgress}
           />
+
+          {floridaPreview && (
+            <Modal
+              isOpen
+              onClose={closeFloridaPreview}
+              title="Florida IEP — preview"
+              size="xl"
+              noScroll
+            >
+              <div className="h-[min(80vh,820px)] w-full bg-slate-100 rounded-b-2xl overflow-hidden">
+                <iframe title="Florida IEP PDF preview" src={floridaPreview.url} className="w-full h-full border-0" />
+              </div>
+            </Modal>
+          )}
 
           <RegenerateIepModal
             isOpen={showGenerateModal}
