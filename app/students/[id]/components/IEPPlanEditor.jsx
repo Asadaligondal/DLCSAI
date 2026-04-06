@@ -82,8 +82,8 @@ export default function IEPPlanEditor({
         </div>
       )}
 
-      {/* Raw Retrieved Context (for analysis) - collapsible dropdown, always visible */}
-      <div id="raw-retrieved-context" className="mt-6 border border-amber-200 rounded-lg bg-amber-50/50 overflow-hidden">
+      {/* Raw Retrieved Context — hidden for now; keep markup for future use */}
+      <div id="raw-retrieved-context" className="mt-6 border border-amber-200 rounded-lg bg-amber-50/50 overflow-hidden hidden" aria-hidden>
         <button
           type="button"
           onClick={() => setShowRagContext(s => !s)}

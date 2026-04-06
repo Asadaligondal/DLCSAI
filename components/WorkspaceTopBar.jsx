@@ -1,14 +1,13 @@
 'use client';
 
 /**
- * Same sticky top bar as the dashboard: left title "Dashboard", welcome + avatar right.
- * No product logo — sidebar already shows branding.
+ * Sticky top bar: left = optional custom node (e.g. breadcrumbs), else "Dashboard" title; welcome + avatar right.
  */
-export default function WorkspaceTopBar({ user }) {
+export default function WorkspaceTopBar({ user, left = null }) {
   return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-8 h-16 flex items-center justify-between sticky top-0 z-20 shrink-0">
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Dashboard</h2>
+    <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-8 h-16 flex items-center justify-between sticky top-0 z-20 shrink-0 gap-4">
+      <div className="min-w-0 flex-1 flex items-center">
+        {left ?? <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Dashboard</h2>}
       </div>
       <div className="flex items-center gap-4">
         <span className="text-sm text-slate-500 hidden sm:inline">Welcome, {user?.name || '—'}</span>

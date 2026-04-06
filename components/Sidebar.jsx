@@ -31,7 +31,9 @@ export default function Sidebar({ user, onLogout }) {
   ];
 
   const isActive = (path) => {
-    if (path === '/dashboard') return pathname === '/dashboard' || pathname.startsWith('/students/');
+    if (path === '/dashboard') {
+      return pathname === '/dashboard' || pathname.startsWith('/dashboard/students') || pathname.startsWith('/students/');
+    }
     return pathname === path;
   };
 

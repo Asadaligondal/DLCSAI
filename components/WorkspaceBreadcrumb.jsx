@@ -8,12 +8,12 @@ import { ChevronRight } from 'lucide-react';
  * items: { label: string, icon?: LucideIcon, href?: string }[]
  * Last item is shown as current (semibold). Earlier items with href navigate; without href render as plain label.
  */
-export default function WorkspaceBreadcrumb({ items = [] }) {
+export default function WorkspaceBreadcrumb({ items = [], className }) {
   const router = useRouter();
   if (!items.length) return null;
 
   return (
-    <nav className="mb-2 flex items-center gap-1 text-sm flex-wrap" aria-label="Breadcrumb">
+    <nav className={`flex items-center gap-1 text-sm flex-wrap ${className ?? 'mb-2'}`} aria-label="Breadcrumb">
       {items.map((item, i) => {
         const isLast = i === items.length - 1;
         const Icon = item.icon;

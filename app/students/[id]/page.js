@@ -117,7 +117,7 @@ export default function StudentDetail() {
   const [hasExistingPlan, setHasExistingPlan] = useState(false);
   const [ragContext, setRagContext] = useState(null);
   const [ragContextByQuery, setRagContextByQuery] = useState([]);
-  const [ragStrategy, setRagStrategy] = useState('baseline');
+  const [ragStrategy, setRagStrategy] = useState('grouped');
   const [pipelineMetrics, setPipelineMetrics] = useState({});
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [floridaPreview, setFloridaPreview] = useState(null);
@@ -1074,16 +1074,10 @@ export default function StudentDetail() {
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
-        <WorkspaceTopBar user={userLocal} />
+        <WorkspaceTopBar user={userLocal} left={<EditorHeader />} />
 
         <main className="p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto space-y-5">
-          <div>
-            <EditorHeader student={student} />
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">IEP Plan</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{student.name || 'Student'}</p>
-          </div>
-
           <StickyActionBar
             onRegenerate={openGenerateModal}
             onSave={handleSaveChanges}
@@ -1160,7 +1154,8 @@ export default function StudentDetail() {
                 customGoals={customGoals}
               />
 
-              <div className="mt-3 space-y-2">
+              {/* Pipeline UI hidden for now — default RAG remains `grouped` (B) via state above */}
+              <div className="hidden" aria-hidden>
                 <PipelineSelector
                   value={ragStrategy}
                   onChange={setRagStrategy}
@@ -1223,7 +1218,6 @@ export default function StudentDetail() {
                   { id: 'custom-goals', label: 'Custom Goals' },
                   { id: 'recommended-accommodations', label: 'Accommodations' },
                   { id: 'intervention-recommendations', label: 'Interventions' },
-                  { id: 'raw-retrieved-context', label: 'Raw Retrieved Context' },
                   { id: 'final-review', label: 'Final Review' }
                 ]} />
               </div>
