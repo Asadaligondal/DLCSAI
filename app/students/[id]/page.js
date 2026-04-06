@@ -1048,6 +1048,19 @@ export default function StudentDetail() {
     setEditablePlan({ ...editablePlan, annual_goals: newGoals });
   };
 
+  const updateGoalPartial = (index, partial) => {
+    const newGoals = Array.isArray(editablePlan?.annual_goals) ? [...editablePlan.annual_goals] : [];
+    const existing = newGoals[index];
+    if (existing && typeof existing === 'object') {
+      newGoals[index] = { ...existing, ...partial };
+    } else if (typeof existing === 'string') {
+      newGoals[index] = { goal: existing, ...partial };
+    } else {
+      newGoals[index] = { ...partial };
+    }
+    setEditablePlan({ ...editablePlan, annual_goals: newGoals });
+  };
+
   const updateObjective = (index, text) => {
     const newObjectives = Array.isArray(editablePlan?.short_term_objectives)
       ? [...editablePlan.short_term_objectives]
@@ -1200,6 +1213,7 @@ export default function StudentDetail() {
                   removeGoal={removeGoal}
                   removeObjective={removeObjective}
                   updateGoal={updateGoal}
+                  updateGoalPartial={updateGoalPartial}
                   updateObjective={updateObjective}
                   setEditablePlan={setEditablePlan}
                   ragContext={ragContext}

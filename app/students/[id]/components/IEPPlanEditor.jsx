@@ -18,6 +18,7 @@ export default function IEPPlanEditor({
   removeGoal,
   removeObjective,
   updateGoal,
+  updateGoalPartial,
   updateObjective,
   setEditablePlan,
   ragContext,
@@ -60,6 +61,7 @@ export default function IEPPlanEditor({
             removeGoal={removeGoal}
             removeObjective={removeObjective}
             updateGoal={updateGoal}
+            updateGoalPartial={updateGoalPartial}
             updateObjective={updateObjective}
             setEditablePlan={setEditablePlan}
           />
@@ -74,6 +76,7 @@ export default function IEPPlanEditor({
             removeGoal={removeGoal}
             removeObjective={removeObjective}
             updateGoal={updateGoal}
+            updateGoalPartial={updateGoalPartial}
             updateObjective={updateObjective}
             setEditablePlan={setEditablePlan}
           />
