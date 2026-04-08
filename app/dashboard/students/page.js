@@ -13,6 +13,7 @@ import { Plus, Search, Trash2, Upload, FileText, Users, ChevronDown, Image as Im
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import ActivityFeed from '../components/ActivityFeed';
+import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 
 /** Map AI-extracted date text to YYYY-MM-DD for date inputs. */
 function normalizeExtractedDate(val) {
@@ -252,6 +253,7 @@ export default function Dashboard() {
   const [filterGrade, setFilterGrade] = useState('');
   const [filterIEP, setFilterIEP] = useState('');
   const [filterExceptionality, setFilterExceptionality] = useState('');
+  const [filterCaseManager, setFilterCaseManager] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -287,9 +289,10 @@ export default function Dashboard() {
     address: '',
     parentGuardian1: '',
     parentGuardian2: '',
+    caseManager: '',
     primaryExceptionality: '',
     relatedServicesTherapy: '',
-    otherExceptionalities: '',
+    domainAreas: [],
     originalMeetingPlanDate: '',
     initiationDate: '',
     durationDate: '',
@@ -378,9 +381,10 @@ export default function Dashboard() {
       address: '',
       parentGuardian1: '',
       parentGuardian2: '',
+      caseManager: '',
       primaryExceptionality: '',
       relatedServicesTherapy: '',
-      otherExceptionalities: '',
+      domainAreas: [],
       originalMeetingPlanDate: '',
       initiationDate: '',
       durationDate: '',
@@ -423,9 +427,10 @@ export default function Dashboard() {
       address: student.address || '',
       parentGuardian1: student.parentGuardian1 || '',
       parentGuardian2: student.parentGuardian2 || '',
+      caseManager: student.caseManager || '',
       primaryExceptionality: student.primaryExceptionality || '',
       relatedServicesTherapy: student.relatedServicesTherapy || '',
-      otherExceptionalities: student.otherExceptionalities || '',
+      domainAreas: Array.isArray(student.domainAreas) ? student.domainAreas : [],
       originalMeetingPlanDate: toDateInput(student.originalMeetingPlanDate),
       initiationDate: toDateInput(student.initiationDate),
       durationDate: toDateInput(student.durationDate),
@@ -467,9 +472,10 @@ export default function Dashboard() {
       address: '',
       parentGuardian1: '',
       parentGuardian2: '',
+      caseManager: '',
       primaryExceptionality: '',
       relatedServicesTherapy: '',
-      otherExceptionalities: '',
+      domainAreas: [],
       originalMeetingPlanDate: '',
       initiationDate: '',
       durationDate: '',
@@ -603,12 +609,11 @@ export default function Dashboard() {
             address: extracted.address !== 'add manually' ? extracted.address : prev.address,
             parentGuardian1: extracted.parentGuardian1 !== 'add manually' ? extracted.parentGuardian1 : prev.parentGuardian1,
             parentGuardian2: extracted.parentGuardian2 !== 'add manually' ? extracted.parentGuardian2 : prev.parentGuardian2,
+            caseManager: extracted.caseManager !== 'add manually' ? extracted.caseManager : prev.caseManager,
             primaryExceptionality:
               extracted.primaryExceptionality !== 'add manually' ? extracted.primaryExceptionality : prev.primaryExceptionality,
             relatedServicesTherapy:
               extracted.relatedServicesTherapy !== 'add manually' ? extracted.relatedServicesTherapy : prev.relatedServicesTherapy,
-            otherExceptionalities:
-              extracted.otherExceptionalities !== 'add manually' ? extracted.otherExceptionalities : prev.otherExceptionalities,
             originalMeetingPlanDate:
               normalizeExtractedDate(extracted.originalMeetingPlanDate) ?? prev.originalMeetingPlanDate,
             initiationDate: normalizeExtractedDate(extracted.initiationDate) ?? prev.initiationDate,
@@ -622,6 +627,9 @@ export default function Dashboard() {
             domainsTransitionAreas:
               extracted.domainsTransitionAreas !== 'add manually' ? extracted.domainsTransitionAreas : prev.domainsTransitionAreas,
             associatedPlans: extracted.associatedPlans !== 'add manually' ? extracted.associatedPlans : prev.associatedPlans,
+            domainAreas: Array.isArray(extracted.domainAreas)
+              ? extracted.domainAreas.filter((d) => DOMAIN_AREA_OPTIONS.includes(d))
+              : prev.domainAreas,
           };
         });
 
@@ -695,6 +703,7 @@ export default function Dashboard() {
   // Derive filter options from data
   const uniqueGrades = [...new Set(students.map(s => s.gradeLevel).filter(Boolean))].sort();
   const uniqueExceptionalities = [...new Set(students.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
+  const uniqueCaseManagers = [...new Set(students.map(s => s.caseManager).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
 
   const getIEPStatus = (s) => {
     const iep = s?.iep_plan_data;
@@ -706,12 +715,22 @@ export default function Dashboard() {
 
   const filteredStudents = students
     .filter((s) => {
-      const q = searchQuery.toLowerCase();
-      const matchSearch = !q || s.name.toLowerCase().includes(q) || s.studentId.toLowerCase().includes(q);
+      const q = searchQuery.trim().toLowerCase();
+      const nm = (s.name && String(s.name).toLowerCase()) || '';
+      const sid = (s.studentId && String(s.studentId).toLowerCase()) || '';
+      const cm = (s.caseManager && String(s.caseManager).toLowerCase()) || '';
+      const matchSearch =
+        !q ||
+        nm.includes(q) ||
+        sid.includes(q) ||
+        cm.includes(q);
       const matchGrade = !filterGrade || s.gradeLevel === filterGrade;
       const matchIEP = !filterIEP || getIEPStatus(s) === filterIEP;
       const matchExc = !filterExceptionality || (s.disabilities || []).includes(filterExceptionality);
-      return matchSearch && matchGrade && matchIEP && matchExc;
+      const matchCaseMgr =
+        !filterCaseManager ||
+        (s.caseManager && String(s.caseManager) === filterCaseManager);
+      return matchSearch && matchGrade && matchIEP && matchExc && matchCaseMgr;
     })
     .sort((a, b) => {
       let cmp = 0;
@@ -736,8 +755,14 @@ export default function Dashboard() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedStudents = filteredStudents.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const activeFilters = [filterGrade, filterIEP, filterExceptionality].filter(Boolean).length;
-  const clearFilters = () => { setFilterGrade(''); setFilterIEP(''); setFilterExceptionality(''); setCurrentPage(1); };
+  const activeFilters = [filterGrade, filterIEP, filterExceptionality, filterCaseManager].filter(Boolean).length;
+  const clearFilters = () => {
+    setFilterGrade('');
+    setFilterIEP('');
+    setFilterExceptionality('');
+    setFilterCaseManager('');
+    setCurrentPage(1);
+  };
 
   const handleSort = (key) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -807,7 +832,7 @@ export default function Dashboard() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="text"
-                        placeholder="Search by name or ID..."
+                        placeholder="Search by name, ID, or case manager…"
                         value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                         className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
@@ -845,6 +870,18 @@ export default function Dashboard() {
                     >
                       <option value="">All Exceptionalities</option>
                       {uniqueExceptionalities.map(e => <option key={e} value={e}>{e.length > 30 ? e.slice(0, 30) + '...' : e}</option>)}
+                    </select>
+
+                    <select
+                      value={filterCaseManager}
+                      onChange={(e) => { setFilterCaseManager(e.target.value); setCurrentPage(1); }}
+                      className="h-9 pl-3 pr-7 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all appearance-none cursor-pointer max-w-[200px]"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                    >
+                      <option value="">All Case Managers</option>
+                      {uniqueCaseManagers.map((m) => (
+                        <option key={m} value={m}>{m.length > 36 ? `${m.slice(0, 36)}…` : m}</option>
+                      ))}
                     </select>
 
                     {activeFilters > 0 && (
@@ -892,6 +929,7 @@ export default function Dashboard() {
                         <tr className="border-b border-slate-100">
                           {[
                             { key: 'name',  label: 'Name' },
+                            { key: null,    label: 'Case Manager' },
                             { key: null,    label: 'Student ID' },
                             { key: 'createdAt', label: 'Added' },
                             { key: 'iep',   label: 'IEP Plan' },
@@ -915,7 +953,7 @@ export default function Dashboard() {
                       <tbody className="divide-y divide-slate-50">
                         {loading ? (
                           <tr>
-                            <td colSpan="5" className="px-6 py-20 text-center">
+                            <td colSpan="6" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -927,7 +965,7 @@ export default function Dashboard() {
                           </tr>
                         ) : paginatedStudents.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="px-6 py-20 text-center">
+                            <td colSpan="6" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
                                   <Users className="w-6 h-6 text-slate-300" />
@@ -964,6 +1002,9 @@ export default function Dashboard() {
                                     </div>
                                     <div className="text-sm font-semibold text-slate-900">{student.name}</div>
                                   </div>
+                                </td>
+                                <td className="px-5 py-3.5 text-sm text-slate-600 max-w-[160px]">
+                                  <span className="line-clamp-2" title={student.caseManager || ''}>{student.caseManager || '—'}</span>
                                 </td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 tabular-nums whitespace-nowrap">{formatAdded(student.createdAt)}</td>
@@ -1032,6 +1073,9 @@ export default function Dashboard() {
                                 <div className="flex-1 min-w-0">
                                   <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
                                   <p className="text-[12px] text-slate-500">ID: {student.studentId}</p>
+                                  {student.caseManager && (
+                                    <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={student.caseManager}>CM: {student.caseManager}</p>
+                                  )}
                                 </div>
                               </div>
 
@@ -1360,25 +1404,28 @@ export default function Dashboard() {
                         className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                       />
                     </div>
-                    <div className="col-span-2 sm:col-span-1">
-                      <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Case Manager</label>
                       <input
                         type="text"
-                        value={formData.primaryExceptionality}
-                        onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
+                        value={formData.caseManager}
+                        onChange={(e) => setFormData({ ...formData, caseManager: e.target.value })}
                         className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                        placeholder="e.g. Specific Learning Disability"
+                        placeholder="Staff managing this student’s case"
                       />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="block text-xs font-medium text-slate-700 mb-2">Other exceptionalities</label>
-                      <input
-                        type="text"
-                        value={formData.otherExceptionalities}
-                        onChange={(e) => setFormData({ ...formData, otherExceptionalities: e.target.value })}
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                      <select
+                        value={formData.primaryExceptionality}
+                        onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
                         className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                        placeholder="e.g. ADHD"
-                      />
+                      >
+                        <option value="">Select primary exceptionality…</option>
+                        {DISABILITIES_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs font-medium text-slate-700 mb-2">Related services / therapy</label>
@@ -1467,12 +1514,22 @@ export default function Dashboard() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-700 mb-2">Associated plans</label>
+                      <label className="block text-xs font-medium text-slate-700 mb-2">Associated Plan</label>
                       <input
                         type="text"
                         value={formData.associatedPlans}
                         onChange={(e) => setFormData({ ...formData, associatedPlans: e.target.value })}
                         className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                        placeholder="e.g. IEP, 504"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <MultiSelect
+                        label="Domain area"
+                        options={DOMAIN_AREA_OPTIONS}
+                        value={formData.domainAreas}
+                        onChange={(value) => setFormData({ ...formData, domainAreas: value })}
+                        placeholder="Select domain area(s)…"
                       />
                     </div>
                   </div>

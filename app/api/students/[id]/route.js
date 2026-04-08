@@ -118,6 +118,7 @@ export async function PUT(request, { params }) {
       address,
       parentGuardian1,
       parentGuardian2,
+      caseManager,
       primaryExceptionality,
       relatedServicesTherapy,
       otherExceptionalities,
@@ -132,6 +133,7 @@ export async function PUT(request, { params }) {
       generationType,
       domainsTransitionAreas,
       associatedPlans,
+      domainAreas,
     } = body;
 
     // Connect to database
@@ -169,6 +171,7 @@ export async function PUT(request, { params }) {
     if (address !== undefined) student.address = address;
     if (parentGuardian1 !== undefined) student.parentGuardian1 = parentGuardian1;
     if (parentGuardian2 !== undefined) student.parentGuardian2 = parentGuardian2;
+    if (caseManager !== undefined) student.caseManager = caseManager;
     if (primaryExceptionality !== undefined) student.primaryExceptionality = primaryExceptionality;
     if (relatedServicesTherapy !== undefined) student.relatedServicesTherapy = relatedServicesTherapy;
     if (otherExceptionalities !== undefined) student.otherExceptionalities = otherExceptionalities;
@@ -183,6 +186,7 @@ export async function PUT(request, { params }) {
     if (generationType !== undefined) student.generationType = generationType;
     if (domainsTransitionAreas !== undefined) student.domainsTransitionAreas = domainsTransitionAreas;
     if (associatedPlans !== undefined) student.associatedPlans = associatedPlans;
+    if (domainAreas !== undefined) student.domainAreas = Array.isArray(domainAreas) ? domainAreas : [];
     if (assignedGoals !== undefined) student.assignedGoals = assignedGoals;
     if (annualGoals !== undefined) student.annualGoals = annualGoals;
     if (servicesRecommendations !== undefined) student.servicesRecommendations = servicesRecommendations;

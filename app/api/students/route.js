@@ -100,9 +100,9 @@ export async function POST(request) {
       address,
       parentGuardian1,
       parentGuardian2,
+      caseManager,
       primaryExceptionality,
       relatedServicesTherapy,
-      otherExceptionalities,
       originalMeetingPlanDate,
       initiationDate,
       durationDate,
@@ -114,6 +114,7 @@ export async function POST(request) {
       generationType,
       domainsTransitionAreas,
       associatedPlans,
+      domainAreas,
     } = body;
 
     // Validate required fields
@@ -164,9 +165,10 @@ export async function POST(request) {
       address: address || '',
       parentGuardian1: parentGuardian1 || '',
       parentGuardian2: parentGuardian2 || '',
+      caseManager: caseManager || '',
       primaryExceptionality: primaryExceptionality || '',
       relatedServicesTherapy: relatedServicesTherapy || '',
-      otherExceptionalities: otherExceptionalities || '',
+      domainAreas: Array.isArray(domainAreas) ? domainAreas : [],
       originalMeetingPlanDate: optDate(originalMeetingPlanDate),
       initiationDate: optDate(initiationDate),
       durationDate: optDate(durationDate),

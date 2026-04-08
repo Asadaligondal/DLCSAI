@@ -27,9 +27,10 @@ const EXTRACTION_PROMPT = `You are a Data Extraction Assistant. Extract the foll
 - address (full street/city line or mailing address if present)
 - parentGuardian1 (first parent/guardian name or label if listed)
 - parentGuardian2 (second parent/guardian if listed)
-- primaryExceptionality (primary disability category label, e.g. Specific Learning Disability, if clearly stated)
+- caseManager (assigned case manager or IEP coordinator name if listed)
+- primaryExceptionality (primary disability category label, e.g. Specific Learning Disability, if clearly stated — prefer matching Florida exceptionality labels when possible)
 - relatedServicesTherapy (comma-separated related services such as Speech, OT, PT, Counseling if listed)
-- otherExceptionalities (comma-separated labels for secondary exceptionalities, e.g. ADHD, if distinct from primary)
+- domainAreas (JSON array of zero or more of: "Curriculum and Learning Environment", "Social or Emotional Behavior", "Independent Functioning", "Communication", "Health Care" — only if clearly indicated)
 - originalMeetingPlanDate (ISO date YYYY-MM-DD if found)
 - initiationDate (ISO date YYYY-MM-DD if found)
 - durationDate (ISO date YYYY-MM-DD if found)
@@ -48,7 +49,8 @@ Special handling for performance fields:
 
 Rules:
 - Return ONLY valid JSON with these exact field names.
-- For disabilities, strengths, weaknesses, areaOfNeed, relatedServicesTherapy, and otherExceptionalities, combine multiple items into a single comma-separated string when needed (e.g., "ADHD, Dyslexia" or "Reading, Math").
+- For disabilities, strengths, weaknesses, areaOfNeed, and relatedServicesTherapy, combine multiple items into a single comma-separated string when needed (e.g., "ADHD, Dyslexia" or "Reading, Math").
+- For domainAreas, return a JSON array of strings chosen only from the five domain labels above; use [] if none are stated.
 - For any date field above, use YYYY-MM-DD only when a clear calendar date appears; otherwise use "add manually".
 - If a field is not found in the document, set it to the exact string "add manually" (lowercase).
 - Do not leave any field as an empty string - use "add manually" for missing data.

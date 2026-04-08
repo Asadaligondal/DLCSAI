@@ -6,6 +6,7 @@ import { X, Save, Target, ChevronDown } from 'lucide-react';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
+import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 
 export default function StudentInfoHeader({
   student,
@@ -270,27 +271,25 @@ export default function StudentInfoHeader({
                         )}
                       </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium text-slate-500 mb-1.5">Primary exceptionality</div>
+                    <div className="col-span-2">
+                      <div className="text-xs font-medium text-slate-500 mb-1.5">Case Manager</div>
                       <div className="flex flex-wrap gap-2">
-                        {pillText(formData.primaryExceptionality || student?.primaryExceptionality) ? (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.primaryExceptionality || student?.primaryExceptionality}</span>
+                        {pillText(formData.caseManager || student?.caseManager) ? (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.caseManager || student?.caseManager}</span>
                         ) : (
                           <span className="text-sm text-slate-500">None</span>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <div className="text-xs font-medium text-slate-500 mb-1.5">Other exceptionalities</div>
-                      <div className="flex flex-wrap gap-2">
-                        {pillText(formData.otherExceptionalities || student?.otherExceptionalities) ? (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.otherExceptionalities || student?.otherExceptionalities}</span>
-                        ) : (
-                          <span className="text-sm text-slate-500">None</span>
-                        )}
-                      </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Primary exceptionality</div>
+                    <div className="flex flex-wrap gap-2">
+                      {pillText(formData.primaryExceptionality || student?.primaryExceptionality) ? (
+                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.primaryExceptionality || student?.primaryExceptionality}</span>
+                      ) : (
+                        <span className="text-sm text-slate-500">None</span>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -394,7 +393,22 @@ export default function StudentInfoHeader({
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Associated plans</div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Domain area</div>
+                    <div className="flex flex-wrap gap-2">
+                      {(() => {
+                        const list = formData.domainAreas ?? student?.domainAreas;
+                        return Array.isArray(list) && list.length > 0 ? (
+                          list.map((d, i) => (
+                            <span key={i} className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">{d}</span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-500">None</span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Associated Plan</div>
                     <div className="flex flex-wrap gap-2">
                       {pillText(formData.associatedPlans || student?.associatedPlans) ? (
                         <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
@@ -698,25 +712,28 @@ export default function StudentInfoHeader({
                       className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
                     />
                   </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Case Manager</label>
                     <input
                       type="text"
-                      value={formData.primaryExceptionality || ''}
-                      onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
+                      value={formData.caseManager || ''}
+                      onChange={(e) => setFormData({ ...formData, caseManager: e.target.value })}
                       className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      placeholder="e.g. Specific Learning Disability"
+                      placeholder="Staff managing this student’s case"
                     />
                   </div>
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Other exceptionalities</label>
-                    <input
-                      type="text"
-                      value={formData.otherExceptionalities || ''}
-                      onChange={(e) => setFormData({ ...formData, otherExceptionalities: e.target.value })}
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                    <select
+                      value={formData.primaryExceptionality || ''}
+                      onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
                       className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      placeholder="e.g. ADHD"
-                    />
+                    >
+                      <option value="">Select primary exceptionality…</option>
+                      {(disabilitiesOptions || []).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-2">Related services / therapy</label>
@@ -805,12 +822,22 @@ export default function StudentInfoHeader({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Associated plans</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Associated Plan</label>
                     <input
                       type="text"
                       value={formData.associatedPlans || ''}
                       onChange={(e) => setFormData({ ...formData, associatedPlans: e.target.value })}
                       className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                      placeholder="e.g. IEP, 504"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <MultiSelect
+                      label="Domain area"
+                      options={DOMAIN_AREA_OPTIONS}
+                      value={Array.isArray(formData.domainAreas) ? formData.domainAreas : []}
+                      onChange={(value) => setFormData({ ...formData, domainAreas: value })}
+                      placeholder="Select domain area(s)…"
                     />
                   </div>
                 </div>

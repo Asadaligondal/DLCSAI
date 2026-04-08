@@ -5,6 +5,7 @@ import Modal from '@/components/Modal';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import { Wand2 } from 'lucide-react';
+import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 
 const GENERATION_TYPES = [
   { value: '', label: 'Select type…' },
@@ -116,13 +117,15 @@ export default function RegenerateIepModal({
   const [persistProfile, setPersistProfile] = useState(true);
 
   const [gradeLevel, setGradeLevel] = useState('');
+  const [caseManager, setCaseManager] = useState('');
   const [disabilities, setDisabilities] = useState([]);
   const [strengths, setStrengths] = useState([]);
   const [weaknesses, setWeaknesses] = useState([]);
   const [primaryExceptionality, setPrimaryExceptionality] = useState('');
-  const [otherExceptionalities, setOtherExceptionalities] = useState('');
   const [relatedServicesTherapy, setRelatedServicesTherapy] = useState('');
   const [domainsTransitionAreas, setDomainsTransitionAreas] = useState('');
+  const [associatedPlans, setAssociatedPlans] = useState('');
+  const [domainAreas, setDomainAreas] = useState([]);
   const [localGoals, setLocalGoals] = useState([]);
   const [accDraft, setAccDraft] = useState(() => cloneAcc(null));
   const [showAccModal, setShowAccModal] = useState(false);
@@ -134,10 +137,12 @@ export default function RegenerateIepModal({
       strengths: [...(profileForm.strengths || [])],
       weaknesses: [...(profileForm.weaknesses || [])],
       gradeLevel: profileForm.gradeLevel || '',
+      caseManager: profileForm.caseManager || '',
       primaryExceptionality: profileForm.primaryExceptionality || '',
-      otherExceptionalities: profileForm.otherExceptionalities || '',
       relatedServicesTherapy: profileForm.relatedServicesTherapy || '',
       domainsTransitionAreas: profileForm.domainsTransitionAreas || '',
+      associatedPlans: profileForm.associatedPlans || '',
+      domainAreas: [...(profileForm.domainAreas || [])],
       accStr: JSON.stringify(cloneAcc(student.student_accommodations)),
       goalSigs: new Set((customGoalsProp || []).map(goalSig))
     };
@@ -167,13 +172,15 @@ export default function RegenerateIepModal({
     setPersistProfile(true);
 
     setGradeLevel(profileForm.gradeLevel || '');
+    setCaseManager(profileForm.caseManager || '');
     setDisabilities([...(profileForm.disabilities || [])]);
     setStrengths([...(profileForm.strengths || [])]);
     setWeaknesses([...(profileForm.weaknesses || [])]);
     setPrimaryExceptionality(profileForm.primaryExceptionality || '');
-    setOtherExceptionalities(profileForm.otherExceptionalities || '');
     setRelatedServicesTherapy(profileForm.relatedServicesTherapy || '');
     setDomainsTransitionAreas(profileForm.domainsTransitionAreas || '');
+    setAssociatedPlans(profileForm.associatedPlans || '');
+    setDomainAreas([...(profileForm.domainAreas || [])]);
 
     const goalsCopy = (customGoalsProp || []).map((x) => ({ ...x }));
     setLocalGoals(goalsCopy);
@@ -207,13 +214,15 @@ export default function RegenerateIepModal({
       persistProfile,
       profile: {
         gradeLevel,
+        caseManager,
         disabilities,
         strengths,
         weaknesses,
         primaryExceptionality,
-        otherExceptionalities,
         relatedServicesTherapy,
         domainsTransitionAreas,
+        associatedPlans,
+        domainAreas,
         student_accommodations: accDraft
       },
       customGoals: localGoals
@@ -284,6 +293,16 @@ export default function RegenerateIepModal({
                 className="w-full h-10 px-3 border border-gray-200 rounded-md bg-white text-sm"
               />
             </div>
+            <div className={caseManager !== baseline?.caseManager ? 'rounded-md border border-sky-200/90 bg-sky-50/30 p-2' : ''}>
+              <label className="block text-xs text-slate-600 mb-1">Case Manager</label>
+              <input
+                type="text"
+                value={caseManager}
+                onChange={(e) => setCaseManager(e.target.value)}
+                className="w-full h-10 px-3 border border-gray-200 rounded-md bg-white text-sm"
+                placeholder="Staff managing this student’s case"
+              />
+            </div>
 
             <MultiSelect
               label="Exceptionalities (disabilities list)"
@@ -309,20 +328,33 @@ export default function RegenerateIepModal({
 
             <div className={primaryExceptionality !== baseline?.primaryExceptionality ? 'rounded-md border border-sky-200/90 bg-sky-50/30 p-2' : ''}>
               <label className="block text-xs text-slate-600 mb-1">Primary exceptionality</label>
-              <input
-                type="text"
+              <select
                 value={primaryExceptionality}
                 onChange={(e) => setPrimaryExceptionality(e.target.value)}
                 className="w-full h-10 px-3 border border-gray-200 rounded-md bg-white text-sm"
-              />
+              >
+                <option value="">Select primary exceptionality…</option>
+                {(disabilitiesOptions || []).map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
-            <div className={otherExceptionalities !== baseline?.otherExceptionalities ? 'rounded-md border border-sky-200/90 bg-sky-50/30 p-2' : ''}>
-              <label className="block text-xs text-slate-600 mb-1">Other exceptionalities</label>
+            <MultiSelect
+              label="Domain area"
+              options={DOMAIN_AREA_OPTIONS}
+              value={domainAreas}
+              onChange={setDomainAreas}
+              baselineValues={baseline?.domainAreas}
+              placeholder="Select domain area(s)…"
+            />
+            <div className={associatedPlans !== baseline?.associatedPlans ? 'rounded-md border border-sky-200/90 bg-sky-50/30 p-2' : ''}>
+              <label className="block text-xs text-slate-600 mb-1">Associated Plan</label>
               <input
                 type="text"
-                value={otherExceptionalities}
-                onChange={(e) => setOtherExceptionalities(e.target.value)}
+                value={associatedPlans}
+                onChange={(e) => setAssociatedPlans(e.target.value)}
                 className="w-full h-10 px-3 border border-gray-200 rounded-md bg-white text-sm"
+                placeholder="e.g. IEP, 504"
               />
             </div>
             <div className={relatedServicesTherapy !== baseline?.relatedServicesTherapy ? 'rounded-md border border-sky-200/90 bg-sky-50/30 p-2' : ''}>

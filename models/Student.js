@@ -76,6 +76,10 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  caseManager: {
+    type: String,
+    default: ''
+  },
   primaryExceptionality: {
     type: String,
     default: ''
@@ -132,6 +136,11 @@ const StudentSchema = new mongoose.Schema({
   associatedPlans: {
     type: String,
     default: ''
+  },
+  /** Florida IEP domain areas (multi-select; subset of DOMAIN_AREA_OPTIONS) */
+  domainAreas: {
+    type: [String],
+    default: []
   },
   student_accommodations: {
     consent: {
