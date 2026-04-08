@@ -9,6 +9,7 @@ import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
+import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
 import { Plus, Search, Trash2, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
@@ -301,6 +302,8 @@ export default function Dashboard() {
     amendmentDate: '',
     previouslyAmended: '',
     meetingPurpose: '',
+    meetingPurposeTags: [],
+    meetingPurposeOther: '',
     domainsTransitionAreas: '',
     associatedPlans: '',
   });
@@ -393,6 +396,8 @@ export default function Dashboard() {
       amendmentDate: '',
       previouslyAmended: '',
       meetingPurpose: '',
+      meetingPurposeTags: [],
+      meetingPurposeOther: '',
       domainsTransitionAreas: '',
       associatedPlans: '',
     });
@@ -439,6 +444,8 @@ export default function Dashboard() {
       amendmentDate: toDateInput(student.amendmentDate),
       previouslyAmended: student.previouslyAmended || '',
       meetingPurpose: student.meetingPurpose || '',
+      meetingPurposeTags: Array.isArray(student.meetingPurposeTags) ? student.meetingPurposeTags : [],
+      meetingPurposeOther: student.meetingPurposeOther || '',
       domainsTransitionAreas: student.domainsTransitionAreas || '',
       associatedPlans: student.associatedPlans || '',
     });
@@ -484,6 +491,8 @@ export default function Dashboard() {
       amendmentDate: '',
       previouslyAmended: '',
       meetingPurpose: '',
+      meetingPurposeTags: [],
+      meetingPurposeOther: '',
       domainsTransitionAreas: '',
       associatedPlans: '',
     });
@@ -1489,12 +1498,11 @@ export default function Dashboard() {
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs font-medium text-slate-700 mb-2">Meeting purpose</label>
-                      <input
-                        type="text"
-                        value={formData.meetingPurpose}
-                        onChange={(e) => setFormData({ ...formData, meetingPurpose: e.target.value })}
-                        className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                        placeholder="e.g. annual review, amendment"
+                      <MeetingPurposeCollapsible
+                        idPrefix="dash-mp"
+                        tags={formData.meetingPurposeTags || []}
+                        otherText={formData.meetingPurposeOther || ''}
+                        onChange={(patch) => setFormData({ ...formData, ...patch })}
                       />
                     </div>
                   </div>

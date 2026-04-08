@@ -124,6 +124,14 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  meetingPurposeTags: {
+    type: [String],
+    default: []
+  },
+  meetingPurposeOther: {
+    type: String,
+    default: ''
+  },
   /** Last IEP generation / meeting type (e.g. Annual review) — set from regenerate modal (M5) */
   generationType: {
     type: String,

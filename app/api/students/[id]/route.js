@@ -130,6 +130,8 @@ export async function PUT(request, { params }) {
       amendmentDate,
       previouslyAmended,
       meetingPurpose,
+      meetingPurposeTags,
+      meetingPurposeOther,
       generationType,
       domainsTransitionAreas,
       associatedPlans,
@@ -183,6 +185,10 @@ export async function PUT(request, { params }) {
     if (amendmentDate !== undefined) student.amendmentDate = optDate(amendmentDate);
     if (previouslyAmended !== undefined) student.previouslyAmended = previouslyAmended;
     if (meetingPurpose !== undefined) student.meetingPurpose = meetingPurpose;
+    if (meetingPurposeTags !== undefined) {
+      student.meetingPurposeTags = Array.isArray(meetingPurposeTags) ? meetingPurposeTags : [];
+    }
+    if (meetingPurposeOther !== undefined) student.meetingPurposeOther = meetingPurposeOther || '';
     if (generationType !== undefined) student.generationType = generationType;
     if (domainsTransitionAreas !== undefined) student.domainsTransitionAreas = domainsTransitionAreas;
     if (associatedPlans !== undefined) student.associatedPlans = associatedPlans;

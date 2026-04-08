@@ -6,6 +6,8 @@ import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import { Wand2 } from 'lucide-react';
 import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
+import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
+import { summarizeMeetingPurpose } from '@/lib/meetingPurposeChecklist';
 
 const GENERATION_TYPES = [
   { value: '', label: 'Select type…' },
@@ -108,7 +110,8 @@ export default function RegenerateIepModal({
   const wasOpenRef = useRef(false);
 
   const [generationType, setGenerationType] = useState('');
-  const [meetingPurpose, setMeetingPurpose] = useState('');
+  const [meetingPurposeTags, setMeetingPurposeTags] = useState([]);
+  const [meetingPurposeOther, setMeetingPurposeOther] = useState('');
   const [originalMeetingPlanDate, setOriginalMeetingPlanDate] = useState('');
   const [reviewDurationDate, setReviewDurationDate] = useState('');
   const [reevaluationDueDate, setReevaluationDueDate] = useState('');
@@ -157,7 +160,10 @@ export default function RegenerateIepModal({
     wasOpenRef.current = true;
 
     setGenerationType(student.generationType || '');
-    setMeetingPurpose(student.meetingPurpose || '');
+    setMeetingPurposeTags(
+      Array.isArray(profileForm.meetingPurposeTags) ? [...profileForm.meetingPurposeTags] : []
+    );
+    setMeetingPurposeOther(profileForm.meetingPurposeOther || '');
     const orig = toDateInput(student.originalMeetingPlanDate);
     setOriginalMeetingPlanDate(orig);
     if (orig) {
@@ -202,6 +208,11 @@ export default function RegenerateIepModal({
     e.preventDefault();
     if (!generationType) return;
 
+    let meetingPurpose = summarizeMeetingPurpose(meetingPurposeTags, meetingPurposeOther);
+    if (!String(meetingPurpose).trim()) {
+      meetingPurpose = (profileForm.meetingPurpose || student.meetingPurpose || '').trim();
+    }
+
     onConfirm({
       generationType,
       meetingPurpose,
@@ -223,7 +234,10 @@ export default function RegenerateIepModal({
         domainsTransitionAreas,
         associatedPlans,
         domainAreas,
-        student_accommodations: accDraft
+        student_accommodations: accDraft,
+        meetingPurposeTags,
+        meetingPurposeOther,
+        meetingPurpose
       },
       customGoals: localGoals
     });
@@ -272,13 +286,15 @@ export default function RegenerateIepModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1.5">Meeting purpose / focus</label>
-            <textarea
-              value={meetingPurpose}
-              onChange={(e) => setMeetingPurpose(e.target.value)}
-              rows={2}
-              placeholder="e.g. annual review, discuss reading goals"
-              className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y min-h-[72px]"
+            <p className="block text-xs font-medium text-slate-700 mb-1.5">Meeting purpose / focus</p>
+            <MeetingPurposeCollapsible
+              idPrefix="regen-mp"
+              tags={meetingPurposeTags}
+              otherText={meetingPurposeOther}
+              onChange={(patch) => {
+                if (patch.meetingPurposeTags !== undefined) setMeetingPurposeTags(patch.meetingPurposeTags);
+                if (patch.meetingPurposeOther !== undefined) setMeetingPurposeOther(patch.meetingPurposeOther);
+              }}
             />
           </div>
 

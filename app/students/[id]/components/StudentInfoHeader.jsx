@@ -7,6 +7,7 @@ import AccommodationsModal from '@/components/AccommodationsModal';
 import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
 import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
+import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
 
 export default function StudentInfoHeader({
   student,
@@ -797,12 +798,11 @@ export default function StudentInfoHeader({
                   </div>
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-2">Meeting purpose</label>
-                    <input
-                      type="text"
-                      value={formData.meetingPurpose || ''}
-                      onChange={(e) => setFormData({ ...formData, meetingPurpose: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      placeholder="e.g. annual review, amendment"
+                    <MeetingPurposeCollapsible
+                      idPrefix="sih-mp"
+                      tags={formData.meetingPurposeTags || []}
+                      otherText={formData.meetingPurposeOther || ''}
+                      onChange={(patch) => setFormData({ ...formData, ...patch })}
                     />
                   </div>
                 </div>

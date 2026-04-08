@@ -151,6 +151,8 @@ export default function StudentDetail() {
     amendmentDate: '',
     previouslyAmended: '',
     meetingPurpose: '',
+    meetingPurposeTags: [],
+    meetingPurposeOther: '',
     generationType: '',
     domainsTransitionAreas: '',
     associatedPlans: '',
@@ -246,6 +248,8 @@ export default function StudentDetail() {
         amendmentDate: toDateInput(studentData.amendmentDate),
         previouslyAmended: studentData.previouslyAmended || '',
         meetingPurpose: studentData.meetingPurpose || '',
+        meetingPurposeTags: Array.isArray(studentData.meetingPurposeTags) ? studentData.meetingPurposeTags : [],
+        meetingPurposeOther: studentData.meetingPurposeOther || '',
         generationType: studentData.generationType || '',
         domainsTransitionAreas: studentData.domainsTransitionAreas || '',
         associatedPlans: studentData.associatedPlans || '',
@@ -398,6 +402,8 @@ export default function StudentDetail() {
           amendmentDate: formData.amendmentDate || null,
           previouslyAmended: formData.previouslyAmended,
           meetingPurpose: formData.meetingPurpose,
+          meetingPurposeTags: formData.meetingPurposeTags,
+          meetingPurposeOther: formData.meetingPurposeOther,
           generationType: formData.generationType,
           domainsTransitionAreas: formData.domainsTransitionAreas,
           associatedPlans: formData.associatedPlans,
@@ -565,7 +571,12 @@ export default function StudentDetail() {
           relatedServicesTherapy: ctx.profile.relatedServicesTherapy ?? prev.relatedServicesTherapy,
           domainsTransitionAreas: ctx.profile.domainsTransitionAreas ?? prev.domainsTransitionAreas,
           associatedPlans: ctx.profile.associatedPlans ?? prev.associatedPlans,
-          domainAreas: ctx.profile.domainAreas ?? prev.domainAreas
+          domainAreas: ctx.profile.domainAreas ?? prev.domainAreas,
+          meetingPurpose: ctx.profile.meetingPurpose ?? ctx.meetingPurpose ?? prev.meetingPurpose,
+          meetingPurposeTags: Array.isArray(ctx.profile.meetingPurposeTags)
+            ? ctx.profile.meetingPurposeTags
+            : prev.meetingPurposeTags,
+          meetingPurposeOther: ctx.profile.meetingPurposeOther ?? prev.meetingPurposeOther
         }));
       }
       if (ctx.customGoals) setCustomGoals(ctx.customGoals);
@@ -578,6 +589,8 @@ export default function StudentDetail() {
           {
             generationType: ctx.generationType,
             meetingPurpose: ctx.meetingPurpose,
+            meetingPurposeTags: ctx.profile?.meetingPurposeTags,
+            meetingPurposeOther: ctx.profile?.meetingPurposeOther,
             originalMeetingPlanDate: ctx.originalMeetingPlanDate || null,
             reviewDueDate: ctx.reviewDueDate || null,
             reevaluationDueDate: ctx.reevaluationDueDate || null,
