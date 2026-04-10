@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, ChevronRight, UserPlus, Upload, Search } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
@@ -53,6 +53,33 @@ export default function DashboardHomePage() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h1>
               <p className="text-sm text-slate-500 mt-0.5">Choose where to go next.</p>
+            </div>
+
+            <div>
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Quick actions</h2>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/students#add"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:border-primary-200/80 hover:bg-primary-50/40 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 text-primary-600 shrink-0" />
+                  Add student
+                </Link>
+                <Link
+                  href="/dashboard/students#import"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:border-primary-200/80 hover:bg-primary-50/40 transition-colors"
+                >
+                  <Upload className="w-4 h-4 text-primary-600 shrink-0" />
+                  Import from document
+                </Link>
+                <Link
+                  href="/dashboard/students#search"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm hover:border-primary-200/80 hover:bg-primary-50/40 transition-colors"
+                >
+                  <Search className="w-4 h-4 text-primary-600 shrink-0" />
+                  Search students
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

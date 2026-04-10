@@ -246,6 +246,7 @@ export default function Dashboard() {
   const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const uploadDropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Table enhancements
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'card'
@@ -362,7 +363,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleOpenModal = () => {
+  const handleOpenModal = useCallback(() => {
     setFormData({
       name: '',
       studentId: '',
@@ -403,7 +404,28 @@ export default function Dashboard() {
     });
     setWizardStep(1);
     setShowModal(true);
-  };
+  }, []);
+
+  /** Deep links from /dashboard quick actions: #add, #import, #search */
+  useEffect(() => {
+    if (!token || user?.role !== 'professor') return;
+    const run = () => {
+      const h = window.location.hash.replace(/^#/, '');
+      if (!h) return;
+      if (h === 'add') {
+        handleOpenModal();
+      } else if (h === 'import') {
+        handleOpenModal();
+        queueMicrotask(() => setUploadDropdownOpen(true));
+      } else if (h === 'search') {
+        queueMicrotask(() => searchInputRef.current?.focus());
+      }
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    };
+    run();
+    window.addEventListener('hashchange', run);
+    return () => window.removeEventListener('hashchange', run);
+  }, [token, user?.role, handleOpenModal]);
 
   const handleEditStudent = (student) => {
     setEditingStudent(student);
@@ -840,6 +862,7 @@ export default function Dashboard() {
                     <div className="relative flex-1 min-w-[200px] max-w-sm">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
+                        ref={searchInputRef}
                         type="text"
                         placeholder="Search by name, ID, or case manager…"
                         value={searchQuery}
