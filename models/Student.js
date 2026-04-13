@@ -132,6 +132,11 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  /** Optional assessment notes (any subject/format) — used only for PLAAFP + academic performance generation */
+  assessmentContext: {
+    type: String,
+    default: ''
+  },
   /** Last IEP generation / meeting type (e.g. Annual review) — set from regenerate modal (M5) */
   generationType: {
     type: String,

@@ -57,6 +57,10 @@ Rules:
 - For performanceQuantitative and performanceNarrative, prefer concise normalized values as described above.
 - Do not include any markdown formatting or explanations, just the JSON object.`;
 
+const ASSESSMENT_EXTRACT_PROMPT = `You extract assessment-related content for special education IEP drafting.
+Return ONLY valid JSON with this exact shape: {"assessmentContext":"..."}.
+The assessmentContext string should be plain prose (paragraphs allowed) summarizing scores, skills, subjects, levels, and observations found in the document. Include specifics when present. If there is no assessment-related content, use an empty string for assessmentContext.`;
+
 export async function POST(request) {
   try {
     const authResult = await protectRoute(request);
@@ -66,6 +70,7 @@ export async function POST(request) {
 
     const formData = await request.formData();
     const file = formData.get('file');
+    const mode = String(formData.get('mode') || '');
 
     if (!file) {
       return NextResponse.json({ success: false, message: 'No file uploaded' }, { status: 400 });
@@ -82,7 +87,70 @@ export async function POST(request) {
       );
     }
 
-    console.log(`[parse] File: ${file.name} (${mimeType}, ${file.size} bytes, ${isImage ? 'image' : 'pdf'})`);
+    console.log(`[parse] File: ${file.name} (${mimeType}, ${file.size} bytes, ${isImage ? 'image' : 'pdf'}, mode=${mode || 'intake'})`);
+
+    if (mode === 'assessment') {
+      let assessMessages;
+      if (isImage) {
+        const bytes = await file.arrayBuffer();
+        const base64 = Buffer.from(bytes).toString('base64');
+        const dataUrl = `data:${mimeType};base64,${base64}`;
+        assessMessages = [
+          { role: 'system', content: ASSESSMENT_EXTRACT_PROMPT },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract assessment-related text from this document image.' },
+              { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } }
+            ]
+          }
+        ];
+      } else {
+        const bytes = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(bytes);
+        let extractedText = '';
+        try {
+          const { extractText } = await import('unpdf');
+          const result = await extractText(uint8Array);
+          const textArray = result?.text || [];
+          extractedText = Array.isArray(textArray) ? textArray.join('\n') : String(textArray);
+          if (!extractedText || extractedText.trim().length < 10) {
+            return NextResponse.json({ success: false, message: 'No text could be extracted from PDF' }, { status: 400 });
+          }
+        } catch (pdfError) {
+          console.error('PDF parsing error:', pdfError);
+          return NextResponse.json({ success: false, message: 'Failed to parse PDF file' }, { status: 400 });
+        }
+        assessMessages = [
+          { role: 'system', content: ASSESSMENT_EXTRACT_PROMPT },
+          { role: 'user', content: `Extract assessment-related text from this document:\n\n${extractedText}` }
+        ];
+      }
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: assessMessages,
+        temperature: 0.1,
+        max_tokens: 4096
+      });
+
+      const responseText = completion.choices[0]?.message?.content || '{}';
+      let extractedData;
+      try {
+        const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        extractedData = JSON.parse(cleanedResponse);
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        return NextResponse.json({ success: false, message: 'Failed to parse AI response' }, { status: 500 });
+      }
+
+      const assessmentContext = typeof extractedData?.assessmentContext === 'string' ? extractedData.assessmentContext : '';
+      return NextResponse.json({
+        success: true,
+        data: { assessmentContext },
+        message: `${isImage ? 'Image' : 'PDF'} parsed successfully`
+      });
+    }
 
     let messages;
 

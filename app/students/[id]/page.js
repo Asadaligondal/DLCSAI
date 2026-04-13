@@ -156,6 +156,7 @@ export default function StudentDetail() {
     generationType: '',
     domainsTransitionAreas: '',
     associatedPlans: '',
+    assessmentContext: '',
   });
 
   useEffect(() => {
@@ -253,6 +254,7 @@ export default function StudentDetail() {
         generationType: studentData.generationType || '',
         domainsTransitionAreas: studentData.domainsTransitionAreas || '',
         associatedPlans: studentData.associatedPlans || '',
+        assessmentContext: studentData.assessmentContext || '',
       });
 
       // Load existing IEP plan if available
@@ -407,6 +409,7 @@ export default function StudentDetail() {
           generationType: formData.generationType,
           domainsTransitionAreas: formData.domainsTransitionAreas,
           associatedPlans: formData.associatedPlans,
+          assessmentContext: formData.assessmentContext,
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -450,7 +453,8 @@ export default function StudentDetail() {
         ragStrategy,
         ...(generationContext && Object.keys(generationContext).length
           ? { generationContext }
-          : {})
+          : {}),
+        assessmentContext: (formData.assessmentContext || s.assessmentContext || '').trim()
       };
 
       const token = localStorage.getItem('token');
@@ -1174,7 +1178,6 @@ export default function StudentDetail() {
                 setFormData={setFormData}
                 handleUpdate={handleUpdate}
                 isGenerating={isGenerating}
-                generateStage={generateStage}
                 handleGenerateIEP={openGenerateModal}
                 hasExistingPlan={hasExistingPlan}
                 disabilitiesOptions={DISABILITIES_OPTIONS}
@@ -1183,6 +1186,17 @@ export default function StudentDetail() {
                 onCustomizeGoals={() => setShowCustomizeModal(true)}
                 onCustomGoalsSaved={(goals) => setCustomGoals(goals)}
                 onAccommodationsSaved={() => fetchStudent(localStorage.getItem('token'))}
+                onAssessmentContextSave={async (text) => {
+                  const token = localStorage.getItem('token');
+                  await axios.put(
+                    `/api/students/${id}`,
+                    { assessmentContext: text },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                  );
+                  setFormData((prev) => ({ ...prev, assessmentContext: text }));
+                  setStudent((prev) => (prev ? { ...prev, assessmentContext: text } : prev));
+                  toast.success('Assessment context saved');
+                }}
                 customGoals={customGoals}
               />
 

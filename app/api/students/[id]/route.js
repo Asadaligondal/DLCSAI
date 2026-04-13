@@ -132,6 +132,7 @@ export async function PUT(request, { params }) {
       meetingPurpose,
       meetingPurposeTags,
       meetingPurposeOther,
+      assessmentContext,
       generationType,
       domainsTransitionAreas,
       associatedPlans,
@@ -189,6 +190,7 @@ export async function PUT(request, { params }) {
       student.meetingPurposeTags = Array.isArray(meetingPurposeTags) ? meetingPurposeTags : [];
     }
     if (meetingPurposeOther !== undefined) student.meetingPurposeOther = meetingPurposeOther || '';
+    if (assessmentContext !== undefined) student.assessmentContext = assessmentContext || '';
     if (generationType !== undefined) student.generationType = generationType;
     if (domainsTransitionAreas !== undefined) student.domainsTransitionAreas = domainsTransitionAreas;
     if (associatedPlans !== undefined) student.associatedPlans = associatedPlans;

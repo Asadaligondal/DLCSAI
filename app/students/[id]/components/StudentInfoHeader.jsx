@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import MultiSelect from '@/components/MultiSelect';
-import { X, Save, Target, ChevronDown } from 'lucide-react';
+import { X, Save, Target, ChevronDown, FileText, Upload, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'react-toastify';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
@@ -25,6 +26,7 @@ export default function StudentInfoHeader({
   onCustomizeGoals,
   onCustomGoalsSaved,
   onAccommodationsSaved,
+  onAssessmentContextSave,
   customGoals = []
 }) {
   const [showAccommodations, setShowAccommodations] = useState(false);
@@ -33,6 +35,9 @@ export default function StudentInfoHeader({
   const [showAccomDetails, setShowAccomDetails] = useState(false);
   const [showCustomGoalDetails, setShowCustomGoalDetails] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
+  const [assessmentDraft, setAssessmentDraft] = useState('');
+  const [assessmentUploading, setAssessmentUploading] = useState(false);
 
   const calcAgeFromDob = (dob) => {
     if (!dob) return { years: '', months: '', numeric: '' };
@@ -119,6 +124,55 @@ export default function StudentInfoHeader({
   const handleCustomGoalsSave = (goals) => {
     setShowCustomGoals(false);
     if (onCustomGoalsSaved) onCustomGoalsSaved(goals);
+  };
+
+  const openAssessmentModal = () => {
+    setAssessmentDraft(formData.assessmentContext || '');
+    setShowAssessmentModal(true);
+  };
+
+  const handleAssessmentFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Please upload a PDF or image file');
+      return;
+    }
+    setAssessmentUploading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('mode', 'assessment');
+      const r = await fetch('/api/parse-pdf', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd
+      });
+      const data = await r.json();
+      if (!r.ok || !data.success) {
+        throw new Error(data.message || 'Upload failed');
+      }
+      const extracted = data.data?.assessmentContext || '';
+      setAssessmentDraft(extracted);
+      toast.success('Extracted into text — review and save');
+    } catch (e) {
+      toast.error(e.message || 'Failed to extract');
+    } finally {
+      setAssessmentUploading(false);
+    }
+  };
+
+  const handleAssessmentSave = async () => {
+    if (!onAssessmentContextSave) return;
+    try {
+      await onAssessmentContextSave(assessmentDraft.trim());
+      setShowAssessmentModal(false);
+    } catch {
+      toast.error('Could not save');
+    }
   };
 
   const pillText = (raw) => {
@@ -563,6 +617,26 @@ export default function StudentInfoHeader({
                 </>
               )}
             </div>
+
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-slate-600">Assessment context</div>
+                  <div className="text-sm text-slate-500 mt-0.5 truncate">
+                    {(formData.assessmentContext || '').trim()
+                      ? `${String(formData.assessmentContext).trim().length} chars (PLAAFP & academic performance only)`
+                      : 'None — optional; type or upload PDF/image'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={openAssessmentModal}
+                  className="shrink-0 px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
             </div>
             </div>
             </div>
@@ -939,6 +1013,88 @@ export default function StudentInfoHeader({
           onClose={() => setShowCustomGoals(false)}
           onSave={handleCustomGoalsSave}
         />
+      )}
+
+      {showAssessmentModal && (
+        <Modal
+          title="Assessment context"
+          onClose={() => { if (!assessmentUploading) setShowAssessmentModal(false); }}
+          size="lg"
+        >
+          <div className="p-6 space-y-4">
+            <p className="text-xs text-slate-600">
+              Optional. Used only when generating <span className="font-medium text-slate-800">PLAAFP</span> and{' '}
+              <span className="font-medium text-slate-800">academic performance</span>. Type below or upload a PDF/image to extract.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="file"
+                id="assessment-pdf-upload"
+                accept="application/pdf"
+                className="hidden"
+                disabled={assessmentUploading}
+                onChange={handleAssessmentFile}
+              />
+              <input
+                type="file"
+                id="assessment-image-upload"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/tiff"
+                className="hidden"
+                disabled={assessmentUploading}
+                onChange={handleAssessmentFile}
+              />
+              <button
+                type="button"
+                disabled={assessmentUploading}
+                onClick={() => document.getElementById('assessment-pdf-upload')?.click()}
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
+              >
+                <FileText className="w-4 h-4" />
+                PDF
+              </button>
+              <button
+                type="button"
+                disabled={assessmentUploading}
+                onClick={() => document.getElementById('assessment-image-upload')?.click()}
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 bg-white text-slate-800 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Image
+              </button>
+              {assessmentUploading && (
+                <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                  <Upload className="w-4 h-4 animate-pulse" />
+                  Extracting…
+                </span>
+              )}
+            </div>
+            <textarea
+              value={assessmentDraft}
+              onChange={(e) => setAssessmentDraft(e.target.value)}
+              rows={10}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y min-h-[160px]"
+              placeholder="Assessment notes, scores, observations…"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={assessmentUploading}
+                onClick={() => setShowAssessmentModal(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={assessmentUploading || !onAssessmentContextSave}
+                onClick={handleAssessmentSave}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

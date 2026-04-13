@@ -39,7 +39,8 @@ export async function POST(req) {
         weaknesses: bodyWeaknesses,
         strengths: bodyStrengths,
         ragStrategy = 'baseline',
-        generationContext
+        generationContext,
+        assessmentContext: assessmentContextBody
       } = body;
 
       if (!studentGrade || !studentAge || !areaOfNeed || !currentPerformance) {
@@ -57,6 +58,7 @@ export async function POST(req) {
       let accommodationsRaw = student_accommodations || null;
       let weaknesses = Array.isArray(bodyWeaknesses) ? bodyWeaknesses : [];
       let strengths = Array.isArray(bodyStrengths) ? bodyStrengths : [];
+      let assessmentContext = typeof assessmentContextBody === 'string' ? assessmentContextBody.trim() : '';
       try {
         if (studentId) {
           const connectDB = (await import('@/lib/mongodb')).default;
@@ -67,6 +69,9 @@ export async function POST(req) {
             if (!accommodationsRaw && stu.student_accommodations) accommodationsRaw = stu.student_accommodations;
             if (weaknesses.length === 0 && stu.weaknesses) weaknesses = Array.isArray(stu.weaknesses) ? stu.weaknesses : [];
             if (strengths.length === 0 && stu.strengths) strengths = Array.isArray(stu.strengths) ? stu.strengths : [];
+            if (!assessmentContext && typeof stu.assessmentContext === 'string' && stu.assessmentContext.trim()) {
+              assessmentContext = stu.assessmentContext.trim();
+            }
           }
         }
       } catch (e) {
@@ -123,6 +128,7 @@ export async function POST(req) {
         strategy,
         ragMetrics,
         generationContext,
+        assessmentContext,
         onSectionComplete(key, label, error) {
           sectionsCompleted++;
           send({
