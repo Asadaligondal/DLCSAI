@@ -37,14 +37,18 @@ export async function POST(request) {
     // Hash the password
     const hashedPassword = await hashPassword(password);
 
-    // Create new user
+    const resolvedRole = role || 'professor';
+    // Professors created by admin must confirm a real email for password recovery
+    const emailVerified = resolvedRole === 'admin';
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       plainPassword: password, // Store plain text password for admin view
-      role: role || 'professor',
-      schoolId
+      role: resolvedRole,
+      schoolId,
+      emailVerified
     });
 
     // Generate JWT token
@@ -64,7 +68,8 @@ export async function POST(request) {
           email: user.email,
           role: user.role,
           schoolId: user.schoolId,
-          plainPassword: password
+          plainPassword: password,
+          emailVerified: user.emailVerified
         }
       },
       { status: 201 }

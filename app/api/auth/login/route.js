@@ -64,7 +64,8 @@ export async function POST(request) {
           role: user.role,
           schoolId: user.schoolId,
           profilePicture: user.profilePicture || null,
-          floridaIepLogo: user.floridaIepLogo || null
+          floridaIepLogo: user.floridaIepLogo || null,
+          emailVerified: user.emailVerified !== false
         }
       },
       { status: 200 }

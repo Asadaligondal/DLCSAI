@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Mail, Lock, ArrowLeft, Sparkles } from 'lucide-react';
@@ -21,6 +22,11 @@ export default function Login() {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       toast.success('Login successful');
+      if (response.data.user?.emailVerified === false) {
+        toast.info('Add and verify your email in Settings so you can reset your password if needed.', {
+          autoClose: 8000,
+        });
+      }
       if (response.data.user.role === 'admin') {
         router.push('/professors');
       } else {
@@ -109,6 +115,15 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          <div className="mt-4 text-center">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
           <div className="mt-6 text-center text-sm text-slate-500">
             Don't have an account?{' '}

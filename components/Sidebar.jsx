@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -19,7 +20,34 @@ import {
 
 export default function Sidebar({ user, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [syncUser, setSyncUser] = useState(user);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setSyncUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || user?.role === 'admin') return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.success || !d.user) return;
+        setSyncUser((prev) => ({ ...prev, ...d.user }));
+        try {
+          const cur = JSON.parse(localStorage.getItem('user') || '{}');
+          localStorage.setItem('user', JSON.stringify({ ...cur, ...d.user }));
+        } catch {
+          /* ignore */
+        }
+        if (d.user.emailVerified === false && !sessionStorage.getItem('ev-nudge-toast')) {
+          sessionStorage.setItem('ev-nudge-toast', '1');
+          toast.info('Verify your email in Settings for password recovery.', { autoClose: 8000 });
+        }
+      })
+      .catch(() => {});
+  }, [user?.role]);
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -77,6 +105,16 @@ export default function Sidebar({ user, onLogout }) {
         </div>
       )}
 
+      {!collapsed && syncUser?.role === 'professor' && syncUser?.emailVerified === false && (
+        <div className="mx-3 mt-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200/90 text-xs text-amber-950">
+          <p className="font-semibold">Verify your email</p>
+          <p className="mt-0.5 text-amber-900/85 leading-snug">Needed for password recovery if you forget your password.</p>
+          <Link href="/settings" className="mt-1.5 inline-block font-semibold text-amber-900 underline underline-offset-2">
+            Open Settings
+          </Link>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         <Link
@@ -126,14 +164,14 @@ export default function Sidebar({ user, onLogout }) {
 
       {/* Footer */}
       <div className="px-3 py-3 border-t border-slate-100">
-        {!collapsed && user && (
+        {!collapsed && (syncUser || user) && (
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 flex-shrink-0">
-              {user.name?.[0]?.toUpperCase() || '?'}
+              {(syncUser || user).name?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-slate-900 truncate">{user.name}</div>
-              <div className="text-[11px] text-slate-500 truncate">{user.email || 'Professor'}</div>
+              <div className="text-sm font-semibold text-slate-900 truncate">{(syncUser || user).name}</div>
+              <div className="text-[11px] text-slate-500 truncate">{(syncUser || user).email || 'Professor'}</div>
             </div>
           </div>
         )}

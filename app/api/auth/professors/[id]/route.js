@@ -21,9 +21,24 @@ export async function PUT(request, { params }) {
 
     await connectDB();
 
+    const existing = await User.findOne({ _id: id, role: 'professor' });
+    if (!existing) {
+      return NextResponse.json({ success: false, message: 'Professor not found' }, { status: 404 });
+    }
+
+    const emailChanged =
+      email !== undefined && String(email).trim().toLowerCase() !== String(existing.email || '').toLowerCase();
+
     const updateData = { name, email, schoolId };
+    if (emailChanged) {
+      updateData.emailVerified = false;
+      updateData.pendingEmail = null;
+      updateData.emailVerificationToken = null;
+      updateData.emailVerificationExpires = null;
+    }
     if (password) {
       updateData.password = await hashPassword(password);
+      updateData.plainPassword = password;
     }
 
     const professor = await User.findOneAndUpdate(
@@ -31,13 +46,6 @@ export async function PUT(request, { params }) {
       updateData,
       { new: true, runValidators: true }
     );
-
-    if (!professor) {
-      return NextResponse.json(
-        { success: false, message: 'Professor not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json(
       { success: true, message: 'Professor updated successfully', professor },

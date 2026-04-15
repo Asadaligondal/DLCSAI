@@ -39,6 +39,36 @@ const UserSchema = new mongoose.Schema({
     required: false,
     default: null
   },
+  passwordResetToken: {
+    type: String,
+    select: false,
+    default: null
+  },
+  passwordResetExpires: {
+    type: Date,
+    select: false,
+    default: null
+  },
+  /** false = professor must verify a real inbox (set when admin creates account) */
+  emailVerified: {
+    type: Boolean,
+    default: true
+  },
+  pendingEmail: {
+    type: String,
+    select: false,
+    default: null
+  },
+  emailVerificationToken: {
+    type: String,
+    select: false,
+    default: null
+  },
+  emailVerificationExpires: {
+    type: Date,
+    select: false,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

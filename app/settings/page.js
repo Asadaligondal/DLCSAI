@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { User, Lock, Bell, Globe, Camera, Settings as SettingsIcon, GraduationCap } from 'lucide-react';
+import { User, Lock, Bell, Globe, Camera, Settings as SettingsIcon, GraduationCap, Mail } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -16,8 +17,39 @@ export default function SettingsPage() {
   const [uploadError, setUploadError] = useState(null);
   const [floridaLogoUploading, setFloridaLogoUploading] = useState(false);
   const [floridaLogoError, setFloridaLogoError] = useState(null);
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifySending, setVerifySending] = useState(false);
 
   const handleLogout = () => { localStorage.clear(); router.push('/login'); };
+
+  const needsEmailVerify = user?.role === 'professor' && user?.emailVerified === false;
+
+  const handleSendVerification = async () => {
+    const e = verifyEmail.trim().toLowerCase();
+    if (!e) {
+      toast.error('Enter your email');
+      return;
+    }
+    setVerifySending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/request-email-verification', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: e }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message || 'Request failed');
+        return;
+      }
+      toast.success(data.message || 'Check your inbox');
+    } catch {
+      toast.error('Request failed');
+    } finally {
+      setVerifySending(false);
+    }
+  };
 
   const fetchUser = async () => {
     const token = localStorage.getItem('token');
@@ -29,6 +61,7 @@ export default function SettingsPage() {
         setUser(data.user);
         setProfilePicture(data.user.profilePicture);
         setFloridaIepLogo(data.user.floridaIepLogo || null);
+        if (data.user.email) setVerifyEmail(data.user.email);
       }
     } catch {}
   };
@@ -42,6 +75,7 @@ export default function SettingsPage() {
         setUser(u);
         setProfilePicture(u.profilePicture || null);
         setFloridaIepLogo(u.floridaIepLogo || null);
+        if (u.email) setVerifyEmail(u.email);
       }
       fetchUser();
     } catch {}
@@ -153,9 +187,39 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">Email</label>
-                    <input type="email" defaultValue={user?.email || ''} placeholder="you@school.edu" className={inputCls} />
+                    <input type="email" readOnly value={user?.email || ''} placeholder="you@school.edu" className={`${inputCls} bg-slate-100/80`} title="Updated after you verify a new address below" />
                   </div>
                 </div>
+                {needsEmailVerify && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <Mail className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-amber-950">Verify your email</p>
+                        <p className="text-[11px] text-amber-900/85 mt-0.5 leading-snug">
+                          Use the address where you can receive mail. After you verify, you can use Forgot password with this email.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      <input
+                        type="email"
+                        value={verifyEmail}
+                        onChange={(ev) => setVerifyEmail(ev.target.value)}
+                        placeholder="your.real@email.com"
+                        className={`${inputCls} flex-1 bg-white`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendVerification}
+                        disabled={verifySending}
+                        className="h-10 px-4 text-xs font-semibold text-white bg-amber-700 hover:bg-amber-800 rounded-lg disabled:opacity-50 shrink-0"
+                      >
+                        {verifySending ? 'Sending…' : 'Send verification link'}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Profile photo</label>
                   <div className="flex items-center gap-4">

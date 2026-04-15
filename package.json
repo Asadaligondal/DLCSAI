@@ -33,6 +33,7 @@
     "mammoth": "^1.12.0",
     "mongoose": "^7.8.8",
     "next": "^15.5.11",
+    "nodemailer": "^8.0.5",
     "openai": "^6.16.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
