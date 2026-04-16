@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, Wand2, Download, ChevronDown, FileText, FileType, GraduationCap, Eye } from 'lucide-react';
+import LoadingSweep from '@/components/LoadingSweep';
 
 export default function StickyActionBar({
   onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onPreviewFloridaIEP, floridaPreviewBusy,
@@ -23,9 +24,12 @@ export default function StickyActionBar({
 
   const exportDisabled = !isReviewed;
   const secondaryDisabled = isBusy;
+  const showSweep = isBusy || floridaPreviewBusy;
 
   return (
-    <div className="sticky top-16 z-30 bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">
+    <div className="sticky top-16 z-30 relative overflow-hidden bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">
+      {showSweep ? <LoadingSweep /> : null}
+      <div className="relative z-[6] flex h-full w-full items-center justify-end gap-2 min-w-0">
           <button
             onClick={onSave}
             disabled={isBusy}
@@ -109,6 +113,7 @@ export default function StickyActionBar({
 
           <div className="w-px h-6 bg-slate-200 mx-0.5" />
           <span className="text-[11px] text-slate-500 min-w-0 truncate max-w-[140px]">{statusText}</span>
+      </div>
     </div>
   );
 }

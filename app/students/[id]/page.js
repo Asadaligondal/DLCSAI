@@ -25,6 +25,11 @@ import PipelineSelector from './components/PipelineSelector';
 import PipelineMetricsPanel from './components/PipelineMetricsPanel';
 import IEPVersionHistory from './components/IEPVersionHistory';
 import RegenerateIepModal from './components/RegenerateIepModal';
+import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
+import LoadingSweep from '@/components/LoadingSweep';
+import useMinLoadingGate from '@/hooks/useMinLoadingGate';
+
+const MIN_ROUTE_LOAD_MS = 3000;
 // GoalsCard removed from main layout; custom goals are managed via StudentInfoHeader modal
 
 function calcAgeFromDob(dob) {
@@ -1097,16 +1102,37 @@ export default function StudentDetail() {
     setEditablePlan({ ...editablePlan, short_term_objectives: newObjectives });
   };
 
-  if (!student) {
+  const hasStudent = !!student;
+  const showBlockingLoader = useMinLoadingGate(hasStudent, MIN_ROUTE_LOAD_MS, id);
+
+  if (!hasStudent || showBlockingLoader) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
+        <IepGeniusLetterReveal
+          text="Individual Education Plan"
+          subtitle="Loading student…"
+        />
       </div>
     );
   }
 
+  const generateOverlaySubtitle =
+    generateStage === 'retrieving_context'
+      ? 'Gathering context…'
+      : generateProgress || 'Drafting your IEP…';
+
   return (
-    <div className="flex h-screen bg-canvas text-slate-800">
+    <div className="flex h-screen bg-canvas text-slate-800 relative">
+      {isGenerating && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/35 backdrop-blur-[1px]">
+          <div className="relative overflow-hidden bg-white rounded-2xl shadow-float px-10 py-12 border border-slate-200/80 max-w-md mx-4">
+            <LoadingSweep />
+            <div className="relative z-[6]">
+              <IepGeniusLetterReveal subtitle={generateOverlaySubtitle} enableSweep={false} />
+            </div>
+          </div>
+        </div>
+      )}
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
@@ -1220,10 +1246,13 @@ export default function StudentDetail() {
                   <button
                     onClick={openGenerateModal}
                     disabled={isGenerating}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                    className="relative overflow-hidden flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
-                    <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
-                    {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context...' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : 'Generate IEP Plan'}
+                    {isGenerating ? <LoadingSweep variant="onPrimary" /> : null}
+                    <span className="relative z-[6] inline-flex items-center gap-2">
+                      <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
+                      {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context...' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : 'Generate IEP Plan'}
+                    </span>
                   </button>
                 </div>
               )}

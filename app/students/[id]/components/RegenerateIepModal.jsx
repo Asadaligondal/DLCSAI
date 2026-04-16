@@ -8,6 +8,7 @@ import { Wand2 } from 'lucide-react';
 import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
 import { summarizeMeetingPurpose } from '@/lib/meetingPurposeChecklist';
+import LoadingSweep from '@/components/LoadingSweep';
 
 const GENERATION_TYPES = [
   { value: '', label: 'Select type…' },
@@ -253,7 +254,10 @@ export default function RegenerateIepModal({
         title="Generate IEP"
         size="xl"
       >
-        <form onSubmit={handleSubmit} className="p-6 pt-0 space-y-4 max-h-[min(80vh,720px)] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="relative flex flex-col min-h-0 max-h-[min(80vh,760px)] overflow-hidden rounded-b-2xl">
+          {busy ? <LoadingSweep /> : null}
+          <div className="relative z-[6] flex flex-1 flex-col min-h-0 p-6 pt-0">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pb-2">
           <div className="flex flex-wrap items-baseline justify-between gap-2 pb-2 border-b border-slate-100">
             <div>
               <p className="text-sm font-semibold text-slate-900">{student?.name || 'Student'}</p>
@@ -525,8 +529,9 @@ export default function RegenerateIepModal({
               Save everything above (dates + student context) to this student&apos;s profile
             </span>
           </label>
+          </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <div className="relative z-[6] flex justify-end gap-2 pt-3 border-t border-slate-100 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
@@ -543,6 +548,7 @@ export default function RegenerateIepModal({
               <Wand2 className="w-4 h-4" />
               {busy ? 'Working…' : 'Generate'}
             </button>
+          </div>
           </div>
         </form>
       </Modal>

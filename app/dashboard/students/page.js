@@ -13,8 +13,12 @@ import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
 import { Plus, Search, Trash2, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
-import ActivityFeed from '../components/ActivityFeed';
+import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
+import LoadingSweep from '@/components/LoadingSweep';
+import useMinLoadingGate from '@/hooks/useMinLoadingGate';
 import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
+
+const MIN_ROUTE_LOAD_MS = 3000;
 
 /** Map AI-extracted date text to YYYY-MM-DD for date inputs. */
 function normalizeExtractedDate(val) {
@@ -243,6 +247,7 @@ export default function Dashboard() {
   const [wizardStep, setWizardStep] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [savingStudent, setSavingStudent] = useState(false);
   const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const uploadDropdownRef = useRef(null);
@@ -255,7 +260,6 @@ export default function Dashboard() {
   const [filterGrade, setFilterGrade] = useState('');
   const [filterIEP, setFilterIEP] = useState('');
   const [filterExceptionality, setFilterExceptionality] = useState('');
-  const [filterCaseManager, setFilterCaseManager] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -693,6 +697,7 @@ export default function Dashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSavingStudent(true);
     try {
       const ageNum = formData.dateOfBirth
         ? calcAgeFromDob(formData.dateOfBirth).numeric
@@ -715,6 +720,8 @@ export default function Dashboard() {
       handleCloseModal();
     } catch (error) {
       toast.error(error.response?.data?.message || (editingStudent ? 'Failed to update student' : 'Failed to add student'));
+    } finally {
+      setSavingStudent(false);
     }
   };
 
@@ -734,8 +741,6 @@ export default function Dashboard() {
   // Derive filter options from data
   const uniqueGrades = [...new Set(students.map(s => s.gradeLevel).filter(Boolean))].sort();
   const uniqueExceptionalities = [...new Set(students.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
-  const uniqueCaseManagers = [...new Set(students.map(s => s.caseManager).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
-
   const getIEPStatus = (s) => {
     const iep = s?.iep_plan_data;
     if (!iep) return 'pending';
@@ -749,19 +754,14 @@ export default function Dashboard() {
       const q = searchQuery.trim().toLowerCase();
       const nm = (s.name && String(s.name).toLowerCase()) || '';
       const sid = (s.studentId && String(s.studentId).toLowerCase()) || '';
-      const cm = (s.caseManager && String(s.caseManager).toLowerCase()) || '';
       const matchSearch =
         !q ||
         nm.includes(q) ||
-        sid.includes(q) ||
-        cm.includes(q);
+        sid.includes(q);
       const matchGrade = !filterGrade || s.gradeLevel === filterGrade;
       const matchIEP = !filterIEP || getIEPStatus(s) === filterIEP;
       const matchExc = !filterExceptionality || (s.disabilities || []).includes(filterExceptionality);
-      const matchCaseMgr =
-        !filterCaseManager ||
-        (s.caseManager && String(s.caseManager) === filterCaseManager);
-      return matchSearch && matchGrade && matchIEP && matchExc && matchCaseMgr;
+      return matchSearch && matchGrade && matchIEP && matchExc;
     })
     .sort((a, b) => {
       let cmp = 0;
@@ -786,12 +786,11 @@ export default function Dashboard() {
   const safePage = Math.min(currentPage, totalPages);
   const paginatedStudents = filteredStudents.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const activeFilters = [filterGrade, filterIEP, filterExceptionality, filterCaseManager].filter(Boolean).length;
+  const activeFilters = [filterGrade, filterIEP, filterExceptionality].filter(Boolean).length;
   const clearFilters = () => {
     setFilterGrade('');
     setFilterIEP('');
     setFilterExceptionality('');
-    setFilterCaseManager('');
     setCurrentPage(1);
   };
 
@@ -813,7 +812,18 @@ export default function Dashboard() {
     }
   };
 
-  if (!user) return null;
+  const listReady = !!user && (!loading || students.length > 0);
+  const showBlockingLoader = useMinLoadingGate(listReady, MIN_ROUTE_LOAD_MS);
+
+  if (!user || !listReady || showBlockingLoader) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
+        <IepGeniusLetterReveal
+          subtitle={!user ? 'Loading…' : 'Loading students…'}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-canvas text-slate-800">
@@ -850,11 +860,7 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Quick Actions */}
-            {/* Main content: table + activity feed */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5">
-              {/* Student table card */}
-              <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
                 {/* Toolbar: search + filters + view toggle */}
                 <div className="px-5 py-3.5 border-b border-slate-100 space-y-3">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -864,7 +870,7 @@ export default function Dashboard() {
                       <input
                         ref={searchInputRef}
                         type="text"
-                        placeholder="Search by name, ID, or case manager…"
+                        placeholder="Search by name or student ID…"
                         value={searchQuery}
                         onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                         className="w-full pl-9 pr-4 h-9 rounded-lg text-sm bg-slate-50 border border-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 focus:bg-white transition-all"
@@ -902,18 +908,6 @@ export default function Dashboard() {
                     >
                       <option value="">All Exceptionalities</option>
                       {uniqueExceptionalities.map(e => <option key={e} value={e}>{e.length > 30 ? e.slice(0, 30) + '...' : e}</option>)}
-                    </select>
-
-                    <select
-                      value={filterCaseManager}
-                      onChange={(e) => { setFilterCaseManager(e.target.value); setCurrentPage(1); }}
-                      className="h-9 pl-3 pr-7 rounded-lg text-sm bg-slate-50 border border-slate-200 text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all appearance-none cursor-pointer max-w-[200px]"
-                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
-                    >
-                      <option value="">All Case Managers</option>
-                      {uniqueCaseManagers.map((m) => (
-                        <option key={m} value={m}>{m.length > 36 ? `${m.slice(0, 36)}…` : m}</option>
-                      ))}
                     </select>
 
                     {activeFilters > 0 && (
@@ -961,7 +955,6 @@ export default function Dashboard() {
                         <tr className="border-b border-slate-100">
                           {[
                             { key: 'name',  label: 'Name' },
-                            { key: null,    label: 'Case Manager' },
                             { key: null,    label: 'Student ID' },
                             { key: 'createdAt', label: 'Added' },
                             { key: 'iep',   label: 'IEP Plan' },
@@ -985,19 +978,13 @@ export default function Dashboard() {
                       <tbody className="divide-y divide-slate-50">
                         {loading ? (
                           <tr>
-                            <td colSpan="6" className="px-6 py-20 text-center">
-                              <div className="flex flex-col items-center gap-3 text-slate-400">
-                                <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span className="text-sm font-medium">Loading students...</span>
-                              </div>
+                            <td colSpan="5" className="px-6 py-20 text-center">
+                              <IepGeniusLetterReveal variant="compact" subtitle="Refreshing…" />
                             </td>
                           </tr>
                         ) : paginatedStudents.length === 0 ? (
                           <tr>
-                            <td colSpan="6" className="px-6 py-20 text-center">
+                            <td colSpan="5" className="px-6 py-20 text-center">
                               <div className="flex flex-col items-center gap-3 text-slate-400">
                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
                                   <Users className="w-6 h-6 text-slate-300" />
@@ -1034,9 +1021,6 @@ export default function Dashboard() {
                                     </div>
                                     <div className="text-sm font-semibold text-slate-900">{student.name}</div>
                                   </div>
-                                </td>
-                                <td className="px-5 py-3.5 text-sm text-slate-600 max-w-[160px]">
-                                  <span className="line-clamp-2" title={student.caseManager || ''}>{student.caseManager || '—'}</span>
                                 </td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 tabular-nums whitespace-nowrap">{formatAdded(student.createdAt)}</td>
@@ -1079,12 +1063,8 @@ export default function Dashboard() {
                   /* CARD VIEW */
                   <div className="p-5">
                     {loading ? (
-                      <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
-                        <svg className="animate-spin h-6 w-6 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="text-sm font-medium">Loading students...</span>
+                      <div className="py-20">
+                        <IepGeniusLetterReveal variant="compact" subtitle="Refreshing…" />
                       </div>
                     ) : paginatedStudents.length === 0 ? (
                       <div className="flex flex-col items-center gap-3 py-20 text-slate-400">
@@ -1105,9 +1085,6 @@ export default function Dashboard() {
                                 <div className="flex-1 min-w-0">
                                   <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
                                   <p className="text-[12px] text-slate-500">ID: {student.studentId}</p>
-                                  {student.caseManager && (
-                                    <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={student.caseManager}>CM: {student.caseManager}</p>
-                                  )}
                                 </div>
                               </div>
 
@@ -1221,17 +1198,6 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Activity Feed (right sidebar) */}
-              <div className="hidden xl:block">
-                <ActivityFeed students={students} />
-              </div>
-            </div>
-
-            {/* Activity Feed (mobile - below table) */}
-            <div className="xl:hidden">
-              <ActivityFeed students={students} />
             </div>
           </div>
         </main>
@@ -1239,7 +1205,9 @@ export default function Dashboard() {
 
       {showModal && (
         <Modal title={editingStudent ? 'Edit Student' : 'Add Student'} onClose={handleCloseModal} size={wizardStep === 2 ? 'wizard' : 'lg'} noScroll>
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit} className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
+            {(savingStudent || uploading) ? <LoadingSweep /> : null}
+            <div className="relative z-[6] flex flex-col flex-1 min-h-0">
             <div className="flex-1 min-h-0 overflow-y-auto p-6 flex flex-col gap-6">
             {wizardStep === 1 ? (
               <>
@@ -1259,12 +1227,15 @@ export default function Dashboard() {
                     <input type="file" id="image-upload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/tiff" onChange={handleFileUpload} className="hidden" disabled={uploading} />
 
                     {uploading ? (
-                      <div className="inline-flex items-center gap-2 h-10 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium opacity-70">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                        Analyzing...
+                      <div className="relative overflow-hidden inline-flex items-center gap-2 h-10 px-4 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                        <LoadingSweep variant="onPrimary" />
+                        <span className="relative z-[6] inline-flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          </svg>
+                          Analyzing...
+                        </span>
                       </div>
                     ) : (
                       <>
@@ -1747,12 +1718,13 @@ export default function Dashboard() {
             </div>
 
             {/* Footer - fixed at modal bottom */}
-            <div className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-4 flex justify-between items-center">
+            <div className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-4 flex justify-between items-center relative z-[6]">
               <div>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  disabled={savingStudent}
+                  className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1762,7 +1734,8 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setWizardStep(2)}
-                    className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    disabled={savingStudent}
+                    className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
                   >
                     Next: Accommodations
                   </button>
@@ -1771,19 +1744,22 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setWizardStep(1)}
-                      className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      disabled={savingStudent}
+                      className="h-11 px-4 text-sm font-medium text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-50"
                     >
                       Back
                     </button>
                     <button
                       type="submit"
-                      className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      disabled={savingStudent}
+                      className="h-11 px-5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
                     >
-                      {editingStudent ? 'Save Changes' : 'Add Student'}
+                      {savingStudent ? 'Saving…' : editingStudent ? 'Save Changes' : 'Add Student'}
                     </button>
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </form>
         </Modal>

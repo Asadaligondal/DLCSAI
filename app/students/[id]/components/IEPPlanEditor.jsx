@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, FileSearch } from 'lucide-react';
+import LoadingSweep from '@/components/LoadingSweep';
 import GoalsObjectivesSection from './GoalsObjectivesSection';
 
 export default function IEPPlanEditor({
@@ -26,8 +27,9 @@ export default function IEPPlanEditor({
 }) {
   const [showRagContext, setShowRagContext] = useState(false);
   return (
-    <div className="mt-4 bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div className="px-5 pt-5 pb-3">
+    <div className="mt-4 relative bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+      {isGenerating ? <LoadingSweep /> : null}
+      <div className="relative z-[6] px-5 pt-5 pb-3">
         <h2 className="text-lg font-semibold text-slate-900 tracking-tight">IEP Plan - Review & Edit</h2>
       </div>
 

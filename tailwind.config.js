@@ -45,6 +45,27 @@ module.exports = {
         'card-hover': '0 4px 12px 0 rgb(0 0 0 / 0.06), 0 1px 3px -1px rgb(0 0 0 / 0.04)',
         'float': '0 8px 24px -4px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04)',
       },
+      keyframes: {
+        letterIn: {
+          '0%': { opacity: '0', transform: 'translateY(0.5rem)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        letterWave: {
+          '0%, 100%': { opacity: '0.45', transform: 'translateY(0.45rem)' },
+          '22%': { opacity: '1', transform: 'translateY(0)' },
+          '55%': { opacity: '1', transform: 'translateY(0)' },
+          '78%': { opacity: '0.45', transform: 'translateY(0.35rem)' },
+        },
+        loadingSweep: {
+          '0%': { transform: 'translateX(-140%) skewX(-18deg)' },
+          '100%': { transform: 'translateX(320%) skewX(-18deg)' },
+        },
+      },
+      animation: {
+        'letter-in': 'letterIn 0.42s ease forwards',
+        'letter-wave': 'letterWave 2.35s ease-in-out infinite',
+        'loading-sweep': 'loadingSweep 1.75s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
