@@ -157,26 +157,21 @@ export default function StudentInfoHeader({
       <div>
         {!isEditing ? (
           <div className="bg-white rounded-xl border border-slate-200/60 shadow-card overflow-hidden">
-            {/* Collapsible header — nav must stay outside expand <button> (no button-in-button). */}
-            <div className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded((e) => !e)}
-                  className="shrink-0 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                >
-                  <h3 className="text-sm font-bold text-slate-900">Student Context</h3>
-                </button>
+            {/* Whole row toggles expand; workspace nav stops propagation (no nested buttons). */}
+            <div
+              aria-expanded={isExpanded}
+              onClick={() => setIsExpanded((e) => !e)}
+              className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-slate-50/50 transition-colors cursor-pointer text-left select-none"
+            >
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-900 shrink-0">Student Context</h3>
                 {student?._id ? (
-                  <StudentWorkspaceNav studentId={String(student._id)} studentName={formData.name || student?.name} />
+                  <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <StudentWorkspaceNav studentId={String(student._id)} studentName={formData.name || student?.name} />
+                  </div>
                 ) : null}
               </div>
-              <button
-                type="button"
-                onClick={() => setIsExpanded((e) => !e)}
-                className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
-                aria-expanded={isExpanded}
-              >
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
                 <span className="text-xs text-slate-500 truncate hidden md:inline max-w-[200px] lg:max-w-[320px]">
                   {[
                     formData.studentId || student?.studentId,
@@ -191,7 +186,7 @@ export default function StudentInfoHeader({
                   ].filter(Boolean).join(' · ')}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''}`} />
-              </button>
+              </div>
             </div>
 
             {/* Animated expandable content */}

@@ -32,7 +32,7 @@ export default function RightTOC({ sections = [] }) {
   };
 
   return (
-    <aside className="hidden lg:block self-start sticky top-14">
+    <aside className="hidden lg:block self-start sticky top-28 z-20">
       <div className="p-3 bg-white border border-slate-200/60 rounded-xl shadow-card">
         <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-1.5">On this page</h4>
         <ul className="space-y-px">

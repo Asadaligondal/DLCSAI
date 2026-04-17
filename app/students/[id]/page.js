@@ -1069,6 +1069,11 @@ export default function StudentDetail() {
             isBusy={isGenerating}
             generateStage={generateStage}
             generateProgress={generateProgress}
+            history={
+              hasExistingPlan && student ? (
+                <IEPVersionHistory student={student} floridaIepLogo={userLocal?.floridaIepLogo} />
+              ) : null
+            }
           />
 
           {floridaPreview && (
@@ -1151,10 +1156,6 @@ export default function StudentDetail() {
                 />
                 <PipelineMetricsPanel pipelineMetrics={pipelineMetrics} />
               </div>
-
-              {hasExistingPlan && (
-                <IEPVersionHistory student={student} floridaIepLogo={userLocal?.floridaIepLogo} />
-              )}
 
               {!hasExistingPlan && (
                 <div className="mt-4 flex flex-col items-center justify-center py-12 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">

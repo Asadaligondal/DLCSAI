@@ -6,13 +6,11 @@ import LoadingSweep from '@/components/LoadingSweep';
 
 export default function StickyActionBar({
   onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onPreviewFloridaIEP, floridaPreviewBusy,
-  onReset, isReviewed, isBusy, savedAt, generateStage = 'idle', generateProgress = ''
+  onReset, isReviewed, isBusy, generateStage = 'idle', generateProgress = '',
+  history = null,
 }) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
-
-  const progressLabel = generateStage === 'retrieving_context' ? 'Retrieving context...' : generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : null;
-  const statusText = isBusy && progressLabel ? progressLabel : savedAt ? `Saved ${savedAt}` : 'Ready';
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -27,7 +25,7 @@ export default function StickyActionBar({
   const showSweep = isBusy || floridaPreviewBusy;
 
   return (
-    <div className="sticky top-16 z-30 relative overflow-hidden bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">
+    <div className="sticky top-16 z-30 relative overflow-visible bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">
       {showSweep ? <LoadingSweep /> : null}
       <div className="relative z-[6] flex h-full w-full items-center justify-end gap-2 min-w-0">
           <button
@@ -111,8 +109,12 @@ export default function StickyActionBar({
             )}
           </div>
 
-          <div className="w-px h-6 bg-slate-200 mx-0.5" />
-          <span className="text-[11px] text-slate-500 min-w-0 truncate max-w-[140px]">{statusText}</span>
+          {history ? (
+            <>
+              <div className="w-px h-6 bg-slate-200 mx-0.5" />
+              {history}
+            </>
+          ) : null}
       </div>
     </div>
   );

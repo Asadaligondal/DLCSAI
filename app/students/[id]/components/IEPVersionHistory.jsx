@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { History, Eye, Download, ChevronDown } from 'lucide-react';
+import { History, Eye, Download, ChevronDown, FileText } from 'lucide-react';
 import Modal from '@/components/Modal';
 import { downloadFloridaIepPdf, getFloridaIepPdfBlobUrl } from '@/lib/floridaIepPdf';
 
@@ -36,12 +36,14 @@ function formatWhen(d) {
   }
 }
 
-export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }) {
-  const [expanded, setExpanded] = useState(true);
+/** Toolbar History control + Past Versions popover (sticky action bar). */
+export default function IEPVersionHistory({ student, floridaIepLogo }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [viewEntry, setViewEntry] = useState(null);
   const [pdfPreview, setPdfPreview] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const pdfRevokeRef = useRef(null);
+  const menuRef = useRef(null);
 
   const versions = student?.iep_version_history || [];
   const sorted = useMemo(
@@ -65,6 +67,15 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
     }
     return null;
   }, [sorted, livePlan, liveNonEmpty]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!viewEntry) {
@@ -137,85 +148,75 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
       fileName: `Florida_IEP_${(student.name || 'Student').replace(/\s+/g, '_')}_v${entry.version}_${stampISO}.pdf`,
       logoUrl: floridaIepLogo || undefined
     });
+    setMenuOpen(false);
   };
 
-  if (!sorted.length) {
-    return (
-      <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-medium text-slate-700">
-          <History className="w-4 h-4 text-slate-400" />
-          IEP version history
-        </div>
-        <p className="mt-1 text-xs text-slate-500">
-          Saved IEPs and each completed generation are listed here.
-        </p>
-      </div>
-    );
-  }
+  const openView = (entry) => {
+    setViewEntry(entry);
+    setMenuOpen(false);
+  };
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200/60 bg-white shadow-card overflow-hidden">
+    <div className="relative shrink-0" ref={menuRef}>
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50/50 transition-colors"
+        onClick={() => setMenuOpen((o) => !o)}
+        className={`flex items-center gap-1.5 h-8 px-3.5 text-[13px] font-semibold rounded-lg transition-colors border ${
+          menuOpen
+            ? 'text-violet-900 bg-violet-100 border-violet-300 shadow-sm'
+            : 'text-violet-900 bg-violet-50 border-violet-200/80 hover:bg-violet-100/90'
+        }`}
+        aria-expanded={menuOpen}
+        aria-haspopup="dialog"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <History className="w-4 h-4 text-primary-600 shrink-0" />
-          <span className="text-sm font-semibold text-slate-900">IEP version history</span>
-          <span className="text-xs text-slate-500">({sorted.length} snapshot{sorted.length !== 1 ? 's' : ''})</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <History className="w-3.5 h-3.5 shrink-0" />
+        History
+        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {expanded && (
-        <div className="border-t border-slate-100 px-4 pb-4">
-          <p className="text-xs text-slate-500 mt-3 mb-2">
-            Newest entries first. The highlighted row matches what is in the editor when the content is unchanged.
-          </p>
-          <div className="overflow-x-auto rounded-lg border border-slate-100">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  <th className="px-3 py-2">Ver.</th>
-                  <th className="px-3 py-2">Captured</th>
-                  <th className="px-3 py-2">Source</th>
-                  <th className="px-3 py-2">Reviewed (then)</th>
-                  <th className="px-3 py-2 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sorted.map((entry) => {
-                  const rowKey = entry._id ? String(entry._id) : `v${entry.version}-${entry.createdAt}`;
-                  const isMatchRow = matchRowId && rowKey === matchRowId;
-                  const rowClass = isMatchRow
-                    ? 'bg-emerald-50/90 ring-1 ring-inset ring-emerald-200/80 hover:bg-emerald-50'
-                    : 'hover:bg-slate-50/80';
-                  return (
-                  <tr key={rowKey} className={rowClass}>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      <span className="inline-flex flex-wrap items-center gap-1.5">
-                        {entry.version}
+      {menuOpen && (
+        <div
+          className="absolute right-0 mt-1.5 w-[min(100vw-2rem,380px)] max-h-[min(70vh,440px)] flex flex-col rounded-xl border border-slate-200/80 bg-white shadow-float z-[60] overflow-hidden"
+          role="dialog"
+          aria-label="Past versions"
+        >
+          <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/80">
+            <h3 className="text-sm font-bold text-slate-900">Past Versions</h3>
+          </div>
+          <div className="overflow-y-auto flex-1 py-1">
+            {!sorted.length ? (
+              <div className="px-3.5 py-4 text-sm text-slate-600">
+                <p className="font-medium text-slate-800">No versions yet</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Saved IEPs and completed generations will appear here with View and PDF.
+                </p>
+              </div>
+            ) : (
+              sorted.map((entry) => {
+                const rowKey = entry._id ? String(entry._id) : `v${entry.version}-${entry.createdAt}`;
+                const isMatchRow = matchRowId && rowKey === matchRowId;
+                return (
+                  <div
+                    key={rowKey}
+                    className={`flex items-start gap-2.5 px-3 py-2.5 border-b border-slate-100 last:border-0 ${
+                      isMatchRow ? 'bg-emerald-50/95' : 'hover:bg-slate-50/80'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-semibold ${isMatchRow ? 'text-emerald-900' : 'text-slate-900'}`}>
+                        Version {entry.version}
                         {isMatchRow ? (
-                          <span className="font-sans text-[10px] font-semibold uppercase tracking-wide text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded">
-                            In editor
-                          </span>
+                          <span className="ml-1.5 font-bold tracking-wide text-emerald-700">(IN EDITOR)</span>
                         ) : null}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-slate-700 whitespace-nowrap">{formatWhen(entry.createdAt)}</td>
-                    <td className="px-3 py-2 text-slate-700">
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                        {entry.source || 'save'}
-                      </span>
-                      {entry.label ? <span className="block text-xs text-slate-500 mt-0.5">{entry.label}</span> : null}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">{entry.meta?.is_reviewed ? 'Yes' : 'No'}</td>
-                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">{formatWhen(entry.createdAt)}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 pt-0.5">
                       <button
                         type="button"
-                        onClick={() => setViewEntry(entry)}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 mr-2"
+                        onClick={() => openView(entry)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         View
@@ -223,17 +224,16 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
                       <button
                         type="button"
                         onClick={() => handleDownload(entry)}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900"
                       >
                         <Download className="w-3.5 h-3.5" />
                         PDF
                       </button>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -268,7 +268,7 @@ export default function IEPVersionHistory({ student, onRefresh, floridaIepLogo }
               <p className="text-sm text-slate-500 py-8 text-center">Could not generate preview.</p>
             )}
             <p className="text-xs text-slate-500 mt-3 shrink-0">
-              Use <strong>PDF</strong> in the table to download the same file. Footer uses the capture date as plan date.
+              Use <strong>PDF</strong> on a version row to download the same file. Footer uses the capture date as plan date.
             </p>
           </div>
         </Modal>
