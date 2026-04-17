@@ -625,7 +625,7 @@ export default function GoalsObjectivesSection({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-400 italic py-2">No custom goals yet. Add them from student profile and regenerate.</p>
+          <p className="text-sm text-slate-400 italic py-2">No custom goals yet. Add them from Student context on the IEP plan page and regenerate.</p>
         )}
       </SectionCard>
 

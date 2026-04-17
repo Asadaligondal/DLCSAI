@@ -28,80 +28,10 @@ import RegenerateIepModal from './components/RegenerateIepModal';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
 import LoadingSweep from '@/components/LoadingSweep';
 import useMinLoadingGate from '@/hooks/useMinLoadingGate';
+import { calcAgeFromDob, DISABILITIES_OPTIONS, STRENGTHS_OPTIONS, WEAKNESSES_OPTIONS } from '@/lib/studentFormConstants';
 
 const MIN_ROUTE_LOAD_MS = 3000;
 // GoalsCard removed from main layout; custom goals are managed via StudentInfoHeader modal
-
-function calcAgeFromDob(dob) {
-  if (!dob) return { years: '', months: '', numeric: '' };
-  const birth = new Date(dob);
-  const now = new Date();
-  let years = now.getFullYear() - birth.getFullYear();
-  let months = now.getMonth() - birth.getMonth();
-  if (months < 0) {
-    years--;
-    months += 12;
-  }
-  if (now.getDate() < birth.getDate()) {
-    months--;
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-  }
-  return { years, months, numeric: years };
-}
-
-const DISABILITIES_OPTIONS = [
-  'Autism Spectrum Disorder (P)',
-  'Deaf or Hard-of-Hearing (H)',
-  'Developmental Delay (T)',
-  'Dual-Sensory Impairment (O)',
-  'Emotional or Behavioral Disability (J)',
-  'Established Conditions (Age: 0-2) (U)',
-  'Gifted (L)',
-  'Hospitalized or Homebound (M)',
-  'Intellectual Disability (W)',
-  'Language Impairment (G)',
-  'Orthopedic Impairment (C)',
-  'Other Health Impairment (V)',
-  'Traumatic Brain Injury (S)',
-  'Specific Learning Disability (K)',
-  'Speech Impairment (F)',
-  'Visual Impairment (I)'
-];
-const STRENGTHS_OPTIONS = [
-  'Good Memory',
-  'Creative',
-  'Problem Solving',
-  'Communication',
-  'Leadership',
-  'Artistic',
-  'Athletic',
-  'Teamwork',
-  'Adaptability',
-  'Organization',
-  'Perseverance',
-  'Attention to Detail',
-  'Curiosity',
-  'Others'
-];
-const WEAKNESSES_OPTIONS = [
-  'Reading Comprehension',
-  'Focus',
-  'Math Skills',
-  'Social Skills',
-  'Writing',
-  'Organization',
-  'Processing Speed',
-  'Working Memory',
-  'Fine Motor',
-  'Gross Motor',
-  'Anxiety',
-  'Executive Functioning',
-  'Behavioral Regulation',
-  'Others'
-];
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -370,37 +300,25 @@ export default function StudentDetail() {
     }
   };
 
-  const handleUpdate = async (e) => {
+  /** IEP student context (demographics / contact on `/students/[id]/profile`). */
+  const handleContextUpdate = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
 
     try {
-      const ageNum = formData.dateOfBirth
-        ? calcAgeFromDob(formData.dateOfBirth).numeric
-        : parseInt(formData.age, 10);
       await axios.put(
         `/api/students/${id}`,
         {
-          name: formData.name,
-          studentId: formData.studentId,
-          age: typeof ageNum === 'number' && !Number.isNaN(ageNum) ? ageNum : parseInt(formData.age, 10),
-          gradeLevel: formData.gradeLevel,
-          dateOfBirth: formData.dateOfBirth || null,
-          disabilities: formData.disabilities,
           strengths: formData.strengths,
           strengthsOther: formData.strengthsOther,
           weaknesses: formData.weaknesses,
           weaknessesOther: formData.weaknessesOther,
+          disabilities: formData.disabilities,
           studentNotes: formData.studentNotes,
-          schoolName: formData.schoolName,
-          address: formData.address,
-          parentGuardian1: formData.parentGuardian1,
-          parentGuardian2: formData.parentGuardian2,
-          caseManager: formData.caseManager,
-          primaryExceptionality: formData.primaryExceptionality,
-          relatedServicesTherapy: formData.relatedServicesTherapy,
+          domainsTransitionAreas: formData.domainsTransitionAreas,
+          associatedPlans: formData.associatedPlans,
           domainAreas: formData.domainAreas,
-          otherExceptionalities: '',
+          primaryExceptionality: formData.primaryExceptionality,
           originalMeetingPlanDate: formData.originalMeetingPlanDate || null,
           initiationDate: formData.initiationDate || null,
           durationDate: formData.durationDate || null,
@@ -412,8 +330,6 @@ export default function StudentDetail() {
           meetingPurposeTags: formData.meetingPurposeTags,
           meetingPurposeOther: formData.meetingPurposeOther,
           generationType: formData.generationType,
-          domainsTransitionAreas: formData.domainsTransitionAreas,
-          associatedPlans: formData.associatedPlans,
           assessmentContext: formData.assessmentContext,
         },
         {
@@ -421,11 +337,11 @@ export default function StudentDetail() {
         }
       );
 
-      toast.success('Student updated successfully');
+      toast.success('Student context saved');
       setIsEditing(false);
       fetchStudent(token);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error updating student');
+      toast.error(error.response?.data?.message || 'Error saving context');
     }
   };
 
@@ -1202,7 +1118,7 @@ export default function StudentDetail() {
                 setIsEditing={setIsEditing}
                 formData={formData}
                 setFormData={setFormData}
-                handleUpdate={handleUpdate}
+                handleUpdate={handleContextUpdate}
                 isGenerating={isGenerating}
                 handleGenerateIEP={openGenerateModal}
                 hasExistingPlan={hasExistingPlan}

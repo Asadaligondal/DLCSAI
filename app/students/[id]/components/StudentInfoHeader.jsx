@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import MultiSelect from '@/components/MultiSelect';
 import { X, Save, Target, ChevronDown, FileText, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import CustomGoalsModal from '@/components/CustomGoalsModal';
 import Modal from '@/components/Modal';
-import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
+import StudentWorkspaceNav from './StudentWorkspaceNav';
+import { DOMAIN_AREA_OPTIONS } from '@/lib/domainAreas';
 
 export default function StudentInfoHeader({
   student,
@@ -39,26 +41,6 @@ export default function StudentInfoHeader({
   const [assessmentDraft, setAssessmentDraft] = useState('');
   const [assessmentUploading, setAssessmentUploading] = useState(false);
 
-  const calcAgeFromDob = (dob) => {
-    if (!dob) return { years: '', months: '', numeric: '' };
-    const birth = new Date(dob);
-    const now = new Date();
-    let years = now.getFullYear() - birth.getFullYear();
-    let months = now.getMonth() - birth.getMonth();
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    if (now.getDate() < birth.getDate()) {
-      months--;
-      if (months < 0) {
-        years--;
-        months += 12;
-      }
-    }
-    return { years, months, numeric: years };
-  };
-
   const fmtViewDate = (v) => {
     if (!v) return '—';
     const raw = String(v);
@@ -67,17 +49,6 @@ export default function StudentInfoHeader({
     const dt = new Date(v);
     return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   };
-
-  const dobForDisplay =
-    formData.dateOfBirth ||
-    (student?.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '');
-  const ageDisplayView = dobForDisplay
-    ? `${calcAgeFromDob(dobForDisplay).years} Year(s)`
-    : formData.age !== '' && formData.age != null
-      ? `${formData.age} Year(s)`
-      : student?.age != null
-        ? `${student.age} Year(s)`
-        : '—';
 
   const openAccommodations = async () => {
     // try to fetch existing accommodations for this student
@@ -186,31 +157,42 @@ export default function StudentInfoHeader({
       <div>
         {!isEditing ? (
           <div className="bg-white rounded-xl border border-slate-200/60 shadow-card overflow-hidden">
-            {/* Collapsible header */}
-            <button
-              type="button"
-              onClick={() => setIsExpanded((e) => !e)}
-              className="w-full flex items-center justify-between gap-3 px-5 py-3.5 text-left hover:bg-slate-50/50 transition-colors"
-            >
-              <h3 className="text-sm font-bold text-slate-900">Student Context</h3>
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-xs text-slate-500 truncate hidden sm:inline">
+            {/* Collapsible header — nav must stay outside expand <button> (no button-in-button). */}
+            <div className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded((e) => !e)}
+                  className="shrink-0 text-left rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                >
+                  <h3 className="text-sm font-bold text-slate-900">Student Context</h3>
+                </button>
+                {student?._id ? (
+                  <StudentWorkspaceNav studentId={String(student._id)} studentName={formData.name || student?.name} />
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExpanded((e) => !e)}
+                className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0 rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                aria-expanded={isExpanded}
+              >
+                <span className="text-xs text-slate-500 truncate hidden md:inline max-w-[200px] lg:max-w-[320px]">
                   {[
-                    formData.name || student?.name || '—',
-                    formData.gradeLevel || student?.gradeLevel || '—',
-                    Array.isArray(student?.disabilities) && student.disabilities[0] ? student.disabilities[0] : null,
+                    formData.studentId || student?.studentId,
+                    formData.gradeLevel || student?.gradeLevel,
                     (() => {
                       const acc = student?.student_accommodations || {};
                       const sum = (obj) => ['presentation','response','scheduling','setting','assistive_technology_device'].reduce((a,k)=> a + (Array.isArray(obj?.[k])? obj[k].length:0),0);
                       const total = sum(acc.classroom || {}) + sum(acc.assessment || {});
                       return total > 0 ? `${total} accommodations` : null;
                     })(),
-                    customGoals.length > 0 ? `${customGoals.length} custom goals` : '0 custom goals'
+                    customGoals.length > 0 ? `${customGoals.length} custom goals` : '0 custom goals',
                   ].filter(Boolean).join(' · ')}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-300 ease-in-out ${isExpanded ? 'rotate-180' : ''}`} />
-              </div>
-            </button>
+              </button>
+            </div>
 
             {/* Animated expandable content */}
             <div
@@ -220,147 +202,21 @@ export default function StudentInfoHeader({
             <div className="overflow-hidden">
             <div className={`px-5 pb-5 pt-0 border-t border-slate-100 transition-opacity duration-300 ease-in-out ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
             <div className="space-y-4 pt-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Name</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.name || student?.name) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.name || student?.name}</span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">School</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.schoolName || student?.schoolName) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.schoolName || student?.schoolName}</span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Student ID</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.studentId || student?.studentId) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.studentId || student?.studentId}</span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Grade</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.gradeLevel || student?.gradeLevel) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.gradeLevel || student?.gradeLevel}</span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">DOB</div>
-                    <div className="flex flex-wrap gap-2">
-                      {(() => {
-                        const v = fmtViewDate(dobForDisplay);
-                        return v === '—' ? (
-                          <span className="text-sm text-slate-500">None</span>
-                        ) : (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{v}</span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Age</div>
-                    <div className="flex flex-wrap gap-2">
-                      {ageDisplayView === '—' ? (
-                        <span className="text-sm text-slate-500">None</span>
-                      ) : (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{ageDisplayView}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-100 pt-4">
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Contact and exceptionalities (detail)</div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Address</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.address || student?.address) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
-                          {formData.address || student?.address}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium text-slate-500 mb-1.5">Parent / Guardian</div>
-                      <div className="flex flex-wrap gap-2">
-                        {pillText(formData.parentGuardian1 || student?.parentGuardian1) ? (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.parentGuardian1 || student?.parentGuardian1}</span>
-                        ) : (
-                          <span className="text-sm text-slate-500">None</span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium text-slate-500 mb-1.5">Parent / Guardian (second)</div>
-                      <div className="flex flex-wrap gap-2">
-                        {pillText(formData.parentGuardian2 || student?.parentGuardian2) ? (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.parentGuardian2 || student?.parentGuardian2}</span>
-                        ) : (
-                          <span className="text-sm text-slate-500">None</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-xs font-medium text-slate-500 mb-1.5">Case Manager</div>
-                      <div className="flex flex-wrap gap-2">
-                        {pillText(formData.caseManager || student?.caseManager) ? (
-                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.caseManager || student?.caseManager}</span>
-                        ) : (
-                          <span className="text-sm text-slate-500">None</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Primary exceptionality</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.primaryExceptionality || student?.primaryExceptionality) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{formData.primaryExceptionality || student?.primaryExceptionality}</span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Related services / therapy</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.relatedServicesTherapy || student?.relatedServicesTherapy) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
-                          {formData.relatedServicesTherapy || student?.relatedServicesTherapy}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs text-slate-500">
+                Demographics and contact details are on{' '}
+                {student?._id ? (
+                  <Link
+                    href={`/students/${student._id}/profile`}
+                    className="text-primary-600 font-medium hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Student profile
+                  </Link>
+                ) : (
+                  <span className="text-slate-600">Student profile</span>
+                )}
+                .
+              </p>
 
               <div className="border-t border-slate-100 pt-4">
                 <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">IEP key dates</div>
@@ -437,24 +293,36 @@ export default function StudentInfoHeader({
                 <div className="space-y-3">
                   <div>
                     <div className="text-xs font-medium text-slate-500 mb-1.5">Domain(s) / transition service activity area(s)</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.domainsTransitionAreas || student?.domainsTransitionAreas) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
-                          {formData.domainsTransitionAreas || student?.domainsTransitionAreas}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
+                    {pillText(formData.domainsTransitionAreas || student?.domainsTransitionAreas) ? (
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap break-words">
+                        {formData.domainsTransitionAreas || student?.domainsTransitionAreas}
+                      </p>
+                    ) : (
+                      <span className="text-sm text-slate-500">None</span>
+                    )}
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Domain area</div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Associated plan</div>
+                    {pillText(formData.associatedPlans || student?.associatedPlans) ? (
+                      <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">
+                        {formData.associatedPlans || student?.associatedPlans}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-slate-500">None</span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-slate-500 mb-1.5">Domain area(s)</div>
                     <div className="flex flex-wrap gap-2">
                       {(() => {
-                        const list = formData.domainAreas ?? student?.domainAreas;
-                        return Array.isArray(list) && list.length > 0 ? (
-                          list.map((d, i) => (
-                            <span key={i} className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">{d}</span>
+                        const areas = Array.isArray(formData.domainAreas) && formData.domainAreas.length
+                          ? formData.domainAreas
+                          : (Array.isArray(student?.domainAreas) ? student.domainAreas : []);
+                        return areas.length > 0 ? (
+                          areas.map((d, i) => (
+                            <span key={i} className="px-2.5 py-1 text-xs font-medium rounded-lg bg-violet-50 text-violet-800 border border-violet-100">
+                              {d}
+                            </span>
                           ))
                         ) : (
                           <span className="text-sm text-slate-500">None</span>
@@ -462,41 +330,51 @@ export default function StudentInfoHeader({
                       })()}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 mb-1.5">Associated Plan</div>
-                    <div className="flex flex-wrap gap-2">
-                      {pillText(formData.associatedPlans || student?.associatedPlans) ? (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 whitespace-pre-wrap break-words max-w-full">
-                          {formData.associatedPlans || student?.associatedPlans}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-slate-500">None</span>
-                      )}
-                    </div>
-                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Primary exceptionality</div>
+                <div className="flex flex-wrap gap-2">
+                  {pillText(formData.primaryExceptionality || student?.primaryExceptionality) ? (
+                    <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">
+                      {formData.primaryExceptionality || student?.primaryExceptionality}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-slate-500">None</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Exceptionalities</div>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    const list = Array.isArray(formData.disabilities) && formData.disabilities.length
+                      ? formData.disabilities
+                      : (Array.isArray(student?.disabilities) ? student.disabilities : []);
+                    return list.length > 0 ? (
+                      <>
+                        {list.slice(0, 8).map((d, i) => (
+                          <span key={i} className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-100">
+                            {d}
+                          </span>
+                        ))}
+                        {list.length > 8 && (
+                          <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-600">
+                            +{list.length - 8} more
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-sm text-slate-500">None</span>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-4">
-              <div>
-                <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Exceptionalities</div>
-                <div className="flex flex-wrap gap-2">
-                  {Array.isArray(student?.disabilities) && student.disabilities.length > 0 ? (
-                    <>
-                      {student.disabilities.slice(0,6).map((d, i) => (
-                        <span key={i} className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-700">{d}</span>
-                      ))}
-                      {student.disabilities.length > 6 && (
-                        <span className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 text-slate-600">+{student.disabilities.length - 6} more</span>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm text-slate-500"><Target className="w-4 h-4 text-slate-300" />None</div>
-                  )}
-                </div>
-              </div>
-
               <div>
                 <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Strengths</div>
                 <div className="flex flex-wrap gap-2">
@@ -532,6 +410,17 @@ export default function StudentInfoHeader({
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2">Additional student context</div>
+              {(formData.studentNotes || student?.studentNotes || '').trim() ? (
+                <p className="text-sm text-slate-700 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                  {formData.studentNotes || student?.studentNotes}
+                </p>
+              ) : (
+                <span className="text-sm text-slate-500">None</span>
+              )}
             </div>
 
             <div className="mt-4 pt-4 border-t border-slate-100">
@@ -643,187 +532,37 @@ export default function StudentInfoHeader({
           </div>
         ) : (
           <form onSubmit={handleUpdate}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Name <span className="text-xs text-slate-500 font-normal">— write only initials</span></label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">School</label>
-                  <input
-                    type="text"
-                    value={formData.schoolName || ''}
-                    onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                    placeholder="School or campus"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Student ID</label>
-                  <input
-                    type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    required
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Grade Level</label>
-                  <select
-                    value={formData.gradeLevel}
-                    onChange={(e) => setFormData({ ...formData, gradeLevel: e.target.value })}
-                    required
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+            <div className="bg-white rounded-xl border border-slate-200/60 shadow-card overflow-hidden p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">Edit student context</h2>
+                <div className="flex items-center gap-2">
+                  {student?._id ? (
+                    <StudentWorkspaceNav studentId={String(student._id)} studentName={formData.name || student?.name} />
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    aria-label="Close edit"
                   >
-                    <option value="">Select grade...</option>
-                    <option>KG</option>
-                    <option>1st</option>
-                    <option>2nd</option>
-                    <option>3rd</option>
-                    <option>4th</option>
-                    <option>5th</option>
-                    <option>6th</option>
-                    <option>7th</option>
-                    <option>8th</option>
-                    <option>9th</option>
-                    <option>10th</option>
-                    <option>11th</option>
-                    <option>12th</option>
-                    {formData.gradeLevel &&
-                      !['KG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th'].includes(
-                        formData.gradeLevel
-                      ) && (
-                        <option value={formData.gradeLevel}>{formData.gradeLevel}</option>
-                      )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Date of Birth</label>
-                  <input
-                    type="date"
-                    value={formData.dateOfBirth || ''}
-                    onChange={(e) => {
-                      const dob = e.target.value;
-                      const { numeric } = calcAgeFromDob(dob);
-                      setFormData({ ...formData, dateOfBirth: dob, age: numeric !== '' ? String(numeric) : '' });
-                    }}
-                    max={new Date().toISOString().split('T')[0]}
-                    className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">Age</label>
-                  {formData.dateOfBirth ? (
-                    <div className="w-full h-11 px-3 border border-gray-200 rounded-md bg-slate-50 text-sm text-slate-900 flex items-center">
-                      {(() => {
-                        const { years } = calcAgeFromDob(formData.dateOfBirth);
-                        return `${years} Year(s)`;
-                      })()}
-                    </div>
-                  ) : (
-                    <input
-                      type="number"
-                      min={0}
-                      max={30}
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      required
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                    />
-                  )}
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
+              <p className="text-xs text-slate-500 mb-5">
+                Demographics and contact details are edited on{' '}
+                {student?._id ? (
+                  <Link href={`/students/${student._id}/profile`} className="text-primary-600 font-medium hover:underline">
+                    Student profile
+                  </Link>
+                ) : (
+                  <span className="text-slate-600">Student profile</span>
+                )}
+                .
+              </p>
 
-              <div className="border-t border-slate-100 pt-4">
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Contact and exceptionalities (detail)</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Address</label>
-                    <input
-                      type="text"
-                      value={formData.address || ''}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      placeholder="Mailing or home address"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian</label>
-                    <input
-                      type="text"
-                      value={formData.parentGuardian1 || ''}
-                      onChange={(e) => setFormData({ ...formData, parentGuardian1: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Parent / Guardian (second)</label>
-                    <input
-                      type="text"
-                      value={formData.parentGuardian2 || ''}
-                      onChange={(e) => setFormData({ ...formData, parentGuardian2: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Case Manager</label>
-                    <input
-                      type="text"
-                      value={formData.caseManager || ''}
-                      onChange={(e) => setFormData({ ...formData, caseManager: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                      placeholder="Staff managing this student’s case"
-                    />
-                  </div>
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
-                    <select
-                      value={formData.primaryExceptionality || ''}
-                      onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
-                      className="w-full h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
-                    >
-                      <option value="">Select primary exceptionality…</option>
-                      {(disabilitiesOptions || []).map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Related services / therapy</label>
-                    <textarea
-                      value={formData.relatedServicesTherapy || ''}
-                      onChange={(e) => setFormData({ ...formData, relatedServicesTherapy: e.target.value })}
-                      rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0 resize-y"
-                      placeholder="e.g. Speech, OT, counseling"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-100 pt-4">
+              <div className="space-y-4">
+              <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">IEP key dates</p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
@@ -873,7 +612,7 @@ export default function StudentInfoHeader({
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-slate-700 mb-2">Meeting purpose</label>
                     <MeetingPurposeCollapsible
-                      idPrefix="sih-mp"
+                      idPrefix="sih-mp-edit"
                       tags={formData.meetingPurposeTags || []}
                       otherText={formData.meetingPurposeOther || ''}
                       onChange={(patch) => setFormData({ ...formData, ...patch })}
@@ -896,7 +635,7 @@ export default function StudentInfoHeader({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-2">Associated Plan</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-2">Associated plan</label>
                     <input
                       type="text"
                       value={formData.associatedPlans || ''}
@@ -905,7 +644,7 @@ export default function StudentInfoHeader({
                       placeholder="e.g. IEP, 504"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <MultiSelect
                       label="Domain area"
                       options={DOMAIN_AREA_OPTIONS}
@@ -917,14 +656,29 @@ export default function StudentInfoHeader({
                 </div>
               </div>
 
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-xs font-medium text-slate-700 mb-2">Primary exceptionality</label>
+                <select
+                  value={formData.primaryExceptionality || ''}
+                  onChange={(e) => setFormData({ ...formData, primaryExceptionality: e.target.value })}
+                  className="w-full max-w-xl h-11 px-3 border border-gray-200 rounded-md bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 min-w-0"
+                >
+                  <option value="">Select primary exceptionality…</option>
+                  {(disabilitiesOptions || []).map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
               <MultiSelect
                 label="Exceptionalities"
                 options={disabilitiesOptions}
-                value={formData.disabilities}
+                value={Array.isArray(formData.disabilities) ? formData.disabilities : []}
                 onChange={(value) => setFormData({ ...formData, disabilities: value })}
-                placeholder="Select exceptionalities..."
+                placeholder="Select exceptionalities…"
               />
 
+              <div className="border-t border-slate-100 pt-4 space-y-4">
               <MultiSelect
                 label="Strengths"
                 options={strengthsOptions}
@@ -933,7 +687,7 @@ export default function StudentInfoHeader({
                 placeholder="Select strengths..."
               />
 
-              {formData.strengths.includes('Others') && (
+              {(Array.isArray(formData.strengths) ? formData.strengths : []).includes('Others') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Other Strengths (describe)</label>
                   <input
@@ -954,7 +708,7 @@ export default function StudentInfoHeader({
                 placeholder="Select weaknesses..."
               />
 
-              {formData.weaknesses.includes('Others') && (
+              {(Array.isArray(formData.weaknesses) ? formData.weaknesses : []).includes('Others') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Other Weaknesses (describe)</label>
                   <input
@@ -966,9 +720,10 @@ export default function StudentInfoHeader({
                   />
                 </div>
               )}
+              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Student Context (Optional)</label>
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Additional student context (optional)</label>
                 <textarea
                   value={formData.studentNotes || ''}
                   onChange={(e) => {
@@ -977,21 +732,22 @@ export default function StudentInfoHeader({
                   }}
                   placeholder="e.g., learning style, interests, triggers, what supports work best…"
                   maxLength={500}
-                  className="w-full min-h-[96px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full min-h-[96px] px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
                 />
-                <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-                  <div>Optional notes to help tailor the IEP.</div>
-                  <div>{formData.studentNotes ? formData.studentNotes.length : 0}/500</div>
+                <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+                  <span>Optional notes to help tailor the IEP.</span>
+                  <span>{formData.studentNotes ? formData.studentNotes.length : 0}/500</span>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 <Save className="w-4 h-4" />
-                Save Changes
+                Save context
               </button>
+            </div>
             </div>
           </form>
         )}
