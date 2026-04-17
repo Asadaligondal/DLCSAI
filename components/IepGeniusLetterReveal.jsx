@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import LoadingSweep from '@/components/LoadingSweep';
 
-const DEFAULT_TEXT = 'IEPGenius';
+const DEFAULT_TEXT = 'IEPGenius.';
 
 /**
- * Deel-style staggered letter reveal, then looping wave + sweep shine.
- * variant: hero (large) | compact (table/inline)
+ * Deel-style loading: each character in an overflow mask rises from below,
+ * staggered, holds, whole line fades, then loops. Used on route gates and overlays.
  */
 export default function IepGeniusLetterReveal({
   text = DEFAULT_TEXT,
@@ -16,16 +16,34 @@ export default function IepGeniusLetterReveal({
   className = '',
   enableSweep = true,
 }) {
-  const line = text || DEFAULT_TEXT;
-  const staggerMs = line.length > 18 ? 38 : 65;
-  const [loopLetters, setLoopLetters] = useState(false);
+  const raw = text != null ? String(text) : '';
+  const line =
+    raw.replace(/\s+/g, ' ').trim().length > 0 ? raw.replace(/\s+/g, ' ').trim() : DEFAULT_TEXT;
+  const chars = useMemo(() => line.split(''), [line]);
+  const n = chars.length;
+
+  /** Stagger step per letter (seconds), in the 0.05–0.1s range */
+  const staggerSec = n > 16 ? 0.055 : 0.075;
+  const riseMs = 520;
+  const holdMs = 520;
+  const fadeMs = 420;
+  const staggerMs = Math.round(staggerSec * 1000);
+  const introMs = Math.max(0, n - 1) * staggerMs + riseMs;
+
+  const [burst, setBurst] = useState(0);
+  const [lineVisible, setLineVisible] = useState(true);
 
   useEffect(() => {
-    setLoopLetters(false);
-    const introMs = line.length * staggerMs + 480;
-    const id = window.setTimeout(() => setLoopLetters(true), introMs);
-    return () => window.clearTimeout(id);
-  }, [line, staggerMs]);
+    const tFade = window.setTimeout(() => setLineVisible(false), introMs + holdMs);
+    const tNext = window.setTimeout(() => {
+      setLineVisible(true);
+      setBurst((b) => b + 1);
+    }, introMs + holdMs + fadeMs);
+    return () => {
+      window.clearTimeout(tFade);
+      window.clearTimeout(tNext);
+    };
+  }, [burst, introMs, holdMs, fadeMs]);
 
   const textCls =
     variant === 'compact'
@@ -37,26 +55,54 @@ export default function IepGeniusLetterReveal({
   const pad = variant === 'compact' ? 'rounded-lg px-2 py-2' : 'rounded-xl px-4 py-4';
 
   return (
-    <div className={`flex flex-col items-center justify-center text-center ${className}`}>
-      <div className={`relative inline-flex max-w-[min(100%,28rem)] flex-col items-center gap-3 overflow-hidden ${pad}`}>
+    <div
+      className={`flex w-full flex-col items-center justify-center text-center font-sans ${
+        variant === 'hero' ? 'min-h-[40vh]' : 'min-h-0'
+      } ${className}`}
+    >
+      <div className={`relative inline-flex max-w-[min(100%,28rem)] flex-col items-center justify-center gap-3 overflow-visible ${pad}`}>
         {enableSweep ? <LoadingSweep /> : null}
-        <div className={`relative z-[6] ${textCls}`} aria-label={line.replace(/\s+/g, ' ').trim()}>
-          {line.split('').map((ch, i) => (
-            <span
-              key={`${ch}-${i}`}
-              className={`inline-block ${
-                loopLetters
-                  ? 'animate-letter-wave'
-                  : 'opacity-0 animate-letter-in'
-              }`}
-              style={{ animationDelay: `${i * staggerMs}ms` }}
-            >
-              {ch === ' ' ? '\u00a0' : ch}
-            </span>
-          ))}
+        <div
+          key={burst}
+          className={`relative z-[6] transition-opacity ease-out ${textCls}`}
+          style={{
+            transitionDuration: `${fadeMs}ms`,
+            opacity: lineVisible ? 1 : 0,
+          }}
+          aria-label={line}
+        >
+          <span className="inline-flex flex-wrap items-end justify-center gap-px sm:gap-0.5">
+            {chars.map((ch, i) => (
+              <span
+                key={`${burst}-${i}-${ch}`}
+                className="inline-block overflow-hidden align-bottom leading-none"
+                style={{ height: '1.15em' }}
+                aria-hidden="true"
+              >
+                <span
+                  className="deel-letter-inner inline-block"
+                  style={{
+                    animationDuration: `${riseMs}ms`,
+                    animationDelay: `${i * staggerSec}s`,
+                  }}
+                >
+                  {ch === ' ' ? '\u00a0' : ch}
+                </span>
+              </span>
+            ))}
+          </span>
         </div>
         {subtitle ? (
-          <p className="relative z-[6] text-sm text-slate-500 max-w-xs leading-snug">{subtitle}</p>
+          <p
+            key={`sub-${burst}`}
+            className="relative z-[6] max-w-xs text-sm leading-snug text-slate-500 transition-opacity ease-out"
+            style={{
+              transitionDuration: `${fadeMs}ms`,
+              opacity: lineVisible ? 1 : 0,
+            }}
+          >
+            {subtitle}
+          </p>
         ) : null}
       </div>
     </div>

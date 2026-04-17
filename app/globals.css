@@ -41,4 +41,21 @@
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* Deel-style masked letter rise (used by IepGeniusLetterReveal) */
+  @keyframes deel-letter-rise {
+    from {
+      /* >100% hides full glyph below mask (100% can peek a pixel on bold fonts) */
+      transform: translate3d(0, 118%, 0);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .deel-letter-inner {
+    animation-name: deel-letter-rise;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+  }
 }
