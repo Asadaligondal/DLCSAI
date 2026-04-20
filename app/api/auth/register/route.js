@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { generateToken, hashPassword } from '@/lib/auth';
+import { protectRoute, checkAdmin } from '@/lib/authMiddleware';
 
 export async function POST(request) {
   try {
+    // Admin-only: only admins may create new user accounts (including other admins).
+    const authResult = await protectRoute(request);
+    if (authResult.error) return authResult.response;
+    const adminCheck = checkAdmin(authResult.user);
+    if (adminCheck.error) return adminCheck.response;
+
     const body = await request.json();
     const { name, email, password, role, schoolId } = body;
 

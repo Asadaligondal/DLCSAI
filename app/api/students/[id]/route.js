@@ -30,8 +30,9 @@ export async function GET(request, { params }) {
     // Connect to database
     await connectDB();
 
-    // Find the student and verify ownership
-    const student = await Student.findOne({ _id: id, createdBy: user._id })
+    // Admins may read any student; professors are scoped to ones they created.
+    const query = user.role === 'admin' ? { _id: id } : { _id: id, createdBy: user._id };
+    const student = await Student.findOne(query)
       .populate('createdBy', 'name email')
       .populate('assignedGoals', 'title description category priority');
 

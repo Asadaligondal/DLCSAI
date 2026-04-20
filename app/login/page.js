@@ -28,7 +28,7 @@ export default function Login() {
         });
       }
       if (response.data.user.role === 'admin') {
-        router.push('/professors');
+        router.push('/admin');
       } else {
         router.push('/dashboard');
       }

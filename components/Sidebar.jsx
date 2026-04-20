@@ -49,8 +49,11 @@ export default function Sidebar({ user, onLogout }) {
       .catch(() => {});
   }, [user?.role]);
 
+  const isAdmin = (syncUser || user)?.role === 'admin';
+  const dashboardPath = isAdmin ? '/admin' : '/dashboard';
+
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: dashboardPath },
     { name: 'Accommodations', icon: Accessibility, path: '/accommodations' },
     { name: 'Manage Classrooms', icon: Users, path: '/students' },
     { name: 'IEP Writer', icon: FileText, path: '/iep-writer', badge: 'WIP' },
@@ -59,6 +62,9 @@ export default function Sidebar({ user, onLogout }) {
   ];
 
   const isActive = (path) => {
+    if (path === '/admin') {
+      return pathname === '/admin' || pathname.startsWith('/admin/');
+    }
     if (path === '/dashboard') {
       return pathname === '/dashboard' || pathname.startsWith('/dashboard/students') || pathname.startsWith('/students/');
     }
