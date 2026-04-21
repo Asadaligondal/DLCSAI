@@ -27,7 +27,7 @@ export default function DashboardHomePage() {
       return;
     }
     if (u.role === 'admin') {
-      router.push('/admin');
+      router.replace('/admin');
       return;
     }
     setUser(u);

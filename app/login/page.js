@@ -27,11 +27,7 @@ export default function Login() {
           autoClose: 8000,
         });
       }
-      if (response.data.user.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push(response.data.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Invalid email or password');
     } finally {

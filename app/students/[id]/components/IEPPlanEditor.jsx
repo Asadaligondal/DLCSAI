@@ -23,31 +23,43 @@ export default function IEPPlanEditor({
   updateObjective,
   setEditablePlan,
   ragContext,
-  ragContextByQuery = []
+  ragContextByQuery = [],
+  readOnly = false,
 }) {
   const [showRagContext, setShowRagContext] = useState(false);
   return (
     <div className="mt-4 relative bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
       {isGenerating ? <LoadingSweep /> : null}
       <div className="relative z-[6] px-5 pt-5 pb-3">
-        <h2 className="text-lg font-semibold text-slate-900 tracking-tight">IEP Plan - Review & Edit</h2>
+        <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
+          {readOnly ? 'IEP Plan (read-only)' : 'IEP Plan - Review & Edit'}
+        </h2>
       </div>
 
       {/* Toggle Between Original and Edited - segmented tabs, sticky inside card */}
       <div className="sticky top-0 bg-white z-10 px-5 pb-4 border-b border-slate-100">
-        <div className="inline-flex rounded-lg bg-slate-100 p-1 gap-0.5">
-          <button
-            onClick={() => setViewMode('original')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'original' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
-          >
-            Original AI Draft
-          </button>
-          <button
-            onClick={() => setViewMode('edited')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'edited' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
-          >
-            Current Edited Version
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-lg bg-slate-100 p-1 gap-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('original')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'original' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+            >
+              Original AI Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('edited')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${viewMode === 'edited' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+            >
+              Current Edited Version
+            </button>
+          </div>
+          {readOnly ? (
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200/80 rounded-lg px-2.5 py-1">
+              Admin · view only
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -66,6 +78,7 @@ export default function IEPPlanEditor({
             updateGoalPartial={updateGoalPartial}
             updateObjective={updateObjective}
             setEditablePlan={setEditablePlan}
+            readOnly={readOnly}
           />
         </div>
       ) : (
@@ -81,6 +94,7 @@ export default function IEPPlanEditor({
             updateGoalPartial={updateGoalPartial}
             updateObjective={updateObjective}
             setEditablePlan={setEditablePlan}
+            readOnly={readOnly}
           />
 
           <div className="h-20" /> {/* spacer so content won't be hidden behind sticky footer */}
@@ -151,7 +165,7 @@ export default function IEPPlanEditor({
       </div>
 
       {/* Sticky bottom review bar inside editor container */}
-      {viewMode === 'edited' && (
+      {viewMode === 'edited' && !readOnly && (
         <div id="final-review" style={{ scrollMarginTop: '120px' }} className="sticky bottom-0 bg-slate-50/95 border-t border-slate-200 px-6 py-4 z-20 backdrop-blur-sm">
           <div className="max-w-full flex items-center justify-between gap-6">
             <div className="flex items-start gap-4">

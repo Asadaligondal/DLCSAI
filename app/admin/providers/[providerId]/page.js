@@ -17,6 +17,7 @@ import {
   Trash2,
   Mail,
   UserSquare2,
+  AlertTriangle,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -44,6 +45,9 @@ export default function ProviderDetailPage() {
   const [form, setForm] = useState({ name: '', gradeLevel: '', schoolName: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [showDeleteProviderModal, setShowDeleteProviderModal] = useState(false);
+  const [providerDeletePwd, setProviderDeletePwd] = useState('');
+  const [deletingProvider, setDeletingProvider] = useState(false);
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -153,6 +157,29 @@ export default function ProviderDetailPage() {
   const handleLogout = () => {
     localStorage.clear();
     router.push('/login');
+  };
+
+  const handleDeleteProviderAccount = async (e) => {
+    e.preventDefault();
+    if (!providerDeletePwd.trim()) {
+      toast.error('Enter your password to confirm');
+      return;
+    }
+    setDeletingProvider(true);
+    try {
+      await axios.delete(`/api/auth/professors/${providerId}`, {
+        data: { currentPassword: providerDeletePwd.trim() },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Provider account removed');
+      setShowDeleteProviderModal(false);
+      setProviderDeletePwd('');
+      router.push('/admin');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not delete provider');
+    } finally {
+      setDeletingProvider(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -349,7 +376,87 @@ export default function ProviderDetailPage() {
             </ul>
           )}
         </div>
+
+        <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-bold text-red-900 tracking-tight">Delete provider account</h2>
+              <p className="mt-1 text-xs text-red-900/80 leading-relaxed">
+                Removes this service provider login. Classrooms and students in the database are not automatically removed.
+                You must enter your admin password to confirm. This action cannot be done from the providers list.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setProviderDeletePwd('');
+                  setShowDeleteProviderModal(true);
+                }}
+                className="mt-4 h-9 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Delete provider account…
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {showDeleteProviderModal && (
+        <Modal
+          title="Confirm delete provider"
+          onClose={() => {
+            if (!deletingProvider) {
+              setShowDeleteProviderModal(false);
+              setProviderDeletePwd('');
+            }
+          }}
+          size="sm"
+        >
+          <form onSubmit={handleDeleteProviderAccount} className="space-y-4 p-1">
+            <p className="text-sm text-slate-600">
+              Enter your <span className="font-semibold text-slate-800">admin account password</span> to permanently delete{' '}
+              <span className="font-semibold text-slate-900">{provider?.name}</span>.
+            </p>
+            <div>
+              <label htmlFor="delete-provider-pwd" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                Your password
+              </label>
+              <input
+                id="delete-provider-pwd"
+                type="password"
+                autoComplete="current-password"
+                value={providerDeletePwd}
+                onChange={(e) => setProviderDeletePwd(e.target.value)}
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
+                placeholder="Current password"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={deletingProvider}
+                onClick={() => {
+                  setShowDeleteProviderModal(false);
+                  setProviderDeletePwd('');
+                }}
+                className="h-9 px-4 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={deletingProvider}
+                className="h-9 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50"
+              >
+                {deletingProvider ? 'Deleting…' : 'Delete provider'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {showModal && (
         <Modal

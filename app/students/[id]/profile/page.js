@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { LayoutDashboard, Users, User } from 'lucide-react';
+import { LayoutDashboard, Users, User, AlertTriangle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import StudentProfileForm from '../components/StudentProfileForm';
 import StudentWorkspaceNav from '../components/StudentWorkspaceNav';
+import Modal from '@/components/Modal';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
 import useMinLoadingGate from '@/hooks/useMinLoadingGate';
 import { calcAgeFromDob } from '@/lib/studentFormConstants';
@@ -23,6 +24,9 @@ export default function StudentProfilePage() {
   const [student, setStudent] = useState(null);
   const [formData, setFormData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -65,7 +69,8 @@ export default function StudentProfilePage() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to load student');
-      router.push('/dashboard/students');
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      router.push(u?.role === 'admin' ? '/admin' : '/dashboard/students');
     }
   };
 
@@ -114,6 +119,30 @@ export default function StudentProfilePage() {
       toast.error(error.response?.data?.message || 'Could not save profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteStudent = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token || !deletePassword.trim()) {
+      toast.error('Enter your password to confirm');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await axios.delete(`/api/students/${id}`, {
+        data: { currentPassword: deletePassword.trim() },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Student removed');
+      setShowDeleteModal(false);
+      setDeletePassword('');
+      router.push(userLocal?.role === 'admin' ? '/admin' : '/dashboard/students');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not delete student');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -178,9 +207,89 @@ export default function StudentProfilePage() {
                 disabled={saving}
               />
             </div>
+
+            <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-6 sm:p-8">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-bold text-red-900 tracking-tight">Delete student</h2>
+                  <p className="mt-1 text-xs text-red-900/80 leading-relaxed">
+                    Permanently removes this student and all IEP data, including version history. This cannot be undone.
+                    Deleting from the student list is no longer available — use this action only when you are certain.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletePassword('');
+                      setShowDeleteModal(true);
+                    }}
+                    className="mt-4 h-9 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  >
+                    Delete student…
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>
+
+      {showDeleteModal && (
+        <Modal
+          title="Confirm delete student"
+          onClose={() => {
+            if (!deleting) {
+              setShowDeleteModal(false);
+              setDeletePassword('');
+            }
+          }}
+          size="sm"
+        >
+          <form onSubmit={handleDeleteStudent} className="space-y-4 p-1">
+            <p className="text-sm text-slate-600">
+              Type your <span className="font-semibold text-slate-800">own account password</span> (the password you use to log in) to confirm. This will delete{' '}
+              <span className="font-semibold text-slate-900">{student?.name || 'this student'}</span> and all related IEP records.
+            </p>
+            <div>
+              <label htmlFor="delete-student-pwd" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                Your password
+              </label>
+              <input
+                id="delete-student-pwd"
+                type="password"
+                autoComplete="current-password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400"
+                placeholder="Current password"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword('');
+                }}
+                className="h-9 px-4 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={deleting}
+                className="h-9 px-4 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete permanently'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

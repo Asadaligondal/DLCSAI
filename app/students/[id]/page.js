@@ -137,6 +137,14 @@ export default function StudentDetail() {
     return () => window.removeEventListener('user-updated', onUserUpdated);
   }, []);
 
+  useEffect(() => {
+    if (userLocal?.role === 'admin') {
+      setIsEditing(false);
+      setShowGenerateModal(false);
+      setShowCustomizeModal(false);
+    }
+  }, [userLocal?.role]);
+
   const fetchStudent = async (token) => {
     try {
       const response = await axios.get(`/api/students/${id}`, {
@@ -1037,6 +1045,8 @@ export default function StudentDetail() {
       ? 'Gathering context…'
       : generateProgress || 'Drafting your IEP…';
 
+  const isAdminReadOnly = userLocal?.role === 'admin';
+
   return (
     <div className="flex h-screen bg-canvas text-slate-800 relative">
       {isGenerating && (
@@ -1052,11 +1062,20 @@ export default function StudentDetail() {
       <Sidebar user={userLocal} onLogout={() => { localStorage.clear(); router.push('/login'); }} />
 
       <div className="flex-1 overflow-auto">
-        <WorkspaceTopBar user={userLocal} left={<EditorHeader />} />
+        <WorkspaceTopBar
+          user={userLocal}
+          left={
+            <EditorHeader
+              variant={isAdminReadOnly ? 'admin' : 'provider'}
+              studentLabel={student?.name || formData?.name || undefined}
+            />
+          }
+        />
 
         <main className="p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto space-y-5">
           <StickyActionBar
+            readOnly={isAdminReadOnly}
             onRegenerate={openGenerateModal}
             onSave={handleSaveChanges}
             onDownload={handleExportToWord}
@@ -1090,20 +1109,22 @@ export default function StudentDetail() {
             </Modal>
           )}
 
-          <RegenerateIepModal
-            isOpen={showGenerateModal}
-            onClose={() => setShowGenerateModal(false)}
-            onConfirm={handleGenerateModalConfirm}
-            student={student}
-            busy={isGenerating}
-            profileForm={formData}
-            customGoals={customGoals}
-            disabilitiesOptions={DISABILITIES_OPTIONS}
-            strengthsOptions={STRENGTHS_OPTIONS}
-            weaknessesOptions={WEAKNESSES_OPTIONS}
-          />
+          {!isAdminReadOnly && (
+            <RegenerateIepModal
+              isOpen={showGenerateModal}
+              onClose={() => setShowGenerateModal(false)}
+              onConfirm={handleGenerateModalConfirm}
+              student={student}
+              busy={isGenerating}
+              profileForm={formData}
+              customGoals={customGoals}
+              disabilitiesOptions={DISABILITIES_OPTIONS}
+              strengthsOptions={STRENGTHS_OPTIONS}
+              weaknessesOptions={WEAKNESSES_OPTIONS}
+            />
+          )}
 
-          {showCustomizeModal && (
+          {!isAdminReadOnly && showCustomizeModal && (
             <CustomizeGoalModal
               isOpen={showCustomizeModal}
               onClose={() => setShowCustomizeModal(false)}
@@ -1119,6 +1140,7 @@ export default function StudentDetail() {
             <div>
               <StudentInfoHeader
                 student={student}
+                readOnly={isAdminReadOnly}
                 isEditing={isEditing}
                 setIsEditing={setIsEditing}
                 formData={formData}
@@ -1159,23 +1181,32 @@ export default function StudentDetail() {
 
               {!hasExistingPlan && (
                 <div className="mt-4 flex flex-col items-center justify-center py-12 px-6 bg-white rounded-xl border border-slate-200/60 shadow-card">
-                  <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
-                  <button
-                    onClick={openGenerateModal}
-                    disabled={isGenerating}
-                    className="relative overflow-hidden flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  >
-                    {isGenerating ? <LoadingSweep variant="onPrimary" /> : null}
-                    <span className="relative z-[6] inline-flex items-center gap-2">
-                      <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
-                      {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context...' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : 'Generate IEP Plan'}
-                    </span>
-                  </button>
+                  {isAdminReadOnly ? (
+                    <p className="text-slate-600 text-center text-sm">
+                      No IEP plan has been generated for this student yet. The provider can generate one from their account.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-slate-600 text-center mb-4">Generate your first IEP plan for this student.</p>
+                      <button
+                        onClick={openGenerateModal}
+                        disabled={isGenerating}
+                        className="relative overflow-hidden flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                      >
+                        {isGenerating ? <LoadingSweep variant="onPrimary" /> : null}
+                        <span className="relative z-[6] inline-flex items-center gap-2">
+                          <Wand2 className={`w-5 h-5 ${isGenerating ? 'animate-pulse' : ''}`} />
+                          {isGenerating && generateStage === 'retrieving_context' ? 'Retrieving context...' : isGenerating && generateStage === 'generating_iep' ? (generateProgress || 'Generating IEP...') : 'Generate IEP Plan'}
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
               {hasExistingPlan && generatedPlan && editablePlan && (
                 <IEPPlanEditor
+                  readOnly={isAdminReadOnly}
                   originalAIPlan={originalAIPlan}
                   editablePlan={editablePlan}
                   viewMode={viewMode}

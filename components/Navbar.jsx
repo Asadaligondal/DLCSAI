@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Target, LogOut, User, Settings, LayoutDashboard, Home, Sparkles } from 'lucide-react';
+import { LogOut, User, Settings, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -43,20 +43,6 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const allNavItems = [
-    { name: 'Home', path: '/', icon: Home, roles: ['admin', 'professor'] },
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['professor'] },
-    { name: 'Teacher/Service Providers', path: '/professors', icon: Users, roles: ['admin'] },
-    { name: 'Goals', path: '/goals', icon: Target, roles: ['admin'] }
-  ];
-
-  const hideTopLinksOnPaths = pathname && (pathname.startsWith('/students') || pathname.startsWith('/services'));
-  const navItems = allNavItems.filter(item => {
-    if (!item.roles.includes(userRole)) return false;
-    if (hideTopLinksOnPaths && (item.name === 'Home' || item.name === 'Dashboard')) return false;
-    return true;
-  });
-
   return (
     <header className="w-full bg-white/95 backdrop-blur-sm border-b border-slate-200/60 sticky top-0 z-40">
       <div className="max-w-full px-6 h-14 flex items-center justify-between">
@@ -67,28 +53,6 @@ export default function Navbar() {
           </div>
           <span className="text-[15px] font-bold text-brand-body tracking-tight">IEP Genius</span>
         </Link>
-
-        {/* Nav */}
-        <nav className="flex items-center gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-brand-features text-brand-emerald'
-                    : 'text-brand-body/80 hover:text-brand-body hover:bg-slate-50'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
 
         {/* Right actions */}
         <div className="flex items-center gap-2">

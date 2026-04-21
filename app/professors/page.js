@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Navbar from '@/components/Navbar';
 import Modal from '@/components/Modal';
-import ConfirmDialog from '@/components/ConfirmDialog';
-import { Plus, Search, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Search, Pencil, Users } from 'lucide-react';
 
 export default function Professors() {
   const router = useRouter();
@@ -17,7 +16,6 @@ export default function Professors() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingProf, setEditingProf] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', schoolId: '' });
 
   useEffect(() => {
@@ -72,15 +70,6 @@ export default function Professors() {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Operation failed');
     }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/api/auth/professors/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success('Provider deleted');
-      fetchProfessors();
-      setDeleteConfirm(null);
-    } catch { toast.error('Failed to delete provider'); }
   };
 
   const filteredProfessors = professors.filter(
@@ -171,9 +160,6 @@ export default function Professors() {
                             <button onClick={() => handleOpenModal(prof)} className="p-1.5 text-primary-600 hover:bg-primary-50 rounded-md transition-colors" title="Edit">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => setDeleteConfirm(prof)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </td>
                       )}
@@ -217,16 +203,6 @@ export default function Professors() {
         </Modal>
       )}
 
-      {deleteConfirm && (
-        <ConfirmDialog
-          title="Delete Provider"
-          message={`Are you sure you want to delete ${deleteConfirm.name}? This cannot be undone.`}
-          type="danger"
-          confirmText="Delete"
-          onConfirm={() => handleDelete(deleteConfirm._id)}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      )}
     </div>
   );
 }

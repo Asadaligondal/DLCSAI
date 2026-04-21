@@ -29,8 +29,10 @@ export default function StudentInfoHeader({
   onCustomGoalsSaved,
   onAccommodationsSaved,
   onAssessmentContextSave,
-  customGoals = []
+  customGoals = [],
+  readOnly = false,
 }) {
+  const inEditMode = isEditing && !readOnly;
   const [showAccommodations, setShowAccommodations] = useState(false);
   const [accommodationsInitial, setAccommodationsInitial] = useState(null);
   const [showCustomGoals, setShowCustomGoals] = useState(false);
@@ -155,8 +157,13 @@ export default function StudentInfoHeader({
   return (
     <div className="mb-6">
       <div>
-        {!isEditing ? (
+        {!inEditMode ? (
           <div className="bg-white rounded-xl border border-slate-200/60 shadow-card overflow-hidden">
+            {readOnly ? (
+              <div className="px-5 py-2.5 border-b border-slate-100 bg-slate-50 text-xs font-medium text-slate-600">
+                Student context is read-only in admin view.
+              </div>
+            ) : null}
             {/* Whole row toggles expand; workspace nav stops propagation (no nested buttons). */}
             <div
               aria-expanded={isExpanded}
@@ -429,7 +436,9 @@ export default function StudentInfoHeader({
                     return total > 0 ? `${total} selected` : 'None';
                   })()}</div>
                 </div>
-                <button onClick={openAccommodations} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit accommodations</button>
+                {!readOnly ? (
+                  <button onClick={openAccommodations} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit accommodations</button>
+                ) : null}
               </div>
               {student.student_accommodations && (() => {
                 const acc = student.student_accommodations;
@@ -475,13 +484,15 @@ export default function StudentInfoHeader({
                   <div className="text-xs font-semibold text-slate-600">Custom Goals</div>
                   <div className="text-sm text-slate-500 mt-0.5">{customGoals.length > 0 ? `${customGoals.length} selected` : 'None'}</div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={onCustomizeGoals} className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
-                    <Target className="w-4 h-4" />
-                    Add goal
-                  </button>
-                  <button onClick={() => setShowCustomGoals(true)} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit selection</button>
-                </div>
+                {!readOnly ? (
+                  <div className="flex gap-2">
+                    <button onClick={onCustomizeGoals} className="flex items-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
+                      <Target className="w-4 h-4" />
+                      Add goal
+                    </button>
+                    <button onClick={() => setShowCustomGoals(true)} className="px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Edit selection</button>
+                  </div>
+                ) : null}
               </div>
               {customGoals.length > 0 && (
                 <>
@@ -512,13 +523,15 @@ export default function StudentInfoHeader({
                       : 'None — optional; type or upload PDF/image'}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={openAssessmentModal}
-                  className="shrink-0 px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-                >
-                  Edit
-                </button>
+                {!readOnly ? (
+                  <button
+                    type="button"
+                    onClick={openAssessmentModal}
+                    className="shrink-0 px-3 py-2 text-sm font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                  >
+                    Edit
+                  </button>
+                ) : null}
               </div>
             </div>
             </div>

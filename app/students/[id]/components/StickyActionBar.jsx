@@ -8,6 +8,7 @@ export default function StickyActionBar({
   onRegenerate, onSave, onDownload, onDownloadPDF, onDownloadFloridaIEP, onPreviewFloridaIEP, floridaPreviewBusy,
   onReset, isReviewed, isBusy, generateStage = 'idle', generateProgress = '',
   history = null,
+  readOnly = false,
 }) {
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
@@ -23,6 +24,17 @@ export default function StickyActionBar({
   const exportDisabled = !isReviewed;
   const secondaryDisabled = isBusy;
   const showSweep = isBusy || floridaPreviewBusy;
+
+  if (readOnly) {
+    return (
+      <div className="sticky top-16 z-30 relative overflow-visible bg-amber-50/90 backdrop-blur-sm border border-amber-200/80 rounded-xl min-h-12 flex items-center justify-between gap-3 px-3 py-2">
+        <p className="text-xs font-semibold text-amber-950 shrink-0">
+          Admin view — read-only. You cannot save, regenerate, reset, or export from here.
+        </p>
+        {history ? <div className="flex items-center gap-2 shrink-0">{history}</div> : null}
+      </div>
+    );
+  }
 
   return (
     <div className="sticky top-16 z-30 relative overflow-visible bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-xl h-12 flex items-center justify-end gap-2 px-3">

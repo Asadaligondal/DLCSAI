@@ -94,7 +94,8 @@ export default function GoalsObjectivesSection({
   updateGoal,
   updateGoalPartial,
   updateObjective,
-  setEditablePlan
+  setEditablePlan,
+  readOnly = false,
 }) {
   const [openPlaafp, setOpenPlaafp] = useState(true);
   const [openAcademic, setOpenAcademic] = useState(true);
@@ -154,7 +155,7 @@ export default function GoalsObjectivesSection({
   };
 
   const plan = viewMode === 'edited' ? editablePlan : originalAIPlan;
-  const isEditable = viewMode === 'edited';
+  const isEditable = viewMode === 'edited' && !readOnly;
 
   const excGoalCount = (plan?.annualGoalsByExceptionality || []).reduce((sum, g) => sum + (g.goals?.length || 0), 0);
   const excObjCount = (plan?.shortTermObjectivesByExceptionality || []).reduce((sum, g) => sum + (g.objectives?.length || 0), 0);
@@ -345,7 +346,7 @@ export default function GoalsObjectivesSection({
               />
             </div>
           ) : (
-            <p className="text-slate-700 text-[14px] leading-relaxed whitespace-pre-wrap">{originalAIPlan.plaafp_narrative}</p>
+            <p className="text-slate-700 text-[14px] leading-relaxed whitespace-pre-wrap">{plan?.plaafp_narrative}</p>
           )}
         </SectionCard>
 
@@ -367,8 +368,8 @@ export default function GoalsObjectivesSection({
               />
             </div>
           ) : (
-            originalAIPlan.academicPerformanceAchievement ? (
-              <p className="text-slate-700 text-[14px] leading-relaxed whitespace-pre-wrap">{originalAIPlan.academicPerformanceAchievement}</p>
+            plan?.academicPerformanceAchievement ? (
+              <p className="text-slate-700 text-[14px] leading-relaxed whitespace-pre-wrap">{plan.academicPerformanceAchievement}</p>
             ) : (
               <p className="text-sm text-slate-400 italic">Generate IEP to see academic performance indicators.</p>
             )

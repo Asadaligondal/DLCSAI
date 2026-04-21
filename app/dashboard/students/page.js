@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Sidebar from '@/components/Sidebar';
 import Modal from '@/components/Modal';
-import ConfirmDialog from '@/components/ConfirmDialog';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
-import { Plus, Search, Trash2, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
+import { Plus, Search, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
@@ -245,7 +244,6 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [savingStudent, setSavingStudent] = useState(false);
   const [uploadDropdownOpen, setUploadDropdownOpen] = useState(false);
@@ -333,20 +331,15 @@ export default function Dashboard() {
       router.push('/login');
       return;
     }
-    // Only professors can access this page
-    if (u.role === 'admin') {
-      router.push('/professors');
-      return;
-    }
     setUser(u);
     setToken(t);
   }, [router]);
 
   useEffect(() => {
-    if (token && user?.role === 'professor') {
+    if (token && user) {
       fetchStudents();
     }
-  }, [token, user?.role]);
+  }, [token, user]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -725,19 +718,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`/api/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Student deleted successfully');
-      fetchStudents();
-      setDeleteConfirm(null);
-    } catch (error) {
-      toast.error('Failed to delete student');
-    }
-  };
-
   // Derive filter options from data
   const uniqueGrades = [...new Set(students.map(s => s.gradeLevel).filter(Boolean))].sort();
   const uniqueExceptionalities = [...new Set(students.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
@@ -1047,9 +1027,6 @@ export default function Dashboard() {
                                     <button type="button" onClick={() => router.push(iepPath)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title="IEP">
                                       <FileText className="w-3.5 h-3.5" />IEP
                                     </button>
-                                    <button type="button" onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
                                   </div>
                                 </td>
                               </tr>
@@ -1124,9 +1101,6 @@ export default function Dashboard() {
                                 </button>
                                 <button onClick={() => router.push(`/students/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[12px] font-medium transition-colors">
                                   <FileText className="w-3 h-3" />IEP
-                                </button>
-                                <button onClick={() => setDeleteConfirm(student)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                                  <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>
@@ -1765,16 +1739,6 @@ export default function Dashboard() {
         </Modal>
       )}
 
-      {deleteConfirm && (
-        <ConfirmDialog
-          title="Delete Student"
-          message={`Are you sure you want to delete ${deleteConfirm.name}? This action cannot be undone.`}
-          type="danger"
-          confirmText="Delete"
-          onConfirm={() => handleDelete(deleteConfirm._id)}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      )}
     </div>
   );
 }

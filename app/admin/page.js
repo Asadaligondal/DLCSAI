@@ -14,10 +14,8 @@ import {
   BookOpen,
   ChevronRight,
   Pencil,
-  Trash2,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
-import ConfirmDialog from '@/components/ConfirmDialog';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
 import useMinLoadingGate from '@/hooks/useMinLoadingGate';
 import AdminShell from './components/AdminShell';
@@ -37,7 +35,6 @@ export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', password: '', schoolId: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -116,19 +113,6 @@ export default function AdminDashboardPage() {
       toast.error(error.response?.data?.message || 'Operation failed');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (prov) => {
-    try {
-      await axios.delete(`/api/auth/professors/${prov._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success('Provider deleted');
-      setDeleteConfirm(null);
-      fetchProviders();
-    } catch {
-      toast.error('Failed to delete provider');
     }
   };
 
@@ -290,13 +274,6 @@ export default function AdminDashboardPage() {
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => setDeleteConfirm(p)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            title="Delete provider"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -374,16 +351,6 @@ export default function AdminDashboardPage() {
         </Modal>
       )}
 
-      {deleteConfirm && (
-        <ConfirmDialog
-          title="Delete provider"
-          message={`Delete ${deleteConfirm.name}? The provider account will be removed. Classrooms and students created by them remain in the database.`}
-          type="danger"
-          confirmText="Delete"
-          onConfirm={() => handleDelete(deleteConfirm)}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      )}
     </AdminShell>
   );
 }

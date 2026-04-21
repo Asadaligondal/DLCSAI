@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { protectAdminRoute } from '@/lib/authMiddleware';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, comparePassword } from '@/lib/auth';
 
 /**
  * PUT /api/auth/professors/[id]
@@ -72,12 +72,42 @@ export async function DELETE(request, { params }) {
       return authResult.response;
     }
 
-    const { id } = params;
+    const admin = authResult.user;
+    const { id } = await params;
 
-    console.log('Attempting to delete professor with ID:', id);
+    let body = {};
+    try {
+      body = await request.json();
+    } catch {
+      /* no body */
+    }
+    const currentPassword = body?.currentPassword;
+    if (!currentPassword || typeof currentPassword !== 'string' || !String(currentPassword).trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Enter your account password to confirm deleting this provider.',
+        },
+        { status: 400 }
+      );
+    }
 
-    // Connect to database
     await connectDB();
+
+    const dbAdmin = await User.findById(admin._id);
+    if (!dbAdmin?.password) {
+      return NextResponse.json(
+        { success: false, message: 'Unable to verify password' },
+        { status: 500 }
+      );
+    }
+    const passwordOk = await comparePassword(String(currentPassword).trim(), dbAdmin.password);
+    if (!passwordOk) {
+      return NextResponse.json(
+        { success: false, message: 'Incorrect password' },
+        { status: 403 }
+      );
+    }
 
     // Find and delete the professor
     const professor = await User.findOneAndDelete({ _id: id, role: 'professor' });

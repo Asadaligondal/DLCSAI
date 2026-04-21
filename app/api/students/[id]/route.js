@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
 import '@/models/Goal';
 import { protectRoute } from '@/lib/authMiddleware';
+import User from '@/models/User';
+import { comparePassword } from '@/lib/auth';
 import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
 
 function optDate(v) {
@@ -241,13 +243,46 @@ export async function DELETE(request, { params }) {
     const user = authResult.user;
     const { id } = await params;
 
-    console.log('Attempting to delete student with ID:', id);
+    let body = {};
+    try {
+      body = await request.json();
+    } catch {
+      /* no body */
+    }
+    const currentPassword = body?.currentPassword;
+    if (!currentPassword || typeof currentPassword !== 'string' || !String(currentPassword).trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Enter your account password to confirm deleting this student.',
+        },
+        { status: 400 }
+      );
+    }
 
-    // Connect to database
     await connectDB();
 
-    // Find and delete the student, verify ownership
-    const student = await Student.findOneAndDelete({ _id: id, createdBy: user._id });
+    const dbUser = await User.findById(user._id);
+    if (!dbUser?.password) {
+      return NextResponse.json(
+        { success: false, message: 'Unable to verify password' },
+        { status: 500 }
+      );
+    }
+    const passwordOk = await comparePassword(String(currentPassword).trim(), dbUser.password);
+    if (!passwordOk) {
+      return NextResponse.json(
+        { success: false, message: 'Incorrect password' },
+        { status: 403 }
+      );
+    }
+
+    const filter =
+      user.role === 'admin'
+        ? { _id: id }
+        : { _id: id, createdBy: user._id };
+
+    const student = await Student.findOneAndDelete(filter);
 
     if (!student) {
       console.log('Student not found with ID:', id);
