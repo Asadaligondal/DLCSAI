@@ -13,6 +13,7 @@ export default function AdminStudentTable({
   emptyTitle = 'No students yet',
   emptyHint = 'When a provider adds students, they will appear here.',
   showClassroomCol = false,
+  showCaseManagerCol = false,
   onRowAction, // optional: (student) => void — e.g. "Move to classroom"
   actionLabel = 'Move',
 }) {
@@ -69,6 +70,9 @@ export default function AdminStudentTable({
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Student ID</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Primary exceptionality</th>
+                {showCaseManagerCol && (
+                  <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Case manager</th>
+                )}
                 {showClassroomCol && (
                   <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Classroom</th>
                 )}
@@ -87,7 +91,17 @@ export default function AdminStudentTable({
                       <div className="w-8 h-8 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span className="font-bold text-xs">{s.name?.[0]?.toUpperCase() || '?'}</span>
                       </div>
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
                       <span className="text-sm font-semibold text-slate-900 truncate">{s.name}</span>
+                      {s.hasRosterReassignmentHistory ? (
+                        <span
+                          className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/90"
+                          title="This student has admin roster or classroom reassignment history"
+                        >
+                          History
+                        </span>
+                      ) : null}
+                      </div>
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{s.studentId}</td>
@@ -95,6 +109,11 @@ export default function AdminStudentTable({
                   <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[220px]">
                     {s.primaryExceptionality || '—'}
                   </td>
+                  {showCaseManagerCol && (
+                    <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[180px]">
+                      {s.createdBy?.name || '—'}
+                    </td>
+                  )}
                   {showClassroomCol && (
                     <td className="px-5 py-3.5 text-sm text-slate-600">
                       {s.classroomId?.name ? (

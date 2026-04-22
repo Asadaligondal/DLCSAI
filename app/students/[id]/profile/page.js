@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import StudentProfileForm from '../components/StudentProfileForm';
+import RosterAssignmentHistoryPanel from '../components/RosterAssignmentHistoryPanel';
 import StudentWorkspaceNav from '../components/StudentWorkspaceNav';
 import Modal from '@/components/Modal';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
@@ -207,6 +208,8 @@ export default function StudentProfilePage() {
                 disabled={saving}
               />
             </div>
+
+            <RosterAssignmentHistoryPanel history={student?.rosterAssignmentHistory} />
 
             <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-6 sm:p-8">
               <div className="flex items-start gap-3">

@@ -20,7 +20,7 @@ export async function GET(request) {
 
     // Find all users with role 'professor'
     const professors = await User.find({ role: 'professor' })
-      .select('name email plainPassword createdAt')
+      .select('name email schoolId createdAt')
       .sort({ createdAt: -1 });
 
     return NextResponse.json(

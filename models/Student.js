@@ -255,6 +255,20 @@ const StudentSchema = new mongoose.Schema({
     default: null,
     index: true
   },
+  /** Admin-only moves; case managers may read for audit. Capped in application code. */
+  rosterAssignmentHistory: {
+    type: [
+      {
+        at: { type: Date, default: Date.now },
+        actorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        fromCaseManagerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+        toCaseManagerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        fromClassroomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Classroom', default: null },
+        toClassroomId: { type: mongoose.Schema.Types.ObjectId, ref: 'Classroom', default: null },
+      },
+    ],
+    default: [],
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

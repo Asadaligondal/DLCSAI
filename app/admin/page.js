@@ -14,6 +14,8 @@ import {
   BookOpen,
   ChevronRight,
   Pencil,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
@@ -37,6 +39,10 @@ export default function AdminDashboardPage() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', password: '', schoolId: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [providerPwdVisible, setProviderPwdVisible] = useState(false);
+  const [showAdminPwdGate, setShowAdminPwdGate] = useState(false);
+  const [adminGatePwd, setAdminGatePwd] = useState('');
+  const [gateLoading, setGateLoading] = useState(false);
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -71,21 +77,86 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const resetPwdReveal = () => {
+    setProviderPwdVisible(false);
+    setShowAdminPwdGate(false);
+    setAdminGatePwd('');
+    setGateLoading(false);
+  };
+
   const openCreate = () => {
     setEditing(null);
     setForm({ name: '', email: '', password: '', schoolId: '' });
+    resetPwdReveal();
     setShowModal(true);
   };
 
   const openEdit = (prov) => {
     setEditing(prov);
     setForm({ name: prov.name, email: prov.email, password: '', schoolId: prov.schoolId || '' });
+    resetPwdReveal();
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
+    resetPwdReveal();
+  };
+
+  const handleProviderPwdEye = () => {
+    if (providerPwdVisible) {
+      setProviderPwdVisible(false);
+      setShowAdminPwdGate(false);
+      setAdminGatePwd('');
+      return;
+    }
+    setShowAdminPwdGate(true);
+    setAdminGatePwd('');
+  };
+
+  const cancelAdminPwdGate = () => {
+    setShowAdminPwdGate(false);
+    setAdminGatePwd('');
+  };
+
+  const confirmAdminPwdGate = async () => {
+    const pwd = adminGatePwd.trim();
+    if (!pwd) {
+      toast.error('Enter your admin password');
+      return;
+    }
+    setGateLoading(true);
+    try {
+      if (editing?._id) {
+        const res = await axios.post(
+          `/api/admin/providers/${editing._id}/reveal-password`,
+          { currentPassword: pwd },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const plain = res.data?.plainPassword;
+        if (plain != null && plain !== '') {
+          setForm((f) => ({ ...f, password: plain }));
+        } else {
+          toast.info(
+            'No saved password for this account. Save a new password on update to store a copy for admin lookup.'
+          );
+        }
+      } else {
+        await axios.post(
+          '/api/auth/verify-current-password',
+          { currentPassword: pwd },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      setProviderPwdVisible(true);
+      setShowAdminPwdGate(false);
+      setAdminGatePwd('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not verify password');
+    } finally {
+      setGateLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -312,13 +383,59 @@ export default function AdminDashboardPage() {
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                 Password {editing && <span className="text-slate-400 font-normal">(leave blank to keep)</span>}
               </label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className={inputCls}
-                required={!editing}
-              />
+              <div className="relative">
+                <input
+                  type={providerPwdVisible ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className={`${inputCls} pr-10`}
+                  required={!editing}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={handleProviderPwdEye}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  title={providerPwdVisible ? 'Hide password' : 'Show password'}
+                  aria-label={providerPwdVisible ? 'Hide password' : 'Show password'}
+                >
+                  {providerPwdVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {showAdminPwdGate ? (
+                <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                  <p className="text-[11px] leading-snug text-slate-600">
+                    Enter your <span className="font-semibold text-slate-800">admin</span> account password to show
+                    this field{editing ? ' (loads saved copy when available)' : ''}.
+                  </p>
+                  <input
+                    type="password"
+                    value={adminGatePwd}
+                    onChange={(e) => setAdminGatePwd(e.target.value)}
+                    className={inputCls}
+                    placeholder="Your admin password"
+                    autoComplete="current-password"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelAdminPwdGate}
+                      disabled={gateLoading}
+                      className="h-8 px-3 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmAdminPwdGate}
+                      disabled={gateLoading}
+                      className="h-8 px-3 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg disabled:opacity-50"
+                    >
+                      {gateLoading ? 'Checking…' : 'Show password'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">

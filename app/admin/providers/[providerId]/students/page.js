@@ -21,12 +21,15 @@ export default function ProviderAllStudentsPage() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState('');
   const [provider, setProvider] = useState(null);
-  const [classrooms, setClassrooms] = useState([]);
   const [students, setStudents] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [moving, setMoving] = useState(null);
   const [moveTarget, setMoveTarget] = useState('');
+  const [moveCaseManagerId, setMoveCaseManagerId] = useState('');
+  const [professors, setProfessors] = useState([]);
+  const [caseManagerClassrooms, setCaseManagerClassrooms] = useState([]);
+  const [loadingClassrooms, setLoadingClassrooms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,11 +49,8 @@ export default function ProviderAllStudentsPage() {
 
   const refresh = async (t = token) => {
     try {
-      const [p, c, s] = await Promise.all([
+      const [p, s] = await Promise.all([
         axios.get(`/api/admin/providers/${providerId}`, {
-          headers: { Authorization: `Bearer ${t}` },
-        }),
-        axios.get(`/api/admin/providers/${providerId}/classrooms`, {
           headers: { Authorization: `Bearer ${t}` },
         }),
         axios.get(`/api/admin/providers/${providerId}/students`, {
@@ -58,7 +58,6 @@ export default function ProviderAllStudentsPage() {
         }),
       ]);
       setProvider(p.data.provider);
-      setClassrooms(c.data.classrooms || []);
       setStudents(s.data.students || []);
     } catch (error) {
       if (error.response?.status === 404) {
@@ -76,6 +75,49 @@ export default function ProviderAllStudentsPage() {
     refresh(token);
   }, [token, providerId]);
 
+  useEffect(() => {
+    if (!token) return;
+    axios
+      .get('/api/auth/professors', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setProfessors(r.data.professors || []))
+      .catch(() => setProfessors([]));
+  }, [token]);
+
+  useEffect(() => {
+    if (!moving || !moveCaseManagerId || !token) {
+      setCaseManagerClassrooms([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingClassrooms(true);
+    axios
+      .get(`/api/admin/providers/${moveCaseManagerId}/classrooms`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        if (!cancelled) setCaseManagerClassrooms(res.data.classrooms || []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCaseManagerClassrooms([]);
+          toast.error('Could not load classrooms for that case manager');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingClassrooms(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [moving, moveCaseManagerId, token]);
+
+  useEffect(() => {
+    if (!moving || !caseManagerClassrooms.length) return;
+    const ok =
+      !moveTarget || caseManagerClassrooms.some((c) => String(c._id) === String(moveTarget));
+    if (!ok) setMoveTarget('');
+  }, [moveCaseManagerId, caseManagerClassrooms, moving, moveTarget]);
+
   const handleLogout = () => {
     localStorage.clear();
     router.push('/login');
@@ -83,22 +125,33 @@ export default function ProviderAllStudentsPage() {
 
   const openMove = (student) => {
     setMoving(student);
+    const ownerId = String(student.createdBy?._id || student.createdBy || '');
+    setMoveCaseManagerId(ownerId);
     setMoveTarget(student.classroomId?._id || student.classroomId || '');
   };
 
   const closeMove = () => {
     setMoving(null);
     setMoveTarget('');
+    setMoveCaseManagerId('');
+    setCaseManagerClassrooms([]);
   };
 
   const submitMove = async (e) => {
     e.preventDefault();
     if (!moving) return;
+    if (!moveCaseManagerId) {
+      toast.error('Select a case manager first');
+      return;
+    }
     setSubmitting(true);
     try {
       await axios.patch(
         `/api/admin/students/${moving._id}`,
-        { classroomId: moveTarget || null },
+        {
+          caseManagerId: moveCaseManagerId,
+          classroomId: moveTarget || null,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Student updated');
@@ -168,6 +221,7 @@ export default function ProviderAllStudentsPage() {
 
         <AdminStudentTable
           students={students}
+          showCaseManagerCol
           showClassroomCol
           emptyTitle="No students yet"
           emptyHint="Ask this provider to add students, or import from a document."
@@ -177,27 +231,57 @@ export default function ProviderAllStudentsPage() {
       </div>
 
       {moving && (
-        <Modal title={`Move ${moving.name}`} onClose={closeMove} size="sm">
+        <Modal title={`Assign ${moving.name}`} onClose={closeMove} size="sm">
           <form onSubmit={submitMove} className="space-y-4 p-1">
             <p className="text-sm text-slate-600">
-              Assign <span className="font-semibold text-slate-800">{moving.name}</span> to a classroom, or
-              leave unassigned.
+              Choose the <span className="font-semibold text-slate-800">case manager</span> (roster owner), then a
+              classroom under that account, or leave the classroom unassigned.
             </p>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Case manager</label>
+              <select
+                value={moveCaseManagerId}
+                onChange={(e) => {
+                  setMoveCaseManagerId(e.target.value);
+                  setMoveTarget('');
+                }}
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
+                required
+              >
+                <option value="">— Select case manager —</option>
+                {professors.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name}
+                    {p.email ? ` (${p.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">Classroom</label>
               <select
                 value={moveTarget}
                 onChange={(e) => setMoveTarget(e.target.value)}
-                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all"
+                disabled={!moveCaseManagerId || loadingClassrooms}
+                className="w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all disabled:opacity-50"
               >
-                <option value="">— Unassigned —</option>
-                {classrooms.map((c) => (
+                <option value="">
+                  {!moveCaseManagerId
+                    ? '— Select case manager first —'
+                    : loadingClassrooms
+                      ? 'Loading classrooms…'
+                      : '— Unassigned —'}
+                </option>
+                {caseManagerClassrooms.map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.name}
                     {c.gradeLevel ? ` · ${c.gradeLevel}` : ''}
                   </option>
                 ))}
               </select>
+              {moveCaseManagerId && !loadingClassrooms && caseManagerClassrooms.length === 0 ? (
+                <p className="mt-1 text-[11px] text-slate-500">No classrooms yet for this case manager — leave unassigned or add classrooms on their provider page.</p>
+              ) : null}
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <button

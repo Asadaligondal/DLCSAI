@@ -41,8 +41,17 @@ export async function GET(request, { params }) {
       .sort({ createdAt: -1 });
 
     const out = students.map((s) => {
+      const o = s.toObject();
       const count = accommodationsCount(s.student_accommodations || null);
-      return { ...s.toObject(), accommodations_count: count, has_accommodations: count > 0 };
+      const histLen = Array.isArray(o.rosterAssignmentHistory) ? o.rosterAssignmentHistory.length : 0;
+      delete o.rosterAssignmentHistory;
+      return {
+        ...o,
+        accommodations_count: count,
+        has_accommodations: count > 0,
+        rosterReassignmentCount: histLen,
+        hasRosterReassignmentHistory: histLen > 0,
+      };
     });
 
     return NextResponse.json(

@@ -6,6 +6,7 @@ import { protectRoute } from '@/lib/authMiddleware';
 import User from '@/models/User';
 import { comparePassword } from '@/lib/auth';
 import { normalizeAccommodations, accommodationsCount } from '@/lib/accommodations';
+import { formatRosterAssignmentHistoryForClient } from '@/lib/rosterAssignmentHistory';
 
 function optDate(v) {
   if (v === undefined) return undefined;
@@ -36,6 +37,7 @@ export async function GET(request, { params }) {
     const query = user.role === 'admin' ? { _id: id } : { _id: id, createdBy: user._id };
     const student = await Student.findOne(query)
       .populate('createdBy', 'name email')
+      .populate('classroomId', 'name gradeLevel')
       .populate('assignedGoals', 'title description category priority');
 
     if (!student) {
@@ -61,7 +63,13 @@ export async function GET(request, { params }) {
       student.student_accommodations = normalizeAccommodations(student.student_accommodations);
     }
 
-    const out = student ? ({ ...student.toObject(), accommodations_count: accommodationsCount(student.student_accommodations) }) : null;
+    const out = student
+      ? { ...student.toObject(), accommodations_count: accommodationsCount(student.student_accommodations) }
+      : null;
+
+    if (out) {
+      out.rosterAssignmentHistory = await formatRosterAssignmentHistoryForClient(out.rosterAssignmentHistory);
+    }
 
     return NextResponse.json(
       {
