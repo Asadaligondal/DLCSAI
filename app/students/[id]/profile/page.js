@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { LayoutDashboard, Users, User, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, User, AlertTriangle, Building2 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
@@ -28,6 +28,16 @@ export default function StudentProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignCaseManagerId, setAssignCaseManagerId] = useState('');
+  const [assignClassroomId, setAssignClassroomId] = useState('');
+  const [professors, setProfessors] = useState([]);
+  const [caseManagerClassrooms, setCaseManagerClassrooms] = useState([]);
+  const [loadingClassrooms, setLoadingClassrooms] = useState(false);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
+
+  const selCls =
+    'w-full h-10 px-3 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition-all disabled:opacity-50';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -81,6 +91,54 @@ export default function StudentProfilePage() {
     fetchStudent(token);
   }, [id, router]);
 
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    const token = localStorage.getItem('token');
+    if (!u || u.role !== 'admin' || !token) return;
+    axios
+      .get('/api/auth/professors', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setProfessors(r.data.professors || []))
+      .catch(() => setProfessors([]));
+  }, []);
+
+  useEffect(() => {
+    if (!showAssignModal || !assignCaseManagerId) {
+      setCaseManagerClassrooms([]);
+      return;
+    }
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    let cancelled = false;
+    setLoadingClassrooms(true);
+    axios
+      .get(`/api/admin/providers/${assignCaseManagerId}/classrooms`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        if (!cancelled) setCaseManagerClassrooms(res.data.classrooms || []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCaseManagerClassrooms([]);
+          toast.error('Could not load classrooms for that case manager');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingClassrooms(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showAssignModal, assignCaseManagerId]);
+
+  useEffect(() => {
+    if (!showAssignModal || !caseManagerClassrooms.length) return;
+    const ok =
+      !assignClassroomId ||
+      caseManagerClassrooms.some((c) => String(c._id) === String(assignClassroomId));
+    if (!ok) setAssignClassroomId('');
+  }, [assignCaseManagerId, caseManagerClassrooms, showAssignModal, assignClassroomId]);
+
   const hasStudent = !!student && !!formData;
   const showBlockingLoader = useMinLoadingGate(hasStudent, MIN_ROUTE_LOAD_MS, id);
 
@@ -120,6 +178,47 @@ export default function StudentProfilePage() {
       toast.error(error.response?.data?.message || 'Could not save profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openAssignModal = () => {
+    if (!student) return;
+    setAssignCaseManagerId(String(student.createdBy?._id || student.createdBy || ''));
+    setAssignClassroomId(student.classroomId?._id || student.classroomId || '');
+    setShowAssignModal(true);
+  };
+
+  const closeAssignModal = () => {
+    setShowAssignModal(false);
+    setAssignClassroomId('');
+    setAssignCaseManagerId('');
+    setCaseManagerClassrooms([]);
+  };
+
+  const handleAssignSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token || !assignCaseManagerId) {
+      toast.error('Select a case manager first');
+      return;
+    }
+    setAssignSubmitting(true);
+    try {
+      await axios.patch(
+        `/api/admin/students/${id}`,
+        {
+          caseManagerId: assignCaseManagerId,
+          classroomId: assignClassroomId || null,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Assignment saved');
+      closeAssignModal();
+      await fetchStudent(token);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not save assignment');
+    } finally {
+      setAssignSubmitting(false);
     }
   };
 
@@ -209,6 +308,29 @@ export default function StudentProfilePage() {
               />
             </div>
 
+            {userLocal?.role === 'admin' ? (
+              <div className="bg-white rounded-xl border border-slate-200/60 shadow-card p-6 sm:p-8">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-sm font-bold text-slate-900 tracking-tight">Case manager & classroom</h2>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                      Admins only. Choose the roster owner, then a classroom under that account (or leave unassigned).
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openAssignModal}
+                      className="mt-4 h-9 px-4 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+                    >
+                      Change assignment…
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <RosterAssignmentHistoryPanel history={student?.rosterAssignmentHistory} />
 
             <div className="rounded-xl border border-red-200/80 bg-red-50/40 p-6 sm:p-8">
@@ -238,6 +360,77 @@ export default function StudentProfilePage() {
           </div>
         </main>
       </div>
+
+      {showAssignModal && userLocal?.role === 'admin' ? (
+        <Modal title={`Assign ${student?.name || 'student'}`} onClose={closeAssignModal} size="sm">
+          <form onSubmit={handleAssignSubmit} className="space-y-4 p-1">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Case manager</label>
+              <select
+                value={assignCaseManagerId}
+                onChange={(e) => {
+                  setAssignCaseManagerId(e.target.value);
+                  setAssignClassroomId('');
+                }}
+                className={selCls}
+                required
+              >
+                <option value="">— Select case manager —</option>
+                {professors.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name}
+                    {p.email ? ` (${p.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Classroom</label>
+              <select
+                value={assignClassroomId}
+                onChange={(e) => setAssignClassroomId(e.target.value)}
+                disabled={!assignCaseManagerId || loadingClassrooms}
+                className={selCls}
+              >
+                <option value="">
+                  {!assignCaseManagerId
+                    ? '— Select case manager first —'
+                    : loadingClassrooms
+                      ? 'Loading classrooms…'
+                      : '— Unassigned —'}
+                </option>
+                {caseManagerClassrooms.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                    {c.gradeLevel ? ` · ${c.gradeLevel}` : ''}
+                  </option>
+                ))}
+              </select>
+              {assignCaseManagerId && !loadingClassrooms && caseManagerClassrooms.length === 0 ? (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  No classrooms for this case manager — leave unassigned or add classrooms on their provider page.
+                </p>
+              ) : null}
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={closeAssignModal}
+                className="h-9 px-4 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={assignSubmitting}
+                className="h-9 px-5 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-sm transition-all disabled:opacity-50"
+              >
+                {assignSubmitting ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
 
       {showDeleteModal && (
         <Modal

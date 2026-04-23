@@ -14,6 +14,8 @@ export default function AdminStudentTable({
   emptyHint = 'When a provider adds students, they will appear here.',
   showClassroomCol = false,
   showCaseManagerCol = false,
+  /** Provider “all students” list: slimmer columns, no row action; use profile to assign. */
+  rosterOnlyView = false,
   onRowAction, // optional: (student) => void — e.g. "Move to classroom"
   actionLabel = 'Move',
 }) {
@@ -22,14 +24,19 @@ export default function AdminStudentTable({
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return students;
-    return students.filter(
-      (s) =>
+    return students.filter((s) => {
+      const base =
         s.name?.toLowerCase().includes(q) ||
         s.studentId?.toLowerCase?.().includes(q) ||
+        s.createdBy?.name?.toLowerCase?.().includes(q);
+      if (rosterOnlyView) return base;
+      return (
+        base ||
         s.gradeLevel?.toLowerCase?.().includes(q) ||
         s.primaryExceptionality?.toLowerCase?.().includes(q)
-    );
-  }, [students, searchQuery]);
+      );
+    });
+  }, [students, searchQuery, rosterOnlyView]);
 
   return (
     <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
@@ -68,17 +75,23 @@ export default function AdminStudentTable({
               <tr className="border-b border-slate-100 bg-slate-50/40">
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Student</th>
                 <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Student ID</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Primary exceptionality</th>
+                {!rosterOnlyView ? (
+                  <>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Grade</th>
+                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Primary exceptionality</th>
+                  </>
+                ) : null}
                 {showCaseManagerCol && (
                   <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Case manager</th>
                 )}
                 {showClassroomCol && (
                   <th className="text-left px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Classroom</th>
                 )}
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Accommodations</th>
+                {!rosterOnlyView ? (
+                  <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Accommodations</th>
+                ) : null}
                 <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Open</th>
-                {onRowAction ? (
+                {!rosterOnlyView && onRowAction ? (
                   <th className="text-right px-5 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Action</th>
                 ) : null}
               </tr>
@@ -105,10 +118,14 @@ export default function AdminStudentTable({
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{s.studentId}</td>
-                  <td className="px-5 py-3.5 text-sm text-slate-600">{s.gradeLevel || '—'}</td>
-                  <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[220px]">
-                    {s.primaryExceptionality || '—'}
-                  </td>
+                  {!rosterOnlyView ? (
+                    <>
+                      <td className="px-5 py-3.5 text-sm text-slate-600">{s.gradeLevel || '—'}</td>
+                      <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[220px]">
+                        {s.primaryExceptionality || '—'}
+                      </td>
+                    </>
+                  ) : null}
                   {showCaseManagerCol && (
                     <td className="px-5 py-3.5 text-sm text-slate-600 truncate max-w-[180px]">
                       {s.createdBy?.name || '—'}
@@ -126,18 +143,30 @@ export default function AdminStudentTable({
                       )}
                     </td>
                   )}
-                  <td className="px-5 py-3.5 text-right text-sm font-semibold text-slate-700 tabular-nums">
-                    {s.accommodations_count || 0}
-                  </td>
+                  {!rosterOnlyView ? (
+                    <td className="px-5 py-3.5 text-right text-sm font-semibold text-slate-700 tabular-nums">
+                      {s.accommodations_count || 0}
+                    </td>
+                  ) : null}
                   <td className="px-5 py-3.5 text-right">
-                    <Link
-                      href={`/students/${s._id}`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 px-2 py-1 rounded hover:bg-primary-50"
-                    >
-                      IEP <ExternalLink className="w-3 h-3" />
-                    </Link>
+                    <div className="inline-flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
+                      <Link
+                        href={`/students/${s._id}`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 px-2 py-1 rounded hover:bg-primary-50"
+                      >
+                        IEP <ExternalLink className="w-3 h-3" />
+                      </Link>
+                      {rosterOnlyView ? (
+                        <Link
+                          href={`/students/${s._id}/profile`}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 rounded hover:bg-slate-100"
+                        >
+                          Profile
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
-                  {onRowAction ? (
+                  {!rosterOnlyView && onRowAction ? (
                     <td className="px-5 py-3.5 text-right">
                       <button
                         onClick={() => onRowAction(s)}
