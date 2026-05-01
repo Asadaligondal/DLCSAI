@@ -255,6 +255,31 @@ const StudentSchema = new mongoose.Schema({
     default: null,
     index: true
   },
+  /**
+   * Team collaboration (notes-only surface). Primary case manager is always createdBy — not duplicated here.
+   * Collaborators are professor users invited by primary or admin; they do not get full student APIs by default.
+   */
+  collaborators: {
+    type: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        roleKey: { type: String, required: true },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  },
+  collaborationNotes: {
+    type: [
+      {
+        authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        roleKey: { type: String, required: true },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    default: [],
+  },
   /** Admin-only moves; case managers may read for audit. Capped in application code. */
   rosterAssignmentHistory: {
     type: [

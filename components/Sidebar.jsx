@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -22,6 +22,7 @@ export default function Sidebar({ user, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
   const [syncUser, setSyncUser] = useState(user);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setSyncUser(user);
@@ -31,9 +32,21 @@ export default function Sidebar({ user, onLogout }) {
     const token = localStorage.getItem('token');
     if (!token || user?.role === 'admin') return;
     fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          try {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          } catch {
+            /* ignore */
+          }
+          router.replace('/login');
+          return null;
+        }
+        return r.json();
+      })
       .then((d) => {
-        if (!d.success || !d.user) return;
+        if (!d || !d.success || !d.user) return;
         setSyncUser((prev) => ({ ...prev, ...d.user }));
         try {
           const cur = JSON.parse(localStorage.getItem('user') || '{}');

@@ -28,20 +28,33 @@ export async function GET(request) {
     // Connect to database
     await connectDB();
 
-    // Find all students created by this user
-    const students = await Student.find({ createdBy: user._id })
-      .populate('createdBy', 'name email')
-      .populate('assignedGoals', 'title description category priority')
-      .sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const asCollaborator = searchParams.get('asCollaborator') === '1';
+
+    let students;
+    if (asCollaborator && user.role === 'professor') {
+      students = await Student.find({
+        collaborators: { $elemMatch: { userId: user._id } },
+      })
+        .populate('createdBy', 'name email')
+        .populate('assignedGoals', 'title description category priority')
+        .sort({ createdAt: -1 });
+    } else {
+      students = await Student.find({ createdBy: user._id })
+        .populate('createdBy', 'name email')
+        .populate('assignedGoals', 'title description category priority')
+        .sort({ createdAt: -1 });
+    }
 
     // For performance, include accommodations_count and has_accommodations summary
-    const studentsOut = students.map(s => {
+    const studentsOut = students.map((s) => {
       const accom = s.student_accommodations || null;
       const count = accommodationsCount(accom);
       return {
         ...s.toObject(),
         accommodations_count: count,
-        has_accommodations: count > 0
+        has_accommodations: count > 0,
+        ...(asCollaborator ? { collaborationOnly: true } : {}),
       };
     });
 

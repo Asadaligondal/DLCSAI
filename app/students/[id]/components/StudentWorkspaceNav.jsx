@@ -3,16 +3,25 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, FileText, User } from 'lucide-react';
+import { ChevronDown, FileText, User, MessageSquare } from 'lucide-react';
 
-export default function StudentWorkspaceNav({ studentId, studentName }) {
+const disabledItemCls =
+  'flex items-center gap-2 px-3 py-2 text-sm text-slate-400 cursor-not-allowed';
+
+export default function StudentWorkspaceNav({
+  studentId,
+  studentName,
+  restrictToCollaboration = false,
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const base = `/students/${studentId}`;
   const profilePath = `${base}/profile`;
+  const collaboratePath = `${base}/collaborate`;
   const onProfile = pathname === profilePath;
   const onIep = pathname === base;
+  const onCollaborate = pathname === collaboratePath;
 
   useEffect(() => {
     if (!open) return;
@@ -45,23 +54,54 @@ export default function StudentWorkspaceNav({ studentId, studentName }) {
           className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl border border-slate-200/80 bg-white py-1 shadow-float"
           role="menu"
         >
+          {restrictToCollaboration ? (
+            <span
+              role="menuitem"
+              className={disabledItemCls}
+              title="Only the primary case manager can open the full IEP."
+            >
+              <FileText className="w-4 h-4 shrink-0 opacity-70" />
+              IEP plan
+            </span>
+          ) : (
+            <Link
+              href={base}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-2 px-3 py-2 text-sm ${onIep ? 'bg-primary-50 text-primary-800 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+            >
+              <FileText className="w-4 h-4 shrink-0 opacity-70" />
+              IEP plan
+            </Link>
+          )}
+          {restrictToCollaboration ? (
+            <span
+              role="menuitem"
+              className={disabledItemCls}
+              title="Only the primary case manager can edit the student profile."
+            >
+              <User className="w-4 h-4 shrink-0 opacity-70" />
+              Student profile
+            </span>
+          ) : (
+            <Link
+              href={profilePath}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-2 px-3 py-2 text-sm ${onProfile ? 'bg-primary-50 text-primary-800 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+            >
+              <User className="w-4 h-4 shrink-0 opacity-70" />
+              Student profile
+            </Link>
+          )}
           <Link
-            href={base}
+            href={collaboratePath}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className={`flex items-center gap-2 px-3 py-2 text-sm ${onIep ? 'bg-primary-50 text-primary-800 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
+            className={`flex items-center gap-2 px-3 py-2 text-sm ${onCollaborate ? 'bg-primary-50 text-primary-800 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
           >
-            <FileText className="w-4 h-4 shrink-0 opacity-70" />
-            IEP plan
-          </Link>
-          <Link
-            href={profilePath}
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className={`flex items-center gap-2 px-3 py-2 text-sm ${onProfile ? 'bg-primary-50 text-primary-800 font-medium' : 'text-slate-700 hover:bg-slate-50'}`}
-          >
-            <User className="w-4 h-4 shrink-0 opacity-70" />
-            Student profile
+            <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
+            Team input
           </Link>
         </div>
       )}

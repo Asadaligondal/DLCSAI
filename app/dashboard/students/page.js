@@ -9,7 +9,7 @@ import Modal from '@/components/Modal';
 import MultiSelect from '@/components/MultiSelect';
 import AccommodationsModal from '@/components/AccommodationsModal';
 import MeetingPurposeCollapsible from '@/components/MeetingPurposeCollapsible';
-import { Plus, Search, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard } from 'lucide-react';
+import { Plus, Search, Upload, FileText, Users, ChevronDown, Image as ImageIcon, Pencil, LayoutGrid, List, ArrowUpDown, ChevronLeft, ChevronRight, X, LayoutDashboard, MessageSquare } from 'lucide-react';
 import WorkspaceBreadcrumb from '@/components/WorkspaceBreadcrumb';
 import WorkspaceTopBar from '@/components/WorkspaceTopBar';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
@@ -349,10 +349,23 @@ export default function Dashboard() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/students', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStudents(res.data.students || []);
+      const headers = { Authorization: `Bearer ${token}` };
+      const ownRes = await axios.get('/api/students', { headers });
+      const own = ownRes.data.students || [];
+      const ownIds = new Set(own.map((s) => String(s._id)));
+      let merged = [...own];
+      if (user?.role === 'professor') {
+        try {
+          const cRes = await axios.get('/api/students?asCollaborator=1', { headers });
+          const collab = cRes.data.students || [];
+          for (const s of collab) {
+            if (!ownIds.has(String(s._id))) merged.push(s);
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      setStudents(merged);
     } catch (error) {
       toast.error('Failed to fetch students');
     } finally {
@@ -979,7 +992,10 @@ export default function Dashboard() {
                         ) : (
                           paginatedStudents.map((student) => {
                             const status = getIEPStatus(student);
-                            const iepPath = `/students/${student._id}`;
+                            const collabOnly = student.collaborationOnly === true;
+                            const iepPath = collabOnly
+                              ? `/students/${student._id}/collaborate`
+                              : `/students/${student._id}`;
                             return (
                               <tr
                                 key={student._id}
@@ -999,7 +1015,14 @@ export default function Dashboard() {
                                     <div className="w-9 h-9 bg-primary-100 text-primary-700 rounded-lg flex items-center justify-center flex-shrink-0">
                                       <span className="font-bold text-sm">{student.name.charAt(0).toUpperCase()}</span>
                                     </div>
-                                    <div className="text-sm font-semibold text-slate-900">{student.name}</div>
+                                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                      <div className="text-sm font-semibold text-slate-900">{student.name}</div>
+                                      {collabOnly ? (
+                                        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-800 border border-violet-200/80">
+                                          Team
+                                        </span>
+                                      ) : null}
+                                    </div>
                                   </div>
                                 </td>
                                 <td className="px-5 py-3.5 text-sm text-slate-600 font-mono tabular-nums">{student.studentId}</td>
@@ -1021,11 +1044,14 @@ export default function Dashboard() {
                                 </td>
                                 <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button type="button" onClick={() => handleEditStudent(student)} className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors" title="Edit">
-                                      <Pencil className="w-3.5 h-3.5" />Edit
-                                    </button>
-                                    <button type="button" onClick={() => router.push(iepPath)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title="IEP">
-                                      <FileText className="w-3.5 h-3.5" />IEP
+                                    {!collabOnly ? (
+                                      <button type="button" onClick={() => handleEditStudent(student)} className="flex items-center gap-1.5 px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[13px] font-medium transition-colors" title="Edit">
+                                        <Pencil className="w-3.5 h-3.5" />Edit
+                                      </button>
+                                    ) : null}
+                                    <button type="button" onClick={() => router.push(iepPath)} className="flex items-center gap-1.5 px-3 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[13px] font-medium transition-colors" title={collabOnly ? 'Team input' : 'IEP'}>
+                                      {collabOnly ? <MessageSquare className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+                                      {collabOnly ? 'Team' : 'IEP'}
                                     </button>
                                   </div>
                                 </td>
@@ -1053,6 +1079,10 @@ export default function Dashboard() {
                         {paginatedStudents.map((student) => {
                           const status = getIEPStatus(student);
                           const hasGoals = student?.assignedGoals?.length > 0;
+                          const collabOnly = student.collaborationOnly === true;
+                          const iepPath = collabOnly
+                            ? `/students/${student._id}/collaborate`
+                            : `/students/${student._id}`;
                           return (
                             <div key={student._id} className="border border-slate-200/60 rounded-xl p-4 hover:shadow-md hover:border-slate-300/60 transition-all group">
                               <div className="flex items-start gap-3 mb-3">
@@ -1060,7 +1090,14 @@ export default function Dashboard() {
                                   <span className="font-bold text-base">{student.name.charAt(0).toUpperCase()}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
+                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
+                                    {collabOnly ? (
+                                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-800 border border-violet-200/80">
+                                        Team
+                                      </span>
+                                    ) : null}
+                                  </div>
                                   <p className="text-[12px] text-slate-500">ID: {student.studentId}</p>
                                 </div>
                               </div>
@@ -1096,11 +1133,14 @@ export default function Dashboard() {
                               </div>
 
                               <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                                <button onClick={() => handleEditStudent(student)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[12px] font-medium transition-colors">
-                                  <Pencil className="w-3 h-3" />Edit
-                                </button>
-                                <button onClick={() => router.push(`/students/${student._id}`)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[12px] font-medium transition-colors">
-                                  <FileText className="w-3 h-3" />IEP
+                                {!collabOnly ? (
+                                  <button onClick={() => handleEditStudent(student)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-[12px] font-medium transition-colors">
+                                    <Pencil className="w-3 h-3" />Edit
+                                  </button>
+                                ) : null}
+                                <button onClick={() => router.push(iepPath)} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-primary-700 hover:bg-primary-50 rounded-md text-[12px] font-medium transition-colors">
+                                  {collabOnly ? <MessageSquare className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                                  {collabOnly ? 'Team' : 'IEP'}
                                 </button>
                               </div>
                             </div>

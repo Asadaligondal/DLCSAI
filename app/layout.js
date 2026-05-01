@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './globals.css';
+import SessionExpiryGate from '@/components/SessionExpiryGate';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
+        <SessionExpiryGate />
         {children}
         <ToastContainer
           position="top-right"
