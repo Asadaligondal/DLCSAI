@@ -131,7 +131,7 @@ export default function DashboardHomePage() {
               </div>
 
               <div className="min-w-0">
-                <ActivityFeed students={students} />
+                <ActivityFeed students={students} userRole={user.role} />
               </div>
             </div>
           </div>

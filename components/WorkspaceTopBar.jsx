@@ -1,5 +1,7 @@
 'use client';
 
+import CollaborationNotificationsBell from '@/components/CollaborationNotificationsBell';
+
 /**
  * Sticky top bar: left = optional custom node (e.g. breadcrumbs), else "Dashboard" title; welcome + avatar right.
  */
@@ -9,7 +11,8 @@ export default function WorkspaceTopBar({ user, left = null }) {
       <div className="min-w-0 flex-1 flex items-center">
         {left ?? <h2 className="text-lg font-semibold text-slate-900 tracking-tight">Dashboard</h2>}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
+        {user?.role === 'professor' ? <CollaborationNotificationsBell /> : null}
         <span className="text-sm text-slate-500 hidden sm:inline">Welcome, {user?.name || '—'}</span>
         <div className="w-9 h-9 rounded-full overflow-hidden bg-primary-100 flex items-center justify-center ring-2 ring-white shrink-0">
           {user?.profilePicture ? (

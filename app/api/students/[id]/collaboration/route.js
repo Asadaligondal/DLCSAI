@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Student from '@/models/Student';
 import User from '@/models/User';
+import Notification from '@/models/Notification';
 import { protectRoute } from '@/lib/authMiddleware';
 import { canManageCollaborators, canUseCollaboration } from '@/lib/studentCollaborationAccess';
 import {
@@ -227,6 +228,13 @@ export async function PATCH(request, { params }) {
 
     const primaryId = String(student.createdBy);
 
+    const oldCollabIds = new Set(
+      (student.collaborators || []).map((c) => {
+        const u = c.userId;
+        return String(u && typeof u === 'object' && u._id ? u._id : u);
+      })
+    );
+
     const byUser = new Map();
     for (const row of incoming) {
       const uid = row?.userId != null ? String(row.userId).trim() : '';
@@ -248,8 +256,26 @@ export async function PATCH(request, { params }) {
       byUser.set(uid, { userId: uid, roleKey: rk, addedAt: new Date() });
     }
 
+    const addedCollabUserIds = [...byUser.keys()].filter((uid) => !oldCollabIds.has(uid));
+    const studentNameForNotif = student.name || 'Student';
+
     student.collaborators = [...byUser.values()];
     await student.save();
+
+    if (addedCollabUserIds.length > 0) {
+      const bodyText = `You were added to the team for ${studentNameForNotif}.`;
+      await Promise.all(
+        addedCollabUserIds.map((recipientId) =>
+          Notification.create({
+            userId: recipientId,
+            type: 'collaboration_invited',
+            studentId: student._id,
+            title: 'Team collaboration',
+            body: bodyText,
+          })
+        )
+      );
+    }
 
     const refreshed = await Student.findById(id)
       .populate('collaborators.userId', 'name email role');
