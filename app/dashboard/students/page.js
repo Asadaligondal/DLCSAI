@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
@@ -260,6 +260,10 @@ export default function Dashboard() {
   const [filterExceptionality, setFilterExceptionality] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  /** Professors: main table = owned roster only; collaborated list is a separate tab. */
+  const [rosterView, setRosterView] = useState('mine');
+  const [collaboratedStudents, setCollaboratedStudents] = useState([]);
+  const [collabLoading, setCollabLoading] = useState(false);
 
   useEffect(() => {
     if (!uploadDropdownOpen) return;
@@ -341,6 +345,34 @@ export default function Dashboard() {
     }
   }, [token, user]);
 
+  useEffect(() => {
+    if (user?.role !== 'professor') setRosterView('mine');
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (!token || user?.role !== 'professor' || rosterView !== 'collaborated') return;
+    let cancelled = false;
+    (async () => {
+      setCollabLoading(true);
+      try {
+        const res = await axios.get('/api/students?asCollaborator=1', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled) setCollaboratedStudents(res.data.students || []);
+      } catch {
+        if (!cancelled) {
+          toast.error('Failed to load collaborated students');
+          setCollaboratedStudents([]);
+        }
+      } finally {
+        if (!cancelled) setCollabLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rosterView, token, user]);
+
   const handleLogout = () => {
     localStorage.clear();
     router.push('/login');
@@ -351,21 +383,7 @@ export default function Dashboard() {
       setLoading(true);
       const headers = { Authorization: `Bearer ${token}` };
       const ownRes = await axios.get('/api/students', { headers });
-      const own = ownRes.data.students || [];
-      const ownIds = new Set(own.map((s) => String(s._id)));
-      let merged = [...own];
-      if (user?.role === 'professor') {
-        try {
-          const cRes = await axios.get('/api/students?asCollaborator=1', { headers });
-          const collab = cRes.data.students || [];
-          for (const s of collab) {
-            if (!ownIds.has(String(s._id))) merged.push(s);
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-      setStudents(merged);
+      setStudents(ownRes.data.students || []);
     } catch (error) {
       toast.error('Failed to fetch students');
     } finally {
@@ -731,9 +749,35 @@ export default function Dashboard() {
     }
   };
 
-  // Derive filter options from data
-  const uniqueGrades = [...new Set(students.map(s => s.gradeLevel).filter(Boolean))].sort();
-  const uniqueExceptionalities = [...new Set(students.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
+  const isCollaboratedTab = user?.role === 'professor' && rosterView === 'collaborated';
+
+  const collaboratedTabRoster = useMemo(() => {
+    if (!isCollaboratedTab || !user) return [];
+    const uid = String(user.id || user._id || '');
+    const createdById = (s) => {
+      const cb = s.createdBy;
+      if (cb && typeof cb === 'object' && cb._id != null) return String(cb._id);
+      return cb ? String(cb) : '';
+    };
+    const apiList = collaboratedStudents || [];
+    const seen = new Set(apiList.map((s) => String(s._id)));
+    const ownedWithTeam = students.filter(
+      (s) => (s.collaborators?.length > 0) && !seen.has(String(s._id))
+    );
+    const taggedOwned = ownedWithTeam.map((s) => ({ ...s, _inCollabTabAs: 'yours' }));
+    const taggedApi = apiList.map((s) => ({
+      ...s,
+      _inCollabTabAs: createdById(s) === uid ? 'yours' : 'invited',
+    }));
+    return [...taggedOwned, ...taggedApi];
+  }, [isCollaboratedTab, user, collaboratedStudents, students]);
+
+  const rosterStudents = isCollaboratedTab ? collaboratedTabRoster : students;
+  const rosterLoading = isCollaboratedTab ? collabLoading : loading;
+
+  // Derive filter options from the active roster list
+  const uniqueGrades = [...new Set(rosterStudents.map(s => s.gradeLevel).filter(Boolean))].sort();
+  const uniqueExceptionalities = [...new Set(rosterStudents.flatMap(s => s.disabilities || []).filter(Boolean))].sort();
   const getIEPStatus = (s) => {
     const iep = s?.iep_plan_data;
     if (!iep) return 'pending';
@@ -742,7 +786,7 @@ export default function Dashboard() {
     return has ? 'generated' : 'pending';
   };
 
-  const filteredStudents = students
+  const filteredStudents = rosterStudents
     .filter((s) => {
       const q = searchQuery.trim().toLowerCase();
       const nm = (s.name && String(s.name).toLowerCase()) || '';
@@ -839,18 +883,52 @@ export default function Dashboard() {
         <main className="p-6 lg:p-8">
           <div className="max-w-[1400px] mx-auto space-y-5">
             {/* Page header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Students</h1>
-                <p className="text-sm text-slate-500 mt-0.5">{students.length} student{students.length !== 1 ? 's' : ''} enrolled</p>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {isCollaboratedTab
+                    ? `${collaboratedTabRoster.length} student${collaboratedTabRoster.length !== 1 ? 's' : ''} in collaboration`
+                    : `${students.length} student${students.length !== 1 ? 's' : ''} enrolled`}
+                </p>
+                {user?.role === 'professor' && (
+                  <div className="flex mt-2 rounded-lg bg-slate-100 p-0.5 w-fit">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRosterView('mine');
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                        rosterView === 'mine' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      My students
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRosterView('collaborated');
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                        rosterView === 'collaborated' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Collaborated
+                    </button>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={handleOpenModal}
-                className="flex items-center gap-2 h-10 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-              >
-                <Plus className="w-4 h-4" />
-                Add Student
-              </button>
+              {!isCollaboratedTab && (
+                <button
+                  onClick={handleOpenModal}
+                  className="flex items-center gap-2 h-10 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Student
+                </button>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-card border border-slate-200/60 overflow-hidden">
@@ -969,7 +1047,7 @@ export default function Dashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {loading ? (
+                        {rosterLoading ? (
                           <tr>
                             <td colSpan="5" className="px-6 py-20 text-center">
                               <IepGeniusLetterReveal variant="compact" subtitle="Refreshing…" />
@@ -984,7 +1062,13 @@ export default function Dashboard() {
                                 </div>
                                 <div>
                                   <div className="text-sm font-semibold text-slate-600">No students found</div>
-                                  <div className="text-xs text-slate-400 mt-0.5">{activeFilters > 0 ? 'Try adjusting your filters' : 'Add a student to get started'}</div>
+                                  <div className="text-xs text-slate-400 mt-0.5">
+                                    {activeFilters > 0
+                                      ? 'Try adjusting your filters'
+                                      : isCollaboratedTab
+                                        ? 'No collaborated students yet'
+                                        : 'Add a student to get started'}
+                                  </div>
                                 </div>
                               </div>
                             </td>
@@ -1017,9 +1101,27 @@ export default function Dashboard() {
                                     </div>
                                     <div className="flex items-center gap-2 flex-wrap min-w-0">
                                       <div className="text-sm font-semibold text-slate-900">{student.name}</div>
-                                      {collabOnly ? (
+                                      {isCollaboratedTab && student._inCollabTabAs === 'yours' ? (
+                                        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/80" title="Your roster — team enabled">
+                                          Yours
+                                        </span>
+                                      ) : null}
+                                      {isCollaboratedTab && student._inCollabTabAs === 'invited' ? (
+                                        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/80" title="Another case manager’s student">
+                                          Shared
+                                        </span>
+                                      ) : null}
+                                      {!isCollaboratedTab && collabOnly ? (
                                         <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-800 border border-violet-200/80">
                                           Team
+                                        </span>
+                                      ) : null}
+                                      {!isCollaboratedTab && !collabOnly && (student.collaborators?.length > 0) ? (
+                                        <span
+                                          className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/80"
+                                          title="This student has invited collaborators"
+                                        >
+                                          Collab
                                         </span>
                                       ) : null}
                                     </div>
@@ -1065,7 +1167,7 @@ export default function Dashboard() {
                 ) : (
                   /* CARD VIEW */
                   <div className="p-5">
-                    {loading ? (
+                    {rosterLoading ? (
                       <div className="py-20">
                         <IepGeniusLetterReveal variant="compact" subtitle="Refreshing…" />
                       </div>
@@ -1092,9 +1194,27 @@ export default function Dashboard() {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap min-w-0">
                                     <h3 className="text-sm font-semibold text-slate-900 truncate">{student.name}</h3>
-                                    {collabOnly ? (
+                                    {isCollaboratedTab && student._inCollabTabAs === 'yours' ? (
+                                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200/80" title="Your roster — team enabled">
+                                        Yours
+                                      </span>
+                                    ) : null}
+                                    {isCollaboratedTab && student._inCollabTabAs === 'invited' ? (
+                                      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200/80" title="Another case manager’s student">
+                                        Shared
+                                      </span>
+                                    ) : null}
+                                    {!isCollaboratedTab && collabOnly ? (
                                       <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-800 border border-violet-200/80">
                                         Team
+                                      </span>
+                                    ) : null}
+                                    {!isCollaboratedTab && !collabOnly && (student.collaborators?.length > 0) ? (
+                                      <span
+                                        className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/80"
+                                        title="This student has invited collaborators"
+                                      >
+                                        Collab
                                       </span>
                                     ) : null}
                                   </div>
@@ -1152,7 +1272,7 @@ export default function Dashboard() {
                 )}
 
                 {/* Pagination */}
-                {!loading && filteredStudents.length > 0 && (
+                {!rosterLoading && filteredStudents.length > 0 && (
                   <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                       <span>Show</span>
