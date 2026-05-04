@@ -25,6 +25,7 @@ import PipelineSelector from './components/PipelineSelector';
 import PipelineMetricsPanel from './components/PipelineMetricsPanel';
 import IEPVersionHistory from './components/IEPVersionHistory';
 import RegenerateIepModal from './components/RegenerateIepModal';
+import ParentInputSection from './components/ParentInputSection';
 import IepGeniusLetterReveal from '@/components/IepGeniusLetterReveal';
 import LoadingSweep from '@/components/LoadingSweep';
 import useMinLoadingGate from '@/hooks/useMinLoadingGate';
@@ -1168,6 +1169,8 @@ export default function StudentDetail() {
                 }}
                 customGoals={customGoals}
               />
+
+              <ParentInputSection studentId={id} readOnly={isAdminReadOnly} />
 
               {/* Pipeline UI hidden for now — default RAG remains `grouped` (B) via state above */}
               <div className="hidden" aria-hidden>

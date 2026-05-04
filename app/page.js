@@ -15,18 +15,22 @@ import {
   User,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
 
 export default function LandingPage() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    setIsLoggedIn(!!(token && user));
-  }, []);
+    const raw = localStorage.getItem('user');
+    if (!token || !raw) return;
+    try {
+      const user = JSON.parse(raw);
+      router.replace(user?.role === 'admin' ? '/admin' : '/dashboard');
+    } catch {
+      /* ignore corrupt storage */
+    }
+  }, [router]);
 
   const features = [
     { icon: Brain, title: 'AI-Powered Drafting', description: 'Turn raw notes into professional narratives. Generate PLAAFPs, goals, and interventions in seconds.' },
@@ -44,12 +48,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {isLoggedIn ? <Navbar /> : null}
-
       {/* Hero + guest nav overlay */}
       <section className="relative overflow-hidden bg-brand-hero">
-        {!isLoggedIn ? (
-          <nav className="absolute top-0 left-0 right-0 z-50 border-b border-white/15">
+        <nav className="absolute top-0 left-0 right-0 z-50 border-b border-white/15">
             <div className="max-w-6xl mx-auto px-6">
               <div className="flex items-center justify-between h-14">
                 <div
@@ -132,9 +133,8 @@ export default function LandingPage() {
               )}
             </div>
           </nav>
-        ) : null}
 
-        <div className={`max-w-6xl mx-auto px-6 py-16 lg:py-24 ${!isLoggedIn ? 'pt-24 lg:pt-28' : 'lg:py-28'}`}>
+        <div className="max-w-6xl mx-auto px-6 py-16 lg:py-24 pt-24 lg:pt-28">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="space-y-6">
               <h1 className="text-4xl sm:text-5xl font-bold text-white leading-[1.2] tracking-tight max-w-xl">
