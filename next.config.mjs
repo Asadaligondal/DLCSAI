@@ -8,6 +8,7 @@
 // export default nextConfig;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['bcryptjs'],
   // 1. Ignore TypeScript Errors during build
   typescript: {
     ignoreBuildErrors: true,
